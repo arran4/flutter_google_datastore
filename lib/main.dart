@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:gcloud/datastore.dart' as datastore;
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart' as p;
+import 'database.dart';
 
 void main() {
   runApp(const MyApp());
 }
+
+final db = DB();
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -25,27 +26,8 @@ class MyApp extends StatelessWidget {
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   @override
   State<LoginPage> createState() => _LoginPageState();
-}
-
-class UrlEntry {
-  final int id;
-  final String url;
-  final String username;
-  final String password;
-
-  UrlEntry({required this.id, required this.url, required this.username, required this.password});
 }
 
 class _LoginPageState extends State<LoginPage> {
@@ -58,27 +40,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<List<UrlEntry>> _loadEntries() async {
-    final database = await openDatabase(
-      p.join(await getDatabasesPath(), 'urls_database.db'),
-      onCreate: (db, version) {
-        return db.execute(
-          'CREATE TABLE urls(id INTEGER PRIMARY KEY, url TEXT, username TEXT, password TEXT)',
-        );
-      },
-      version: 1,
-    );
-
-    final List<Map<String, dynamic>> maps = await database.query('urls');
-    await database.close();
-
-    return List.generate(maps.length, (i) {
-      return UrlEntry(
-        id: maps[i]['id'],
-        url: maps[i]['url'],
-        username: maps[i]['username'],
-        password: maps[i]['password'],
-      );
-    });
+    return db.getUrlEntries;
   }
 
   @override
@@ -88,20 +50,94 @@ class _LoginPageState extends State<LoginPage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text("Datastore login"),
       ),
-      body: ListView.builder(
-          itemCount: urlEntries.length,
-          itemBuilder: (BuildContext context, int index) {
-            return ListTile(
-              title: Text(urlEntries[index].url),
-              subtitle: Text('Username: ${urlEntries[index].username}\nPassword: ${urlEntries[index].password}'),
-              // You can add onTap functionality here if needed
+      body: FutureBuilder<List<UrlEntry>>(
+        future: urlEntries,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const CircularProgressIndicator();
+          } else if (snapshot.hasError) {
+            return Text('Error: ${snapshot.error}');
+          } else {
+            final urlEntries = snapshot.data;
+            return ListView.builder(
+              itemCount: urlEntries!.length,
+              itemBuilder: (BuildContext context, int index) {
+                return ListTile(
+                  title: Text(urlEntries[index].url),
+                  subtitle: Text('Username: ${urlEntries[index].username}'),
+                );
+              },
             );
-          },
+          }
+        },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: addLogin,
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => AddLoginScreen(),
+            ),
+          );
+        },
         tooltip: 'addLogin',
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class AddLoginScreen extends StatefulWidget {
+  @override
+  _AddLoginScreenState createState() => _AddLoginScreenState();
+}
+
+class _AddLoginScreenState extends State<AddLoginScreen> {
+  final TextEditingController urlController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  void addLogin() async {
+    await db.createNewUrlEntry(
+      urlController.text,
+      usernameController.text,
+      passwordController.text,
+    );
+
+    if (!context.mounted) return;
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Add Login'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            TextField(
+              controller: urlController,
+              decoration: const InputDecoration(labelText: 'URL'),
+            ),
+            TextField(
+              controller: usernameController,
+              decoration: const InputDecoration(labelText: 'Username'),
+            ),
+            TextField(
+              controller: passwordController,
+              decoration: const InputDecoration(labelText: 'Password'),
+              obscureText: true, // Hide password text
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: addLogin,
+              child: const Text('Add Login'),
+            ),
+          ],
+        ),
       ),
     );
   }
