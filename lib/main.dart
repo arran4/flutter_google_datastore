@@ -22,29 +22,29 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
       ),
-      home: const LoginPage(),
+      home: const ProjectPage(),
     );
   }
 }
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class ProjectPage extends StatefulWidget {
+  const ProjectPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<ProjectPage> createState() => _ProjectPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
-  late Future<List<UrlEntry>> urlEntries;
+class _ProjectPageState extends State<ProjectPage> {
+  late Future<List<Project>> projects;
 
   @override
   void initState() {
     super.initState();
-    urlEntries = _loadEntries();
+    projects = _loadEntries();
   }
 
-  Future<List<UrlEntry>> _loadEntries() async {
-    return db.getUrlEntries;
+  Future<List<Project>> _loadEntries() async {
+    return db.getProjects;
   }
 
   void popupItemSelected(String value) {
@@ -54,7 +54,7 @@ class _LoginPageState extends State<LoginPage> {
           return const SettingsWidget();
         })).then((dynamic value) {
           setState(() {
-            urlEntries = _loadEntries();
+            projects = _loadEntries();
           });
         });
         break;
@@ -70,14 +70,14 @@ class _LoginPageState extends State<LoginPage> {
     ];
   }
 
-  addLoginPressed () async {
+  addProjectPressed () async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const AddLoginScreen(),
+        builder: (context) => const AddProjectScreen(),
       ),
     );
     setState(() {
-      urlEntries = _loadEntries();
+      projects = _loadEntries();
     });
   }
 
@@ -86,35 +86,35 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text("Datastore login"),
+        title: const Text("Datastore Project"),
         actions: <Widget>[
-          TextButton(onPressed: addLoginPressed, child: const Text("Add")),
+          TextButton(onPressed: addProjectPressed, child: const Text("Add")),
           PopupMenuButton<String>(
             onSelected: popupItemSelected,
             itemBuilder: createPopupItems,
           ),
         ],
       ),
-      body: FutureBuilder<List<UrlEntry>>(
-        future: urlEntries,
+      body: FutureBuilder<List<Project>>(
+        future: projects,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const CircularProgressIndicator();
           } else if (snapshot.hasError) {
-            return Text('Error: ${snapshot.error}');
+            return SelectableText('Error: ${snapshot.error}');
           } else {
-            final urlEntries = snapshot.data;
+            final projects = snapshot.data;
             return ListView.builder(
-              itemCount: urlEntries!.length,
+              itemCount: projects!.length,
               itemBuilder: (BuildContext context, int index) {
                 return ListTile(
-                  title: Text(urlEntries[index].url),
-                  subtitle: Text('Username: ${urlEntries[index].username}'),
+                  title: Text(projects[index].projectId),
+                  subtitle: Text('Endpoint: ${projects[index].endpointUrl}'),
                   trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                     children: [
                       TextButton(onPressed: () {
-                        connectPressed(index,urlEntries[index]);
+                        connectPressed(index,projects[index]);
                       }, child: const Text("Connect")),
                     ],
                   ),
@@ -125,39 +125,37 @@ class _LoginPageState extends State<LoginPage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: addLoginPressed,
-        tooltip: 'addLogin',
+        onPressed: addProjectPressed,
+        tooltip: 'addProject',
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  void connectPressed(int index, UrlEntry urlEntry) async {
+  void connectPressed(int index, Project project) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => DatastoreMainPage(index: index, urlEntry: urlEntry,),
+        builder: (context) => DatastoreMainPage(index: index, project: project,),
       ),
     );
   }
 }
 
-class AddLoginScreen extends StatefulWidget {
-  const AddLoginScreen({super.key});
+class AddProjectScreen extends StatefulWidget {
+  const AddProjectScreen({super.key});
 
   @override
-  _AddLoginScreenState createState() => _AddLoginScreenState();
+  _AddProjectScreenState createState() => _AddProjectScreenState();
 }
 
-class _AddLoginScreenState extends State<AddLoginScreen> {
-  final TextEditingController urlController = TextEditingController();
-  final TextEditingController usernameController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+class _AddProjectScreenState extends State<AddProjectScreen> {
+  final TextEditingController endpointUrlController = TextEditingController();
+  final TextEditingController projectIdController = TextEditingController();
 
-  void addLogin() async {
-    await db.createNewUrlEntry(
-      urlController.text,
-      usernameController.text,
-      passwordController.text,
+  void addProject() async {
+    await db.createNewProject(
+      endpointUrlController.text,
+      projectIdController.text,
     );
 
     if (!context.mounted) return;
@@ -168,7 +166,7 @@ class _AddLoginScreenState extends State<AddLoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Login'),
+        title: const Text('Add Project'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -176,22 +174,17 @@ class _AddLoginScreenState extends State<AddLoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             TextField(
-              controller: urlController,
-              decoration: const InputDecoration(labelText: 'URL'),
+              controller: endpointUrlController,
+              decoration: const InputDecoration(labelText: 'Endpoint URL'),
             ),
             TextField(
-              controller: usernameController,
-              decoration: const InputDecoration(labelText: 'Username'),
-            ),
-            TextField(
-              controller: passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true, // Hide password text
+              controller: projectIdController,
+              decoration: const InputDecoration(labelText: 'Project'),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: addLogin,
-              child: const Text('Add Login'),
+              onPressed: addProject,
+              child: const Text('Add Project'),
             ),
           ],
         ),

@@ -32,36 +32,35 @@ class DB {
     return fullFn;
   }
 
-  Future<UrlEntry> createNewUrlEntry(String url, String username, String password) async {
+  Future<Project> createNewProject(String endpointUrl, String projectId) async {
     Database db = await _db;
     Map<String, Object?> values = <String, Object?>{};
-    values["url"] = url;
-    values["username"] = username;
-    values["password"] = password;
-    int cid = await db.insert(UrlEntry.name, values);
-    return getUrlEntry(cid);
+    values["endpointUrl"] = endpointUrl;
+    values["projectId"] = projectId;
+    int cid = await db.insert(Project.name, values);
+    return getProject(cid);
   }
 
-  Future<List<UrlEntry>> get getUrlEntries async {
+  Future<List<Project>> get getProjects async {
     Database db = await _db;
-    List<Map<String, Object?>> urlEntryResults = await db.query(UrlEntry.name, where: "DELETED IS NULL", whereArgs: <Object?>[], columns: UrlEntry.columns, distinct: true, limit: 100, orderBy: "created ASC");
-    List<UrlEntry> urlEntries = urlEntryResults.fold<List<UrlEntry>>(List<UrlEntry>.empty(growable: true), (List<UrlEntry> result, Map<String, Object?> each) {
-      if (UrlEntry.validRow(each)) {
-        result.add(UrlEntry.fromRow(each));
+    List<Map<String, Object?>> projectResults = await db.query(Project.name, where: "DELETED IS NULL", whereArgs: <Object?>[], columns: Project.columns, distinct: true, limit: 100, orderBy: "created ASC");
+    List<Project> projects = projectResults.fold<List<Project>>(List<Project>.empty(growable: true), (List<Project> result, Map<String, Object?> each) {
+      if (Project.validRow(each)) {
+        result.add(Project.fromRow(each));
       }
       return result;
     });
-    return urlEntries;
+    return projects;
   }
 
-  Future<UrlEntry> getUrlEntry(int id) async {
+  Future<Project> getProject(int id) async {
     Database db = await _db;
-    List<Map<String, Object?>> urlEntryResult = await db.query(UrlEntry.name, where: "DELETED IS NULL AND id=?", whereArgs: <Object?>[id], columns: UrlEntry.columns, limit: 1, distinct: true);
-    if (urlEntryResult.isEmpty) {
+    List<Map<String, Object?>> projectResult = await db.query(Project.name, where: "DELETED IS NULL AND id=?", whereArgs: <Object?>[id], columns: Project.columns, limit: 1, distinct: true);
+    if (projectResult.isEmpty) {
       throw ErrorDescription("empty");
     }
-    UrlEntry urlEntry = UrlEntry.fromRow(urlEntryResult.first);
-    return urlEntry;
+    Project project = Project.fromRow(projectResult.first);
+    return project;
   }
 
   void deleteEntireDatabase() async {
@@ -70,7 +69,7 @@ class DB {
     await db.close();
     await File(fn).delete();
     _db = getBuildDb();
-    await getUrlEntries;
+    await getProjects;
   }
 
   Future<Database> getBuildDb() async {
@@ -79,7 +78,7 @@ class DB {
       fullFn,
       version: 1,
       onCreate: (Database db, int version) async {
-        await db.execute(UrlEntry.createSql);
+        await db.execute(Project.createSql);
       },
       onUpgrade: (Database db, int oldVersion, int newVersion) async {
         switch (oldVersion) {
@@ -91,42 +90,37 @@ class DB {
   }
 }
 
-class UrlEntry {
+class Project {
   final int id;
-  final String url;
-  final String username;
-  final String password;
+  final String endpointUrl;
+  final String projectId;
   DateTime created;
   DateTime updated;
   DateTime? deleted;
 
-  static const name = "UrlEntry";
+  static const name = "Project";
   static const createSql = '''
-          CREATE TABLE ${UrlEntry.name}(
+          CREATE TABLE ${Project.name}(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
             updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
             deleted TIMESTAMP DEFAULT NULL,
-            url STRING,
-            username STRING,
-            password STRING
+            endpointUrl STRING,
+            projectId STRING
           );
       ''';
-  static const List<String> columns = <String>["id", "created", "updated", "deleted", "url", "username", "password"];
-  static const List<String> required = <String>["id", "url", "username", "password"];
+  static const List<String> columns = <String>["id", "created", "updated", "deleted", "endpointUrl", "projectId"];
+  static const List<String> required = <String>["id", "url", "endpointUrl", "projectId"];
 
-  UrlEntry({required this.id, required this.created, required this.updated, this.deleted, required this.url, required this.username, required this.password});
+  Project({required this.id, required this.created, required this.updated, this.deleted, required this.endpointUrl, required this.projectId});
 
-  UrlEntry.fromRow(Map<String, Object?> each)
+  Project.fromRow(Map<String, Object?> each)
       : id = int.parse(each["id"].toString()),
         created = DateTime.tryParse(each["created"].toString()) ?? DateTime.timestamp(),
         updated = DateTime.tryParse(each["updated"].toString()) ?? DateTime.timestamp(),
         deleted = each["deleted"] != null ? DateTime.tryParse(each["deleted"].toString()) : null,
-        url = each["url"].toString(),
-        username = each["username"].toString(),
-        password = each["password"].toString();
-
-  String get projectId => "arran4com"; // TODO make dynamic
+        endpointUrl = each["endpointUrl"].toString(),
+        projectId = each["projectId"].toString();
 
   static bool validRow(Map<String, Object?> each) {
     for (String column in required) {
@@ -136,5 +130,4 @@ class UrlEntry {
     }
     return true;
   }
-
 }

@@ -5,11 +5,11 @@ import 'package:http/http.dart' as http;
 
 class DatastoreMainPage extends StatefulWidget {
   final int index;
-  final UrlEntry urlEntry;
+  final Project project;
 
 
   const DatastoreMainPage(
-      {super.key, required this.index, required this.urlEntry});
+      {super.key, required this.index, required this.project});
 
   @override
   State createState() {
@@ -61,7 +61,7 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
             .of(context)
             .colorScheme
             .inversePrimary,
-        title: Text("Datastore: ${widget.urlEntry.url}"),
+        title: Text("Project: ${widget.project.projectId} @ ${widget.project.endpointUrl}"),
         actions: <Widget>[
           TextButton(onPressed: closePressed, child: const Text("Close")),
           // PopupMenuButton<String>(
@@ -74,7 +74,7 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
         future: listOfKinds,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Text('Error: ${snapshot.error}');
+            return SelectableText('Error: ${snapshot.error}');
           } else if (snapshot.hasData) {
             final listOfKinds = snapshot.data;
             return ListView.builder(
@@ -114,7 +114,7 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
       dsv1.RunQueryResponse response = await dsApi!.projects.runQuery(dsv1.RunQueryRequest(
         query: dsv1.Query(kind: [dsv1.KindExpression(name: "__kind__")]),
         partitionId: dsv1.PartitionId(namespaceId: namespace.name)
-      ), widget.urlEntry.projectId);
+      ), widget.project.projectId);
       results.addAll(response?.batch?.entityResults?.map((e) => e.entity)?.whereType<dsv1.Entity>()?.map((e) => Kind.fromEntityWithNamespace(e, namespace)) ?? []);
     }
 
@@ -122,7 +122,7 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
   }
 
   Future<void> loadApiClient() async {
-    dsApi ??= dsv1.DatastoreApi(http.Client(), rootUrl: widget.urlEntry.url);
+    dsApi ??= dsv1.DatastoreApi(http.Client(), rootUrl: widget.project.endpointUrl);
   }
 
   Future<void> loadNamespaces() async {
@@ -133,7 +133,7 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
     await loadApiClient();
     dsv1.RunQueryResponse response = await dsApi!.projects.runQuery(dsv1.RunQueryRequest(
     query: dsv1.Query(kind: [dsv1.KindExpression(name: "__namespace__")]),
-    ), widget.urlEntry.projectId);
+    ), widget.project.projectId);
     return response?.batch?.entityResults?.map((e) => e.entity)?.whereType<dsv1.Entity>()?.map((e) => Namespace.fromEntity(e))?.toList() ?? [];
   }
 }
