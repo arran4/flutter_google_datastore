@@ -1,7 +1,4 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
@@ -128,6 +125,8 @@ class UrlEntry {
         url = each["url"].toString(),
         username = each["username"].toString(),
         password = each["password"].toString();
+
+  String get projectId => "arran4com"; // TODO make dynamic
 
   static bool validRow(Map<String, Object?> each) {
     for (String column in required) {

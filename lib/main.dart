@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/settings.dart';
-import 'package:gcloud/datastore.dart' as datastore;
 import 'database.dart';
 import 'datastoremain.dart';
 
