@@ -110,7 +110,7 @@ class Project {
           );
       ''';
   static const List<String> columns = <String>["id", "created", "updated", "deleted", "endpointUrl", "projectId"];
-  static const List<String> required = <String>["id", "url", "endpointUrl", "projectId"];
+  static const List<String> required = <String>["id", "endpointUrl", "projectId"];
 
   Project({required this.id, required this.created, required this.updated, this.deleted, required this.endpointUrl, required this.projectId});
 
