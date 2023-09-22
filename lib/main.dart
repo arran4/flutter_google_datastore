@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gcloud/datastore.dart' as datastore;
 import 'database.dart';
@@ -26,6 +28,7 @@ class MyApp extends StatelessWidget {
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
@@ -72,12 +75,15 @@ class _LoginPageState extends State<LoginPage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).push(
+        onPressed: () async {
+          await Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) => AddLoginScreen(),
+              builder: (context) => const AddLoginScreen(),
             ),
           );
+          setState(() {
+            urlEntries = _loadEntries();
+          });
         },
         tooltip: 'addLogin',
         child: const Icon(Icons.add),
@@ -87,6 +93,8 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 class AddLoginScreen extends StatefulWidget {
+  const AddLoginScreen({super.key});
+
   @override
   _AddLoginScreenState createState() => _AddLoginScreenState();
 }

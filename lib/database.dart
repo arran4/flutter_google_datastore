@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
@@ -14,7 +15,7 @@ class DB {
 
   factory DB() => _instance ??= DB._();
 
-  final String filename = 'counters.db';
+  final String filename = 'google-datastore.db';
 
   late Future<Database> _db = getBuildDb();
 
@@ -46,7 +47,7 @@ class DB {
 
   Future<List<UrlEntry>> get getUrlEntries async {
     Database db = await _db;
-    List<Map<String, Object?>> urlEntryResults = await db.query("urlEntries", where: "DELETED IS NULL", whereArgs: <Object?>[], columns: UrlEntry.columns, distinct: true, limit: 100, orderBy: "sequence ASC, created ASC");
+    List<Map<String, Object?>> urlEntryResults = await db.query(UrlEntry.name, where: "DELETED IS NULL", whereArgs: <Object?>[], columns: UrlEntry.columns, distinct: true, limit: 100, orderBy: "created ASC");
     List<UrlEntry> urlEntries = urlEntryResults.fold<List<UrlEntry>>(List<UrlEntry>.empty(growable: true), (List<UrlEntry> result, Map<String, Object?> each) {
       if (UrlEntry.validRow(each)) {
         result.add(UrlEntry.fromRow(each));
@@ -58,7 +59,7 @@ class DB {
 
   Future<UrlEntry> getUrlEntry(int id) async {
     Database db = await _db;
-    List<Map<String, Object?>> urlEntryResult = await db.query("urlEntries", where: "DELETED IS NULL AND id=?", whereArgs: <Object?>[id], columns: UrlEntry.columns, limit: 1, distinct: true);
+    List<Map<String, Object?>> urlEntryResult = await db.query(UrlEntry.name, where: "DELETED IS NULL AND id=?", whereArgs: <Object?>[id], columns: UrlEntry.columns, limit: 1, distinct: true);
     if (urlEntryResult.isEmpty) {
       throw ErrorDescription("empty");
     }
