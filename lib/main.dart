@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_google_datastore/settings.dart';
 import 'package:gcloud/datastore.dart' as datastore;
 import 'database.dart';
 
@@ -46,12 +47,53 @@ class _LoginPageState extends State<LoginPage> {
     return db.getUrlEntries;
   }
 
+  void popupItemSelected(String value) {
+    switch (value) {
+      case 'settings':
+        Navigator.push(context, MaterialPageRoute<bool>(builder: (BuildContext context) {
+          return const SettingsWidget();
+        })).then((dynamic value) {
+          setState(() {
+            urlEntries = _loadEntries();
+          });
+        });
+        break;
+    }
+  }
+
+  List<PopupMenuEntry<String>> createPopupItems(BuildContext context) {
+    return <PopupMenuEntry<String>>[
+      const PopupMenuItem<String>(
+        value: 'settings',
+        child: Text('Settings'),
+      ),
+    ];
+  }
+
+  addLoginPressed () async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const AddLoginScreen(),
+      ),
+    );
+    setState(() {
+      urlEntries = _loadEntries();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text("Datastore login"),
+        actions: <Widget>[
+          TextButton(onPressed: addLoginPressed, child: const Text("Add")),
+          PopupMenuButton<String>(
+            onSelected: popupItemSelected,
+            itemBuilder: createPopupItems,
+          ),
+        ],
       ),
       body: FutureBuilder<List<UrlEntry>>(
         future: urlEntries,
@@ -75,16 +117,7 @@ class _LoginPageState extends State<LoginPage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const AddLoginScreen(),
-            ),
-          );
-          setState(() {
-            urlEntries = _loadEntries();
-          });
-        },
+        onPressed: addLoginPressed,
         tooltip: 'addLogin',
         child: const Icon(Icons.add),
       ),
