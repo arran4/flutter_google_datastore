@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/settings.dart';
 import 'package:gcloud/datastore.dart' as datastore;
 import 'database.dart';
+import 'datastoremain.dart';
 
 void main() {
   runApp(const MyApp());
@@ -110,6 +111,14 @@ class _LoginPageState extends State<LoginPage> {
                 return ListTile(
                   title: Text(urlEntries[index].url),
                   subtitle: Text('Username: ${urlEntries[index].username}'),
+                  trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextButton(onPressed: () {
+                        connectPressed(index,urlEntries[index]);
+                      }, child: const Text("Connect")),
+                    ],
+                  ),
                 );
               },
             );
@@ -120,6 +129,14 @@ class _LoginPageState extends State<LoginPage> {
         onPressed: addLoginPressed,
         tooltip: 'addLogin',
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  void connectPressed(int index, UrlEntry urlEntry) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => DatastoreMainPage(index: index, urlEntry: urlEntry,),
       ),
     );
   }
