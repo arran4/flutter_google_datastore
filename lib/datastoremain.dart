@@ -61,7 +61,7 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
             .of(context)
             .colorScheme
             .inversePrimary,
-        title: Text("Project: ${widget.project.projectId} @ ${widget.project.endpointUrl}"),
+        title: Text("Project: ${widget.project.projectId} @ ${widget.project.endpointUrl ?? "default"}"),
         actions: <Widget>[
           TextButton(onPressed: closePressed, child: const Text("Close")),
           // PopupMenuButton<String>(
@@ -122,7 +122,11 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
   }
 
   Future<void> loadApiClient() async {
-    dsApi ??= dsv1.DatastoreApi(http.Client(), rootUrl: widget.project.endpointUrl);
+    if (widget.project.endpointUrl != null) {
+      dsApi ??= dsv1.DatastoreApi(http.Client(), rootUrl: widget.project.endpointUrl!);
+    } else {
+      dsApi ??= dsv1.DatastoreApi(http.Client());
+    }
   }
 
   Future<void> loadNamespaces() async {

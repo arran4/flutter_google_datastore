@@ -32,10 +32,12 @@ class DB {
     return fullFn;
   }
 
-  Future<Project> createNewProject(String endpointUrl, String projectId) async {
+  Future<Project> createNewProject(String? endpointUrl, String projectId) async {
     Database db = await _db;
     Map<String, Object?> values = <String, Object?>{};
-    values["endpointUrl"] = endpointUrl;
+    if (endpointUrl != null) {
+      values["endpointUrl"] = endpointUrl;
+    }
     values["projectId"] = projectId;
     int cid = await db.insert(Project.name, values);
     return getProject(cid);
@@ -92,7 +94,7 @@ class DB {
 
 class Project {
   final int id;
-  final String endpointUrl;
+  final String? endpointUrl;
   final String projectId;
   DateTime created;
   DateTime updated;
@@ -105,12 +107,12 @@ class Project {
             created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
             updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
             deleted TIMESTAMP DEFAULT NULL,
-            endpointUrl STRING,
-            projectId STRING
+            endpointUrl STRING DEFAULT NULL,
+            projectId STRING NOT NULL
           );
       ''';
   static const List<String> columns = <String>["id", "created", "updated", "deleted", "endpointUrl", "projectId"];
-  static const List<String> required = <String>["id", "endpointUrl", "projectId"];
+  static const List<String> required = <String>["id", "projectId"];
 
   Project({required this.id, required this.created, required this.updated, this.deleted, required this.endpointUrl, required this.projectId});
 
@@ -119,7 +121,7 @@ class Project {
         created = DateTime.tryParse(each["created"].toString()) ?? DateTime.timestamp(),
         updated = DateTime.tryParse(each["updated"].toString()) ?? DateTime.timestamp(),
         deleted = each["deleted"] != null ? DateTime.tryParse(each["deleted"].toString()) : null,
-        endpointUrl = each["endpointUrl"].toString(),
+        endpointUrl = each.containsKey("endpointUrl") && each["endpointUrl"] != null ? each["endpointUrl"].toString() : null,
         projectId = each["projectId"].toString();
 
   static bool validRow(Map<String, Object?> each) {

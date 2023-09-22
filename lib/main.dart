@@ -109,7 +109,7 @@ class _ProjectPageState extends State<ProjectPage> {
               itemBuilder: (BuildContext context, int index) {
                 return ListTile(
                   title: Text(projects[index].projectId),
-                  subtitle: Text('Endpoint: ${projects[index].endpointUrl}'),
+                  subtitle: Text('Endpoint: ${projects[index].endpointUrl ?? "default"}'),
                   trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                     children: [
@@ -153,8 +153,12 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
   final TextEditingController projectIdController = TextEditingController();
 
   void addProject() async {
+    String? endpointUrl = endpointUrlController.text;
+    if (endpointUrl.isEmpty) {
+      endpointUrl = null;
+    }
     await db.createNewProject(
-      endpointUrlController.text,
+      endpointUrl,
       projectIdController.text,
     );
 
@@ -175,7 +179,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
           children: [
             TextField(
               controller: endpointUrlController,
-              decoration: const InputDecoration(labelText: 'Endpoint URL'),
+              decoration: const InputDecoration(labelText: 'Endpoint URL (blank for default)'),
             ),
             TextField(
               controller: projectIdController,
