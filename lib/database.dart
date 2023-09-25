@@ -35,13 +35,14 @@ class DB {
     return fullFn;
   }
 
-  Future<Project> createNewProject(String? endpointUrl, String projectId) async {
+  Future<Project> createNewProject(String? endpointUrl, String projectId, String authMode) async {
     Database db = await _db;
     Map<String, Object?> values = <String, Object?>{};
     if (endpointUrl != null) {
       values["endpointUrl"] = endpointUrl;
     }
     values["projectId"] = projectId;
+    values["authMode"] = authMode;
     int cid = await db.insert(Project.name, values);
     return getProject(cid);
   }
@@ -81,7 +82,7 @@ class DB {
     String fullFn = await filepath();
     return await openDatabase(
       fullFn,
-      version: 1,
+      version: 2,
       onCreate: (Database db, int version) async {
         await db.execute(Project.createSql);
       },
@@ -89,6 +90,8 @@ class DB {
         switch (oldVersion) {
           case 0:
           // await db.execute();
+          case 1:
+          await db.execute(Project.dbV1toV2);
         }
       },
     );
@@ -106,7 +109,7 @@ class DB {
     return;
   }
 
-  Future<Project> updateProject(int id, String? endpointUrl, String? projectId) async {
+  Future<Project> updateProject(int id, String? endpointUrl, String? projectId, String? authMode) async {
     Database db = await _db;
     Map<String, Object?> values = <String, Object?>{};
     if (endpointUrl != null) {
@@ -114,6 +117,9 @@ class DB {
     }
     if (projectId != null) {
       values["projectId"] = projectId;
+    }
+    if (authMode != null) {
+      values["authMode"] = authMode;
     }
     db.update(Project.name, values, where: "id=?", whereArgs: <Object?>[id]);
     return getProject(id);
@@ -124,25 +130,30 @@ class Project {
   final int id;
   final String? endpointUrl;
   final String projectId;
+  final String authMode;
   DateTime created;
   DateTime updated;
   DateTime? deleted;
 
   static const name = "Project";
   static const createSql = '''
-          CREATE TABLE ${Project.name}(
+          CREATE TABLE ${Project.name} (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
             updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
             deleted TIMESTAMP DEFAULT NULL,
             endpointUrl STRING DEFAULT NULL,
+            authMode STRING DEFAULT "none" NOT NULL,
             projectId STRING NOT NULL
           );
       ''';
-  static const List<String> columns = <String>["id", "created", "updated", "deleted", "endpointUrl", "projectId"];
+  static const dbV1toV2 = '''
+    ALTER TABLE ${Project.name} ADD COLUMN authMode STRING DEFAULT "none" NOT NULL;
+  ''';
+  static const List<String> columns = <String>["id", "created", "updated", "deleted", "endpointUrl", "projectId", "authMode"];
   static const List<String> required = <String>["id", "projectId"];
 
-  Project({required this.id, required this.created, required this.updated, this.deleted, required this.endpointUrl, required this.projectId});
+  Project({required this.id, required this.created, required this.updated, this.deleted, required this.endpointUrl, required this.projectId, required this.authMode});
 
   Project.fromRow(Map<String, Object?> each)
       : id = int.parse(each["id"].toString()),
@@ -150,6 +161,7 @@ class Project {
         updated = DateTime.tryParse(each["updated"].toString()) ?? DateTime.timestamp(),
         deleted = each["deleted"] != null ? DateTime.tryParse(each["deleted"].toString()) : null,
         endpointUrl = each.containsKey("endpointUrl") && each["endpointUrl"] != null ? each["endpointUrl"].toString() : null,
+        authMode = each["authMode"].toString() ?? "none",
         projectId = each["projectId"].toString();
 
   static bool validRow(Map<String, Object?> each) {

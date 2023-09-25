@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/settings.dart';
@@ -50,7 +51,8 @@ class _ProjectPageState extends State<ProjectPage> {
   void popupItemSelected(String value) {
     switch (value) {
       case 'settings':
-        Navigator.push(context, MaterialPageRoute<bool>(builder: (BuildContext context) {
+        Navigator.push(context,
+            MaterialPageRoute<bool>(builder: (BuildContext context) {
           return const SettingsWidget();
         })).then((dynamic value) {
           setState(() {
@@ -101,7 +103,7 @@ class _ProjectPageState extends State<ProjectPage> {
     ];
   }
 
-  addProjectPressed () async {
+  addProjectPressed() async {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const AddEditProjectScreen(),
@@ -112,7 +114,7 @@ class _ProjectPageState extends State<ProjectPage> {
     });
   }
 
-  editProjectPressed (Project project) async {
+  editProjectPressed(Project project) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => AddEditProjectScreen(project: project),
@@ -151,15 +153,19 @@ class _ProjectPageState extends State<ProjectPage> {
               itemBuilder: (BuildContext context, int index) {
                 return ListTile(
                   title: Text(projects[index].projectId),
-                  subtitle: Text('Endpoint: ${projects[index].endpointUrl ?? "default"}'),
+                  subtitle: Text(
+                      'Endpoint: ${projects[index].endpointUrl ?? "default"}'),
                   trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      TextButton(onPressed: () {
-                        connectPressed(projects[index]);
-                      }, child: const Text("Connect")),
+                      TextButton(
+                          onPressed: () {
+                            connectPressed(projects[index]);
+                          },
+                          child: const Text("Connect")),
                       PopupMenuButton<String>(
-                        onSelected: (String value) => itemPopupItemSelected(projects[index], value),
+                        onSelected: (String value) =>
+                            itemPopupItemSelected(projects[index], value),
                         itemBuilder: createItemPopupItems,
                       ),
                     ],
@@ -181,7 +187,9 @@ class _ProjectPageState extends State<ProjectPage> {
   void connectPressed(Project project) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => DatastoreMainPage(project: project,),
+        builder: (context) => DatastoreMainPage(
+          project: project,
+        ),
       ),
     );
   }
@@ -189,7 +197,9 @@ class _ProjectPageState extends State<ProjectPage> {
   void deletePressed(Project project) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => DeleteProjectScreen(project: project,),
+        builder: (context) => DeleteProjectScreen(
+          project: project,
+        ),
       ),
     );
     setState(() {
@@ -198,8 +208,19 @@ class _ProjectPageState extends State<ProjectPage> {
   }
 }
 
+final authModes = createAuthModes();
+
+List<String> createAuthModes() {
+  var elements = ["none"];
+  if (Platform.isLinux) {
+    elements.add("gcloud cli");
+  }
+  return List.of(elements, growable: false);
+}
+
 class AddEditProjectScreen extends StatefulWidget {
   final Project? project;
+
   const AddEditProjectScreen({super.key, this.project});
 
   @override
@@ -209,6 +230,7 @@ class AddEditProjectScreen extends StatefulWidget {
 class AddEditProjectScreenState extends State<AddEditProjectScreen> {
   final TextEditingController endpointUrlController = TextEditingController();
   final TextEditingController projectIdController = TextEditingController();
+  String authMode = "none";
 
   void saveProject() async {
     String? endpointUrl = endpointUrlController.text;
@@ -220,12 +242,14 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
       await db.createNewProject(
         endpointUrl,
         projectIdController.text,
+        authMode,
       );
     } else {
       await db.updateProject(
         project.id,
         endpointUrl,
         projectIdController.text,
+        authMode,
       );
     }
 
@@ -233,11 +257,11 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
     Navigator.of(context).pop();
   }
 
-
   @override
   void initState() {
     projectIdController.text = widget.project?.projectId ?? "";
     endpointUrlController.text = widget.project?.endpointUrl ?? "";
+    authMode = widget.project?.authMode ?? "none";
   }
 
   @override
@@ -253,16 +277,37 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
           children: [
             TextField(
               controller: endpointUrlController,
-              decoration: const InputDecoration(labelText: 'Endpoint URL (blank for default)'),
+              decoration: const InputDecoration(
+                  labelText: 'Endpoint URL (blank for default)'),
             ),
             TextField(
               controller: projectIdController,
               decoration: const InputDecoration(labelText: 'Project'),
             ),
+            DropdownButtonFormField<String>(
+              value: authMode,
+              decoration: const InputDecoration(labelText: 'Authentication mode'),
+              icon: const Icon(Icons.arrow_downward),
+              elevation: 16,
+              style: const TextStyle(color: Colors.deepPurple),
+              onChanged: (String? value) {
+                // This is called when the user selects an item.
+                setState(() {
+                  authMode = value!;
+                });
+              },
+              items: authModes.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+            ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: saveProject,
-              child: Text(widget.project == null ? 'Add Project' : 'Edit Project'),
+              child:
+                  Text(widget.project == null ? 'Add Project' : 'Edit Project'),
             ),
           ],
         ),
@@ -273,6 +318,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
 
 class DeleteProjectScreen extends StatelessWidget {
   final Project project;
+
   const DeleteProjectScreen({super.key, required this.project});
 
   @override
@@ -296,7 +342,8 @@ class DeleteProjectScreen extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () => deleteProject(context),
                   style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.red),
+                    backgroundColor: MaterialStateProperty.resolveWith(
+                        (states) => Colors.red),
                   ),
                   child: const Text("Delete"),
                 ),
@@ -307,7 +354,6 @@ class DeleteProjectScreen extends StatelessWidget {
       ),
     );
   }
-
 
   void back(BuildContext context) {
     Navigator.of(context).pop();
