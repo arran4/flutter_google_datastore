@@ -43,18 +43,16 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
           // ),
         ],
       ),
-      body: Row(
-        children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Card(
-                child: Row(
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Card(
+              margin: const EdgeInsets.all(16.0),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
                   children: [
-                    Title(
-                        color: Theme.of(context).colorScheme.primary,
-                        child: const Text("Details")),
+                    Text("Details", style: Theme.of(context).textTheme.headlineSmall),
                     Table(
                       children: [
                         TableRow(children: [
@@ -68,8 +66,8 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
                         ]),
                         TableRow(children: [
                           const Text("Namespace"),
-                          SelectableText(widget.kind.namespace?.name ??
-                              "Default namespace"),
+                          SelectableText(
+                              widget.kind.namespace?.name ?? "Default namespace"),
                         ]),
                         TableRow(children: [
                           const Text("Kind"),
@@ -77,8 +75,8 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
                         ]),
                         TableRow(children: [
                           const Text("Database Id"),
-                          SelectableText(widget.entityRow.entity.key
-                                  ?.partitionId?.databaseId ??
+                          SelectableText(widget
+                              .entityRow.entity.key?.partitionId?.databaseId ??
                               ""),
                         ]),
                         TableRow(children: [
@@ -86,88 +84,86 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
                           SelectableText(widget.entityRow.key),
                         ]),
                       ],
+                    )
+                  ],
+                ),
+              ),
+            ),
+            Card(
+              margin: const EdgeInsets.all(16.0),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text("Properties", style: Theme.of(context).textTheme.headlineSmall),
+                    Table(
+                      children: widget.entityRow.entity.properties?.entries
+                          .map((e) {
+                        String type = "unknown";
+                        String displayValue = "";
+                        if (e.value.arrayValue != null) {
+                          type = "array";
+                          // TODO Recursive....
+                          displayValue =
+                          "[${e.value.arrayValue?.values?.join(" , ") ?? "#ERROR"}]";
+                        } else if (e.value.blobValue != null) {
+                          type = "blob";
+                          // TODO a way of looking at the content.
+                          displayValue =
+                          "Blob Length: ${e.value.blobValue?.length ?? "#ERROR"}";
+                        } else if (e.value.booleanValue != null) {
+                          type = "boolean";
+                          displayValue =
+                              e.value.booleanValue?.toString() ?? "#ERROR";
+                        } else if (e.value.doubleValue != null) {
+                          type = "double";
+                          displayValue =
+                          "${e.value.doubleValue ?? "#ERROR"}";
+                        } else if (e.value.entityValue != null) {
+                          type = "entity";
+                          // TODO recursive
+                          displayValue = "#ERROR nested entity type";
+                        } else if (e.value.geoPointValue != null) {
+                          type = "geoPoint";
+                          displayValue =
+                          "lat: ${e.value.geoPointValue?.latitude ?? "null"} long: ${e.value.geoPointValue?.latitude ?? "null"}";
+                        } else if (e.value.integerValue != null) {
+                          type = "integer";
+                          displayValue = e.value.integerValue ?? "null";
+                        } else if (e.value.keyValue != null) {
+                          type = "key";
+                          displayValue =
+                          "Key: ${keyToString(e.value.keyValue)}";
+                        } else if (e.value.meaning != null) {
+                          type = "me";
+                          displayValue = "${e.value.meaning}";
+                        } else if (e.value.nullValue != null) {
+                          type = "null";
+                          displayValue = e.value.nullValue ?? "null";
+                        } else if (e.value.stringValue != null) {
+                          type = "string";
+                          displayValue = e.value.stringValue ?? "#ERROR";
+                        } else if (e.value.timestampValue != null) {
+                          type = "timestamp";
+                          displayValue = e.value.timestampValue ?? "#ERROR";
+                        } else {}
+                        return TableRow(children: [
+                          SelectableText(e.key),
+                          SelectableText(
+                              "$type ${e.value.excludeFromIndexes == true ? "" : "Indexed"}"),
+                          SelectableText(displayValue),
+                        ]);
+                      }).toList() ??
+                          [],
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-          // Card(
-          //   child: Column(
-          //     mainAxisAlignment: MainAxisAlignment.center,
-          //     crossAxisAlignment: CrossAxisAlignment.stretch,
-          //     children: <Widget>[
-          //       Row(
-          //         children: [
-          //           Title(
-          //               color: Theme.of(context).colorScheme.primary,
-          //               child: const Text("Properties")),
-          //           Table(
-          //             children: widget.entityRow.entity.properties?.entries
-          //                     .map((e) {
-          //                   String type = "unknown";
-          //                   String displayValue = "";
-          //                   if (e.value.arrayValue != null) {
-          //                     type = "array";
-          //                     // TODO Recursive....
-          //                     displayValue =
-          //                         "[${e.value.arrayValue?.values?.join(" , ") ?? "#ERROR"}]";
-          //                   } else if (e.value.blobValue != null) {
-          //                     type = "blob";
-          //                     // TODO a way of looking at the content.
-          //                     displayValue =
-          //                         "Blob Length: ${e.value.blobValue?.length ?? "#ERROR"}";
-          //                   } else if (e.value.booleanValue != null) {
-          //                     type = "boolean";
-          //                     displayValue =
-          //                         e.value.booleanValue?.toString() ?? "#ERROR";
-          //                   } else if (e.value.doubleValue != null) {
-          //                     type = "double";
-          //                     displayValue =
-          //                         "${e.value.doubleValue ?? "#ERROR"}";
-          //                   } else if (e.value.entityValue != null) {
-          //                     type = "entity";
-          //                     // TODO recursive
-          //                     displayValue = "#ERROR nested entity type";
-          //                   } else if (e.value.geoPointValue != null) {
-          //                     type = "geoPoint";
-          //                     displayValue =
-          //                         "lat: ${e.value.geoPointValue?.latitude ?? "null"} long: ${e.value.geoPointValue?.latitude ?? "null"}";
-          //                   } else if (e.value.integerValue != null) {
-          //                     type = "integer";
-          //                     displayValue = e.value.integerValue ?? "null";
-          //                   } else if (e.value.keyValue != null) {
-          //                     type = "key";
-          //                     displayValue =
-          //                         "Key: ${keyToString(e.value.keyValue)}";
-          //                   } else if (e.value.meaning != null) {
-          //                     type = "me";
-          //                     displayValue = "${e.value.meaning}";
-          //                   } else if (e.value.nullValue != null) {
-          //                     type = "null";
-          //                     displayValue = e.value.nullValue ?? "null";
-          //                   } else if (e.value.stringValue != null) {
-          //                     type = "string";
-          //                     displayValue = e.value.stringValue ?? "#ERROR";
-          //                   } else if (e.value.timestampValue != null) {
-          //                     type = "timestamp";
-          //                     displayValue = e.value.timestampValue ?? "#ERROR";
-          //                   } else {}
-          //                   return TableRow(children: [
-          //                     SelectableText(e.key),
-          //                     SelectableText(
-          //                         "$type ${e.value.excludeFromIndexes == true ? "" : "Indexed"}"),
-          //                     SelectableText(displayValue),
-          //                   ]);
-          //                 }).toList() ??
-          //                 [],
-          //           ),
-          //         ],
-          //       ),
-          //     ],
-          //   ),
-          // ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
