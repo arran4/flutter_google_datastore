@@ -3,6 +3,7 @@ import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart' as ppath;
 import 'dart:io';
 
 class DB {
@@ -16,15 +17,17 @@ class DB {
 
   late Future<Database> _db = getBuildDb();
 
-  Future<String> dbFn() async {
+  Future<String> filepath() async {
     final String dbPath;
     if (kIsWeb) {
       databaseFactory = databaseFactoryFfiWeb;
       dbPath = '';
+    } else if (Platform.isAndroid) {
+      dbPath = await getDatabasesPath();
     } else if (Platform.isLinux || Platform.isWindows) {
       sqfliteFfiInit();
       databaseFactory = databaseFactoryFfi;
-      dbPath = await getDatabasesPath();
+      dbPath = (await ppath.getApplicationSupportDirectory()).path;
     } else {
       dbPath = await getDatabasesPath();
     }
@@ -55,9 +58,9 @@ class DB {
     return projects;
   }
 
-  Future<Project> getProject(int id) async {
+  Future<Project> getProject(int id, [bool ignoreDeleted = false]) async {
     Database db = await _db;
-    List<Map<String, Object?>> projectResult = await db.query(Project.name, where: "DELETED IS NULL AND id=?", whereArgs: <Object?>[id], columns: Project.columns, limit: 1, distinct: true);
+    List<Map<String, Object?>> projectResult = await db.query(Project.name, where: ignoreDeleted ? "id=?" : "DELETED IS NULL AND id=?", whereArgs: <Object?>[id], columns: Project.columns, limit: 1, distinct: true);
     if (projectResult.isEmpty) {
       throw ErrorDescription("empty");
     }
@@ -66,7 +69,7 @@ class DB {
   }
 
   void deleteEntireDatabase() async {
-    String fn = await dbFn();
+    String fn = await filepath();
     Database db = await _db;
     await db.close();
     await File(fn).delete();
@@ -75,7 +78,7 @@ class DB {
   }
 
   Future<Database> getBuildDb() async {
-    String fullFn = await dbFn();
+    String fullFn = await filepath();
     return await openDatabase(
       fullFn,
       version: 1,
@@ -89,6 +92,31 @@ class DB {
         }
       },
     );
+  }
+
+  Future<Project> deleteProject(int id) async {
+    Database db = await _db;
+    await db.execute("UPDATE ${Project.name} SET deleted=CURRENT_TIMESTAMP WHERE id=?", <Object?>[id]);
+    return getProject(id, true);
+  }
+
+  Future<void> removeProject(int id) async {
+    Database db = await _db;
+    await db.execute("DELETE FROM ${Project.name} WHERE id=?", <Object?>[id]);
+    return;
+  }
+
+  Future<Project> updateProject(int id, String? endpointUrl, String? projectId) async {
+    Database db = await _db;
+    Map<String, Object?> values = <String, Object?>{};
+    if (endpointUrl != null) {
+      values["endpointUrl"] = endpointUrl;
+    }
+    if (projectId != null) {
+      values["projectId"] = projectId;
+    }
+    db.update(Project.name, values, where: "id=?", whereArgs: <Object?>[id]);
+    return getProject(id);
   }
 }
 

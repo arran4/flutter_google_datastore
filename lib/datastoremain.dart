@@ -4,12 +4,10 @@ import 'package:googleapis/datastore/v1.dart' as dsv1;
 import 'package:http/http.dart' as http;
 
 class DatastoreMainPage extends StatefulWidget {
-  final int index;
   final Project project;
 
-
   const DatastoreMainPage(
-      {super.key, required this.index, required this.project});
+      {super.key, required this.project});
 
   @override
   State createState() {

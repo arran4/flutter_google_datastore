@@ -70,10 +70,52 @@ class _ProjectPageState extends State<ProjectPage> {
     ];
   }
 
+  void itemPopupItemSelected(Project project, String value) {
+    switch (value) {
+      case 'connect':
+        connectPressed(project);
+        break;
+      case 'edit':
+        editProjectPressed(project);
+        break;
+      case 'delete':
+        deletePressed(project);
+        break;
+    }
+  }
+
+  List<PopupMenuEntry<String>> createItemPopupItems(BuildContext context) {
+    return <PopupMenuEntry<String>>[
+      const PopupMenuItem<String>(
+        value: 'connect',
+        child: Text('Connect'),
+      ),
+      const PopupMenuItem<String>(
+        value: 'edit',
+        child: Text('Edit'),
+      ),
+      const PopupMenuItem<String>(
+        value: 'delete',
+        child: Text('Delete'),
+      ),
+    ];
+  }
+
   addProjectPressed () async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const AddProjectScreen(),
+        builder: (context) => const AddEditProjectScreen(),
+      ),
+    );
+    setState(() {
+      projects = _loadEntries();
+    });
+  }
+
+  editProjectPressed (Project project) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AddEditProjectScreen(project: project),
       ),
     );
     setState(() {
@@ -114,8 +156,12 @@ class _ProjectPageState extends State<ProjectPage> {
                       mainAxisSize: MainAxisSize.min,
                     children: [
                       TextButton(onPressed: () {
-                        connectPressed(index,projects[index]);
+                        connectPressed(projects[index]);
                       }, child: const Text("Connect")),
+                      PopupMenuButton<String>(
+                        onSelected: (String value) => itemPopupItemSelected(projects[index], value),
+                        itemBuilder: createItemPopupItems,
+                      ),
                     ],
                   ),
                 );
@@ -132,45 +178,73 @@ class _ProjectPageState extends State<ProjectPage> {
     );
   }
 
-  void connectPressed(int index, Project project) async {
+  void connectPressed(Project project) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => DatastoreMainPage(index: index, project: project,),
+        builder: (context) => DatastoreMainPage(project: project,),
       ),
     );
   }
+
+  void deletePressed(Project project) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => DeleteProjectScreen(project: project,),
+      ),
+    );
+    setState(() {
+      projects = _loadEntries();
+    });
+  }
 }
 
-class AddProjectScreen extends StatefulWidget {
-  const AddProjectScreen({super.key});
+class AddEditProjectScreen extends StatefulWidget {
+  final Project? project;
+  const AddEditProjectScreen({super.key, this.project});
 
   @override
-  AddProjectScreenState createState() => AddProjectScreenState();
+  AddEditProjectScreenState createState() => AddEditProjectScreenState();
 }
 
-class AddProjectScreenState extends State<AddProjectScreen> {
+class AddEditProjectScreenState extends State<AddEditProjectScreen> {
   final TextEditingController endpointUrlController = TextEditingController();
   final TextEditingController projectIdController = TextEditingController();
 
-  void addProject() async {
+  void saveProject() async {
     String? endpointUrl = endpointUrlController.text;
     if (endpointUrl.isEmpty) {
       endpointUrl = null;
     }
-    await db.createNewProject(
-      endpointUrl,
-      projectIdController.text,
-    );
+    var project = widget.project;
+    if (project == null) {
+      await db.createNewProject(
+        endpointUrl,
+        projectIdController.text,
+      );
+    } else {
+      await db.updateProject(
+        project.id,
+        endpointUrl,
+        projectIdController.text,
+      );
+    }
 
     if (!context.mounted) return;
     Navigator.of(context).pop();
+  }
+
+
+  @override
+  void initState() {
+    projectIdController.text = widget.project?.projectId ?? "";
+    endpointUrlController.text = widget.project?.endpointUrl ?? "";
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Project'),
+        title: Text(widget.project == null ? 'Add Project' : 'Edit Project'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -187,12 +261,63 @@ class AddProjectScreenState extends State<AddProjectScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: addProject,
-              child: const Text('Add Project'),
+              onPressed: saveProject,
+              child: Text(widget.project == null ? 'Add Project' : 'Edit Project'),
             ),
           ],
         ),
       ),
     );
+  }
+}
+
+class DeleteProjectScreen extends StatelessWidget {
+  final Project project;
+  const DeleteProjectScreen({super.key, required this.project});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Delete Project?'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text("Delete ${project.projectId} @ ${project.endpointUrl} ?"),
+            ButtonBar(
+              children: [
+                ElevatedButton(
+                  onPressed: () => back(context),
+                  child: const Text("Don't Delete"),
+                ),
+                ElevatedButton(
+                  onPressed: () => deleteProject(context),
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.red),
+                  ),
+                  child: const Text("Delete"),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  void back(BuildContext context) {
+    Navigator.of(context).pop();
+  }
+
+  void deleteProject(BuildContext context) async {
+    await db.deleteProject(project.id);
+    await db.removeProject(project.id);
+    if (context.mounted) {
+      Navigator.of(context).pop();
+    }
   }
 }
