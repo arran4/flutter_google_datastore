@@ -126,7 +126,7 @@ class _ProjectPageState extends State<ProjectPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: addProjectPressed,
-        tooltip: 'addProject',
+        tooltip: 'Add Project',
         child: const Icon(Icons.add),
       ),
     );
