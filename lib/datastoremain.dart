@@ -14,6 +14,7 @@ import 'package:xdg_directories/xdg_directories.dart' as xdg;
 import 'package:path_provider/path_provider.dart' as ppath;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'kind.dart';
 import 'main.dart';
 
 final datastoreRequiredScopes = [
@@ -49,6 +50,8 @@ class Kind {
   Kind.fromEntity(dsv1.Entity entity) : this.fromKey(entity.key!);
   Kind.fromKeyWithNamespace(dsv1.Key key, this.namespace) : name = key.path?[0]?.name??"";
   Kind.fromEntityWithNamespace(dsv1.Entity entity, Namespace? namespace) : this.fromKeyWithNamespace(entity.key!, namespace);
+
+  get key => "${namespace?.name ?? "default"}-$name";
 }
 
 class _DatastoreMainPageState extends State<DatastoreMainPage> {
@@ -104,9 +107,13 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      TextButton(onPressed: () {
-                        // TODO
-                      }, child: const Text("View")
+                      TextButton(onPressed: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => KindContentsPage(project: widget.project, kind: listOfKinds[index], dsApi: dsApi!, key: Key(listOfKinds[index].key)),
+                          ),
+                        );
+                        }, child: const Text("View")
                       ),
                     ],
                   ),
