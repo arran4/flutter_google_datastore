@@ -13,7 +13,7 @@ class DB {
 
   factory DB() => _instance ??= DB._();
 
-  final String filename = 'google-datastore.db';
+  final String filename = 'google-datastore${kDebugMode ? "-debug" : ""}.db';
 
   late Future<Database> _db = getBuildDb();
 
