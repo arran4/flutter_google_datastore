@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/database.dart';
 import 'package:flutter_google_datastore/datastoremain.dart';
+import 'package:flutter_google_datastore/entity.dart';
 import 'package:googleapis/datastore/v1.dart' as dsv1;
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
@@ -72,7 +73,9 @@ class _KindContentsPageState extends State<KindContentsPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       TextButton(onPressed: () {
-                        // TODO
+                        Navigator.of(context).push(
+                            MaterialPageRoute(builder: (BuildContext context) => ViewEntityPage(widget.project, widget.dsApi, widget.kind, item)),
+                        );
                       }, child: const Text("View")
                       ),
                     ],
@@ -119,12 +122,15 @@ class _KindContentsPageState extends State<KindContentsPage> {
   }
 }
 
+String keyToString(dsv1.Key? key) {
+  return key?.path?.map((e) => "${e.kind ?? ""} ( ${e.name ?? e.id ?? ""} )").join(" => ") ?? "#KEY ERROR";
+}
+
 class EntityRow {
   dsv1.Entity entity;
 
   EntityRow({required this.entity});
 
-  String get key =>
-      entity.key?.path?.map((e) => "${e.kind ?? ""} ( ${e.name ?? e.id ??
-          ""} )").join(" => ") ?? "#KEY ERROR";
+  String get key => keyToString(entity.key);
+
 }
