@@ -51,7 +51,7 @@ class Kind {
   Kind.fromKeyWithNamespace(dsv1.Key key, this.namespace) : name = key.path?[0]?.name??"";
   Kind.fromEntityWithNamespace(dsv1.Entity entity, Namespace? namespace) : this.fromKeyWithNamespace(entity.key!, namespace);
 
-  get key => "${namespace?.name ?? "default"}-$name";
+  String get key => "$name${ (namespace == null || namespace!.name.isEmpty) ? "" : " IN ${namespace!.name}"}";
 }
 
 class _DatastoreMainPageState extends State<DatastoreMainPage> {

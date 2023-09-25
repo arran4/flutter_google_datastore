@@ -3,8 +3,6 @@ import 'package:flutter_google_datastore/database.dart';
 import 'package:flutter_google_datastore/datastoremain.dart';
 import 'package:googleapis/datastore/v1.dart' as dsv1;
 
-import 'main.dart';
-
 final datastoreRequiredScopes = [
   "https://www.googleapis.com/auth/datastore",
 ];
@@ -49,7 +47,7 @@ class _KindContentsPageState extends State<KindContentsPage> {
             .of(context)
             .colorScheme
             .inversePrimary,
-        title: Text("Project: ${widget.project.projectId} @ ${widget.project.endpointUrl ?? "default"}"),
+        title: Text("${widget.kind.key} In Project: ${widget.project.projectId} @ ${widget.project.endpointUrl ?? "default"}"),
         actions: <Widget>[
           TextButton(onPressed: closePressed, child: const Text("Close")),
           // PopupMenuButton<String>(
