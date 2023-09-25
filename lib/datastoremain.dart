@@ -74,6 +74,9 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
         future: listOfKinds,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
+            if (snapshot.error.runtimeType == dsv1.DetailedApiRequestError) {
+              return SelectableText('Authentication Error: ${snapshot.error}'); // TODO self provide details.
+            }
             return SelectableText('Error: ${snapshot.error}');
           } else if (snapshot.hasData) {
             final listOfKinds = snapshot.data;
