@@ -1,7 +1,24 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/database.dart';
 import 'package:googleapis/datastore/v1.dart' as dsv1;
+import 'package:googleapis_auth/auth_io.dart';
+import 'package:googleapis_auth/src/auth_http_utils.dart';
 import 'package:http/http.dart' as http;
+//import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart' as googleSignin;
+import 'package:ini/ini.dart' as ini;
+import 'package:path/path.dart' as path;
+import 'package:xdg_directories/xdg_directories.dart' as xdg;
+import 'package:path_provider/path_provider.dart' as ppath;
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+import 'main.dart';
+
+final datastoreRequiredScopes = [
+  "https://www.googleapis.com/auth/datastore",
+];
 
 class DatastoreMainPage extends StatefulWidget {
   final Project project;
@@ -38,7 +55,7 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
   dsv1.DatastoreApi? dsApi;
   Future<List<Kind>>? listOfKinds;
   Future<List<Namespace>>? listOfNamespaces;
-
+  GCloudCLICredentialDiscover gCloudCLICredentials = GCloudCLICredentialDiscover();
   @override
   void initState() {
     listOfKinds = retrieveKinds();
@@ -88,8 +105,9 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       TextButton(onPressed: () {
-
-                      }, child: const Text("View")),
+                        // TODO
+                      }, child: const Text("View")
+                      ),
                     ],
                   ),
                 );
@@ -123,10 +141,25 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
   }
 
   Future<void> loadApiClient() async {
+    var client = http.Client();
+    switch (widget.project.authMode) {
+      case gcloudCliAuthMode:
+        final credsJson = await gCloudCLICredentials.getJsonCredentials(widget.project.googleCliProfile??"default");
+        var creds = jsonDecode(credsJson);
+        ClientId clientId = ClientId(
+          creds["client_id"],
+          creds["client_secret"],
+        );
+        AccessToken accessToken = AccessToken("", "", DateTime.now().subtract(const Duration(days: 1)).toUtc());
+        AccessCredentials accessCredentials = AccessCredentials(accessToken, creds["refresh_token"], datastoreRequiredScopes);
+        accessCredentials = await refreshCredentials(clientId, accessCredentials, client);
+        client = AutoRefreshingClient(client, clientId, accessCredentials);
+        break;
+    }
     if (widget.project.endpointUrl != null) {
-      dsApi ??= dsv1.DatastoreApi(http.Client(), rootUrl: widget.project.endpointUrl!);
+      dsApi ??= dsv1.DatastoreApi(client, rootUrl: widget.project.endpointUrl!);
     } else {
-      dsApi ??= dsv1.DatastoreApi(http.Client());
+      dsApi ??= dsv1.DatastoreApi(client);
     }
   }
 
@@ -142,3 +175,67 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
     return response?.batch?.entityResults?.map((e) => e.entity)?.whereType<dsv1.Entity>()?.map((e) => Namespace.fromEntity(e))?.toList() ?? [];
   }
 }
+
+class GCloudCLICredentialDiscover {
+  late final String configDir;
+  late final String credentialsDBFile;
+  late final String accessTokensDBFile;
+  late final String profileConfigDir;
+  late final List<String> profiles;
+  final String defaultProfileName = "default";
+
+  bool get hasDefault {
+    return profiles.contains(defaultProfileName);
+}
+
+  GCloudCLICredentialDiscover() {
+    loadConfigDir();
+  }
+
+  Future<void> loadConfigDir() async {
+    if (Platform.isLinux) {
+      configDir = path.join(xdg.configHome.path, "gcloud");
+    } else {
+      configDir = path.join((await ppath.getLibraryDirectory()).path, "gcloud");
+    }
+    credentialsDBFile = path.join(configDir, "credentials.db");
+    accessTokensDBFile = path.join(configDir, "access_tokens.db");
+    profileConfigDir = path.join(configDir, "configurations");
+    await loadProfiles();
+  }
+
+  loadProfiles() async {
+    final dir = Directory(profileConfigDir);
+    profiles = await dir.list().where((FileSystemEntity fse) {
+      return path.basename(fse.path).startsWith("config_");
+    }).map((FileSystemEntity fse) => path.basename(fse.path).substring("config_".length)).toList();
+    if (profiles.isEmpty) {
+      profiles = ["default"];
+    }
+  }
+
+  Future<String> getJsonCredentials(String forProfile) async {
+    String fileContents = await File(path.join(profileConfigDir, "config_$forProfile")).readAsString();
+    ini.Config inic = ini.Config.fromString(fileContents);
+
+    dynamic account = inic.get("core", "account");
+    // TODO expand to other platforms.
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+    Database db = await openDatabase(credentialsDBFile, readOnly: true);
+    try {
+      List<Map<String,Object?>> results = await db.query("credentials", where: "account_id=?", whereArgs: [account], limit: 1, columns: ["value"]);
+      if (results.length != 1) {
+        throw Error.safeToString("Credentials for profile not found");
+      }
+      var result = results[0]["value"];
+      if (result is! String) {
+        throw Error.safeToString("Credentials in an unknown format");
+      }
+      return result;
+    } finally {
+      db.close();
+    }
+  }
+}
+

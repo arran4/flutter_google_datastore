@@ -35,11 +35,14 @@ class DB {
     return fullFn;
   }
 
-  Future<Project> createNewProject(String? endpointUrl, String projectId, String authMode) async {
+  Future<Project> createNewProject(String? endpointUrl, String projectId, String authMode, String? googleCliProfile) async {
     Database db = await _db;
     Map<String, Object?> values = <String, Object?>{};
     if (endpointUrl != null) {
       values["endpointUrl"] = endpointUrl;
+    }
+    if (googleCliProfile != null) {
+      values["googleCliProfile"] = googleCliProfile;
     }
     values["projectId"] = projectId;
     values["authMode"] = authMode;
@@ -109,11 +112,14 @@ class DB {
     return;
   }
 
-  Future<Project> updateProject(int id, String? endpointUrl, String? projectId, String? authMode) async {
+  Future<Project> updateProject(int id, String? endpointUrl, String? projectId, String? authMode, String? googleCliProfile) async {
     Database db = await _db;
     Map<String, Object?> values = <String, Object?>{};
     if (endpointUrl != null) {
       values["endpointUrl"] = endpointUrl;
+    }
+    if (googleCliProfile != null) {
+      values["googleCliProfile"] = googleCliProfile;
     }
     if (projectId != null) {
       values["projectId"] = projectId;
@@ -131,6 +137,7 @@ class Project {
   final String? endpointUrl;
   final String projectId;
   final String authMode;
+  final String? googleCliProfile;
   DateTime created;
   DateTime updated;
   DateTime? deleted;
@@ -143,6 +150,7 @@ class Project {
             updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
             deleted TIMESTAMP DEFAULT NULL,
             endpointUrl STRING DEFAULT NULL,
+            googleCliProfile STRING DEFAULT NULL,
             authMode STRING DEFAULT "none" NOT NULL,
             projectId STRING NOT NULL
           );
@@ -150,10 +158,13 @@ class Project {
   static const dbV1toV2 = '''
     ALTER TABLE ${Project.name} ADD COLUMN authMode STRING DEFAULT "none" NOT NULL;
   ''';
-  static const List<String> columns = <String>["id", "created", "updated", "deleted", "endpointUrl", "projectId", "authMode"];
+  static const dbV2toV3 = '''
+    ALTER TABLE ${Project.name} ADD COLUMN googleCliProfile STRING DEFAULT NULL;
+  ''';
+  static const List<String> columns = <String>["id", "created", "updated", "deleted", "endpointUrl", "projectId", "authMode", "googleCliProfile"];
   static const List<String> required = <String>["id", "projectId"];
 
-  Project({required this.id, required this.created, required this.updated, this.deleted, required this.endpointUrl, required this.projectId, required this.authMode});
+  Project({required this.id, required this.created, required this.updated, this.deleted, required this.endpointUrl, required this.projectId, required this.authMode, required this.googleCliProfile});
 
   Project.fromRow(Map<String, Object?> each)
       : id = int.parse(each["id"].toString()),
@@ -161,6 +172,7 @@ class Project {
         updated = DateTime.tryParse(each["updated"].toString()) ?? DateTime.timestamp(),
         deleted = each["deleted"] != null ? DateTime.tryParse(each["deleted"].toString()) : null,
         endpointUrl = each.containsKey("endpointUrl") && each["endpointUrl"] != null ? each["endpointUrl"].toString() : null,
+        googleCliProfile = each.containsKey("googleCliProfile") && each["googleCliProfile"] != null ? each["googleCliProfile"].toString() : null,
         authMode = each["authMode"].toString() ?? "none",
         projectId = each["projectId"].toString();
 

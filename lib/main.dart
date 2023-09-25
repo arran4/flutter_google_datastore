@@ -210,10 +210,12 @@ class _ProjectPageState extends State<ProjectPage> {
 
 final authModes = createAuthModes();
 
+const gcloudCliAuthMode = "gcloud cli";
+
 List<String> createAuthModes() {
   var elements = ["none"];
   if (Platform.isLinux) {
-    elements.add("gcloud cli");
+    elements.add(gcloudCliAuthMode);
   }
   return List.of(elements, growable: false);
 }
@@ -231,6 +233,8 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
   final TextEditingController endpointUrlController = TextEditingController();
   final TextEditingController projectIdController = TextEditingController();
   String authMode = "none";
+  GCloudCLICredentialDiscover gCloudCLICredentialDiscover = GCloudCLICredentialDiscover();
+  String? googleCliProfile;
 
   void saveProject() async {
     String? endpointUrl = endpointUrlController.text;
@@ -243,6 +247,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
         endpointUrl,
         projectIdController.text,
         authMode,
+        googleCliProfile,
       );
     } else {
       await db.updateProject(
@@ -250,6 +255,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
         endpointUrl,
         projectIdController.text,
         authMode,
+        googleCliProfile,
       );
     }
 
@@ -262,6 +268,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
     projectIdController.text = widget.project?.projectId ?? "";
     endpointUrlController.text = widget.project?.endpointUrl ?? "";
     authMode = widget.project?.authMode ?? "none";
+    googleCliProfile = widget.project?.googleCliProfile ?? "default";
   }
 
   @override
@@ -303,6 +310,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
                 );
               }).toList(),
             ),
+            ...(authenticationMethodConfiguration(authMode)),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: saveProject,
@@ -313,6 +321,35 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
         ),
       ),
     );
+  }
+
+  List<Widget> authenticationMethodConfiguration(String authMode) {
+    switch (authMode) {
+      case gcloudCliAuthMode:
+        return [
+          DropdownButtonFormField<String>(
+            value: googleCliProfile,
+            decoration: const InputDecoration(labelText: 'Google CLI Profile'),
+            icon: const Icon(Icons.arrow_downward),
+            elevation: 16,
+            style: const TextStyle(color: Colors.deepPurple),
+            onChanged: (String? value) {
+              // This is called when the user selects an item.
+              setState(() {
+                googleCliProfile = value!;
+              });
+            },
+            items: gCloudCLICredentialDiscover.profiles.map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+          ),
+        ];
+        default:
+          return [];
+    }
   }
 }
 
@@ -343,7 +380,8 @@ class DeleteProjectScreen extends StatelessWidget {
                   onPressed: () => deleteProject(context),
                   style: ButtonStyle(
                     backgroundColor: MaterialStateProperty.resolveWith(
-                        (states) => Colors.red),
+                        (states) => Colors.red
+                    ),
                   ),
                   child: const Text("Delete"),
                 ),
