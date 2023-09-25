@@ -47,7 +47,7 @@ class _KindContentsPageState extends State<KindContentsPage> {
             .of(context)
             .colorScheme
             .inversePrimary,
-        title: Text("${widget.kind.key} In Project: ${widget.project.projectId} @ ${widget.project.endpointUrl ?? "default"}"),
+        title: Text("${widget.kind.key} In Project: ${widget.project.key}"),
         actions: <Widget>[
           TextButton(onPressed: closePressed, child: const Text("Close")),
           // PopupMenuButton<String>(

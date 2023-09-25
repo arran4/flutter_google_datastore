@@ -79,7 +79,7 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
             .of(context)
             .colorScheme
             .inversePrimary,
-        title: Text("Project: ${widget.project.projectId} @ ${widget.project.endpointUrl ?? "default"}"),
+        title: Text("Project: ${widget.project.key}"),
         actions: <Widget>[
           TextButton(onPressed: closePressed, child: const Text("Close")),
           // PopupMenuButton<String>(

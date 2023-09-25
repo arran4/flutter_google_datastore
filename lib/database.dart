@@ -176,6 +176,8 @@ class Project {
         authMode = each["authMode"].toString() ?? "none",
         projectId = each["projectId"].toString();
 
+  String get key => "$projectId @ ${endpointUrl ?? "default"}";
+
   static bool validRow(Map<String, Object?> each) {
     for (String column in required) {
       if (!each.containsKey(column) || each[column] == null) {
