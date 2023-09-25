@@ -15,7 +15,10 @@ class KindContentsPage extends StatefulWidget {
   final Kind kind;
 
   const KindContentsPage(
-      {super.key, required this.project, required this.dsApi, required this.kind});
+      {super.key,
+      required this.project,
+      required this.dsApi,
+      required this.kind});
 
   @override
   State createState() {
@@ -28,8 +31,9 @@ class _KindContentsPageState extends State<KindContentsPage> {
   int limit = 100;
   int pages = -1;
   String? startCursor;
-  final PagingController<int, EntityRow> _pagingController = PagingController(
-      firstPageKey: 0);
+  Set<EntityRow> expanded = {};
+  final PagingController<int, EntityRow> _pagingController =
+      PagingController(firstPageKey: 0);
 
   void closePressed() async {
     if (!Navigator.canPop(context)) {
@@ -50,10 +54,7 @@ class _KindContentsPageState extends State<KindContentsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme
-            .of(context)
-            .colorScheme
-            .inversePrimary,
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text("${widget.kind.key} In Project: ${widget.project.key}"),
         actions: <Widget>[
           TextButton(onPressed: closePressed, child: const Text("Close")),
@@ -67,19 +68,41 @@ class _KindContentsPageState extends State<KindContentsPage> {
         pagingController: _pagingController,
         builderDelegate: PagedChildBuilderDelegate<EntityRow>(
             itemBuilder: (BuildContext context, EntityRow item, int index) =>
-                ListTile(
-                  title: Text(item.key),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextButton(onPressed: () {
-                        Navigator.of(context).push(
-                            MaterialPageRoute(builder: (BuildContext context) => ViewEntityPage(widget.project, widget.dsApi, widget.kind, item)),
-                        );
-                      }, child: const Text("View")
+                Column(
+                  children: [
+                    ListTile(
+                      title: Text(item.key),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  if (expanded.contains(item)) {
+                                    expanded.remove(item);
+                                  } else {
+                                    expanded.add(item);
+                                  }
+                                });
+                              },
+                              child: expanded.contains(item)
+                                  ? const Text("Collapse")
+                                  : const Text("Expand")),
+                          TextButton(
+                              onPressed: () {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (BuildContext context) =>
+                                        ViewEntityPage(widget.project, widget.dsApi,
+                                            widget.kind, item)));
+                              },
+                              child: const Text("View")),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    ...(expanded.contains(item) ? [ViewEntity(
+                        widget.project, widget.dsApi, widget.kind, item,
+                        key: widget.key)] : [])
+                  ],
                 )
         ),
       ),
@@ -91,17 +114,22 @@ class _KindContentsPageState extends State<KindContentsPage> {
 
     dsv1.RunQueryResponse response = await widget.dsApi!.projects.runQuery(
         dsv1.RunQueryRequest(
-          query: dsv1.Query(kind: [dsv1.KindExpression(name: widget.kind.name)],
+          query: dsv1.Query(
+              kind: [dsv1.KindExpression(name: widget.kind.name)],
               startCursor: startCursor,
               limit: limit,
               offset: offset),
-          partitionId: widget.kind.namespace != null ? dsv1.PartitionId(
-              namespaceId: widget.kind.namespace!.name) : null,
-        ), widget.project.projectId);
+          partitionId: widget.kind.namespace != null
+              ? dsv1.PartitionId(namespaceId: widget.kind.namespace!.name)
+              : null,
+        ),
+        widget.project.projectId);
     startCursor = response?.batch?.endCursor;
-    results.addAll(
-        response?.batch?.entityResults?.map((e) => e.entity)?.whereType<
-            dsv1.Entity>()?.map((e) => EntityRow(entity: e)) ?? []);
+    results.addAll(response?.batch?.entityResults
+            ?.map((e) => e.entity)
+            ?.whereType<dsv1.Entity>()
+            ?.map((e) => EntityRow(entity: e)) ??
+        []);
 
     return results;
   }
@@ -123,7 +151,10 @@ class _KindContentsPageState extends State<KindContentsPage> {
 }
 
 String keyToString(dsv1.Key? key) {
-  return key?.path?.map((e) => "${e.kind ?? ""} ( ${e.name ?? e.id ?? ""} )").join(" => ") ?? "#KEY ERROR";
+  return key?.path
+          ?.map((e) => "${e.kind ?? ""} ( ${e.name ?? e.id ?? ""} )")
+          .join(" => ") ??
+      "#KEY ERROR";
 }
 
 class EntityRow {
@@ -132,5 +163,4 @@ class EntityRow {
   EntityRow({required this.entity});
 
   String get key => keyToString(entity.key);
-
 }
