@@ -145,10 +145,10 @@ class AddProjectScreen extends StatefulWidget {
   const AddProjectScreen({super.key});
 
   @override
-  _AddProjectScreenState createState() => _AddProjectScreenState();
+  AddProjectScreenState createState() => AddProjectScreenState();
 }
 
-class _AddProjectScreenState extends State<AddProjectScreen> {
+class AddProjectScreenState extends State<AddProjectScreen> {
   final TextEditingController endpointUrlController = TextEditingController();
   final TextEditingController projectIdController = TextEditingController();
 
