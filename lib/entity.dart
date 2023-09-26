@@ -81,35 +81,106 @@ class _ViewEntityState extends State<ViewEntity> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Text("Details", style: Theme.of(context).textTheme.headlineSmall),
+                Text("Details",
+                    style: Theme.of(context).textTheme.headlineSmall),
                 Table(
+                  defaultColumnWidth: const IntrinsicColumnWidth(flex: 1),
                   children: [
                     TableRow(children: [
-                      const Text("Project Id"),
-                      SelectableText(widget.project.projectId ?? ""),
+                      const TableCell(
+                        child: Padding(
+                          padding: EdgeInsets.all(4.0),
+                          child: Text("Project Id", textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.bold),),
+                        ),
+                      ),
+                      TableCell(
+                        child: Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: SelectableText(widget.project.projectId ?? ""),
+                        ),
+                      ),
                     ]),
-                    TableRow(children: [
-                      const Text("End Point"),
-                      SelectableText(
-                          widget.project.endpointUrl ?? "Google Cloud"),
-                    ]),
-                    TableRow(children: [
-                      const Text("Namespace"),
-                      SelectableText(
-                          widget.kind.namespace?.name ?? "Default namespace"),
-                    ]),
-                    TableRow(children: [
-                      const Text("Kind"),
-                      SelectableText(widget.kind.name),
-                    ]),
-                    TableRow(children: [
-                      const Text("Database Id"),
-                      SelectableText(widget.entityRow.entity.key?.partitionId?.databaseId ?? ""),
-                    ]),
-                    TableRow(children: [
-                      const Text("Key Path"),
-                      SelectableText(widget.entityRow.key),
-                    ]),
+                    TableRow(
+                      children: [
+                        const TableCell(
+                          child: Padding(
+                            padding: EdgeInsets.all(4.0),
+                            child: Text("End Point", textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.bold),),
+                          ),
+                        ),
+                        TableCell(
+                          child: Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: SelectableText(widget.project.endpointUrl ?? "Google Cloud"),
+                          ),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        const TableCell(
+                          child: Padding(
+                            padding: EdgeInsets.all(4.0),
+                            child: Text("Namespace", textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.bold),),
+                          ),
+                        ),
+                        TableCell(
+                          child: Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: SelectableText(widget.kind.namespace?.name ?? "Default namespace"),
+                          ),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        const TableCell(
+                          child: Padding(
+                            padding: EdgeInsets.all(4.0),
+                            child: Text("Kind", textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.bold),),
+                          ),
+                        ),
+                        TableCell(
+                          child: Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: SelectableText(widget.kind.name),
+                          ),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        const TableCell(
+                          child: Padding(
+                            padding: EdgeInsets.all(4.0),
+                            child: Text("Database Id", textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.bold),),
+                          ),
+                        ),
+                        TableCell(
+                          child: Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: SelectableText(widget.entityRow.entity.key?.partitionId?.databaseId ??
+                            ""),
+                          ),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        const TableCell(
+                          child: Padding(
+                            padding: EdgeInsets.all(4.0),
+                            child: Text("Key Path", textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.bold),),
+                          ),
+                        ),
+                        TableCell(
+                          child: Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: SelectableText(widget.entityRow.key),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 )
               ],
@@ -122,8 +193,10 @@ class _ViewEntityState extends State<ViewEntity> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Text("Properties", style: Theme.of(context).textTheme.headlineSmall),
+                Text("Properties",
+                    style: Theme.of(context).textTheme.headlineSmall),
                 Table(
+                  defaultColumnWidth: const IntrinsicColumnWidth(flex: 1),
                   children:
                       widget.entityRow.entity.properties?.entries.map((e) {
                             String type = "unknown";
@@ -175,9 +248,15 @@ class _ViewEntityState extends State<ViewEntity> {
                               displayValue = e.value.timestampValue ?? "#ERROR";
                             } else {}
                             return TableRow(children: [
-                              SelectableText(e.key),
-                              SelectableText(
-                                  "$type ${e.value.excludeFromIndexes == true ? "" : "Indexed"}"),
+                              SelectableText.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(text: "($type${e.value.excludeFromIndexes == true ? "" : ", Indexed"}) ", style: const TextStyle(fontStyle: FontStyle.italic)),
+                                    TextSpan(text: "${e.key}: ", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  ]
+                                ),
+                                textAlign: TextAlign.end,
+                              ),
                               SelectableText(displayValue),
                             ]);
                           }).toList() ??
