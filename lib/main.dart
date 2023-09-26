@@ -50,6 +50,14 @@ class _ProjectPageState extends State<ProjectPage> {
 
   void popupItemSelected(String value) {
     switch (value) {
+      case 'add':
+        addProjectPressed();
+        break;
+      case 'refresh':
+          setState(() {
+            projects = _loadEntries();
+          });
+        break;
       case 'settings':
         Navigator.push(context,
             MaterialPageRoute<bool>(builder: (BuildContext context) {
@@ -65,6 +73,14 @@ class _ProjectPageState extends State<ProjectPage> {
 
   List<PopupMenuEntry<String>> createPopupItems(BuildContext context) {
     return <PopupMenuEntry<String>>[
+      const PopupMenuItem<String>(
+        value: 'add',
+        child: Text('Add'),
+      ),
+      const PopupMenuItem<String>(
+        value: 'refresh',
+        child: Text('Refresh'),
+      ),
       const PopupMenuItem<String>(
         value: 'settings',
         child: Text('Settings'),
@@ -132,7 +148,6 @@ class _ProjectPageState extends State<ProjectPage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text("Datastore Project"),
         actions: <Widget>[
-          TextButton(onPressed: addProjectPressed, child: const Text("Add")),
           PopupMenuButton<String>(
             onSelected: popupItemSelected,
             itemBuilder: createPopupItems,
