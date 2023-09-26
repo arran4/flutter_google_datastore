@@ -1,0 +1,10 @@
+# The value of AppId uniquely identifies this application.
+# Do not use the same AppId value in installers for other applications.
+app_id: c0fe4260-3ded-453b-89a2-1ed738302afd
+publisher: Arran4
+publisher_url: https://github.com/arran4/flutter_google_datastore
+display_name: Flutter Google Datastore
+create_desktop_icon: true
+install_dir_name: FLUTTER-Google-Datastore
+locales:
+  - en
