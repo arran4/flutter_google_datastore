@@ -23,3 +23,4 @@ See releases, should work on Linux, Mac, Windows, Android and iOS.
 * Ability to create an entity
 * Export and import of multiple types both datastore / could and it's own
 
+If you find this project valuable and would like to support its development, consider sponsoring it.
