@@ -18,7 +18,6 @@ a client however supports connecting to a cloud instance.
 See releases, should work on Linux, Mac, Windows, Android and iOS.
 
 # Roadmap
-(when I have the need)
 * More authentication methods including android compatible Oauth2
 * Ability to edit an entity
 * Ability to create an entity
