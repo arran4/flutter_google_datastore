@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/database.dart';
 import 'package:flutter_google_datastore/datastoremain.dart';
@@ -26,7 +28,13 @@ class KindContentsPage extends StatefulWidget {
   }
 }
 
-class _KindContentsPageState extends State<KindContentsPage> {
+abstract class EntityActions {
+   Future<dsv1.Entity?> refreshEntity(dsv1.Key key);
+   Future<EntityRow?> updateEntity(int index, dsv1.Entity newEntity);
+}
+
+
+class _KindContentsPageState extends State<KindContentsPage> implements EntityActions {
   int limit = 100;
   String? startCursor;
   Set<String> expanded = {};
@@ -74,15 +82,11 @@ class _KindContentsPageState extends State<KindContentsPage> {
         if (entityRow.entity.key == null) {
           return;
         }
-        EntityRow? newEntity = await refreshEntityRow(entityRow.entity.key!);
+        dsv1.Entity? newEntity = await refreshEntity(entityRow.entity.key!);
         if (newEntity == null) {
           return;
         }
-        setState(() {
-          if (index < (_pagingController.value.itemList?.length??0) && _pagingController.value.itemList![index].key == newEntity.key) {
-            _pagingController.value.itemList![index] = newEntity;
-          }
-        });
+        updateEntity(index, newEntity);
         break;
     }
   }
@@ -137,8 +141,7 @@ class _KindContentsPageState extends State<KindContentsPage> {
                               onPressed: () {
                                 Navigator.of(context).push(MaterialPageRoute(
                                     builder: (BuildContext context) =>
-                                        ViewEntityPage(widget.project, widget.dsApi,
-                                            widget.kind, item)));
+                                        ViewEntityPage(widget.project, widget.dsApi, widget.kind, item, index, this)));
                               },
                               child: const Text("View")
                           ),
@@ -147,7 +150,6 @@ class _KindContentsPageState extends State<KindContentsPage> {
                             itemBuilder: createRowPopupItems,
                           ),
                         ],
-
                       ),
                     ),
                     ...(expanded.contains(item.key) ? [ViewEntity(
@@ -200,12 +202,28 @@ class _KindContentsPageState extends State<KindContentsPage> {
     }
   }
 
-  Future<EntityRow?> refreshEntityRow(dsv1.Key key) async {
+  Future<dsv1.Entity?> refreshEntity(dsv1.Key key) async {
     dsv1.LookupResponse lookupResponse = await widget.dsApi!.projects.lookup(dsv1.LookupRequest(databaseId: widget.project.databaseId, keys: [key]), widget.project.projectId);
     if (lookupResponse.found?.length != 1) {
       throw Error.safeToString("no results found");
     }
-    return EntityRow(entity: lookupResponse.found![0].entity!);
+    return lookupResponse.found![0].entity;
+  }
+
+  Future<EntityRow?> updateEntity(int index, dsv1.Entity newEntity) async {
+    if (index >= (_pagingController.value.itemList?.length??0)) {
+      return null;
+    }
+    EntityRow er = _pagingController.value.itemList![index];
+    Completer<EntityRow?> completer = Completer();
+      setState(() {
+        if (index < (_pagingController.value.itemList?.length??0) && _pagingController.value.itemList![index].key == keyToString(newEntity.key)) {
+          er.entity = newEntity!;
+          _pagingController.value.itemList![index] = er;
+        }
+        completer.complete(er);
+      });
+    return completer.future;
   }
 }
 

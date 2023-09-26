@@ -10,20 +10,61 @@ class ViewEntityPage extends StatefulWidget {
   final dsv1.DatastoreApi dsApi;
   final Kind kind;
   final EntityRow entityRow;
+  final int index;
+  final EntityActions? actions;
 
-  const ViewEntityPage(this.project, this.dsApi, this.kind, this.entityRow,
-      {super.key});
+  const ViewEntityPage(this.project, this.dsApi, this.kind, this.entityRow, this.index, this.actions, {super.key});
 
   @override
   State createState() => _ViewEntityPageState();
 }
 
 class _ViewEntityPageState extends State<ViewEntityPage> {
+  late EntityRow entityRow;
+
+
+  @override
+  void initState() {
+    entityRow = widget.entityRow;
+  }
+
   void closePressed() async {
     if (!Navigator.canPop(context)) {
       return;
     }
     Navigator.pop(context);
+  }
+
+  List<PopupMenuEntry<String>> createRowPopupItems(BuildContext context) {
+    return <PopupMenuEntry<String>>[
+      const PopupMenuItem<String>(
+        value: 'refresh',
+        child: Text('Refresh'),
+      ),
+    ];
+  }
+
+  void popupRowItemSelected(String value) async {
+    switch (value) {
+      case 'refresh':
+        if (widget.entityRow.entity.key == null) {
+          return;
+        }
+        if (widget.actions == null) {
+          return;
+        }
+        dsv1.Entity? newEntity = await widget.actions!.refreshEntity(widget.entityRow.entity.key!);
+        if (newEntity == null) {
+          return;
+        }
+        EntityRow? er = await widget.actions!.updateEntity(widget.index, newEntity);
+        if (er != null) {
+          setState(() {
+            entityRow = er;
+          });
+        }
+        break;
+    }
   }
 
   @override
@@ -34,11 +75,10 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
         title: Text(
             "${widget.entityRow.key} In ${widget.kind.key} In Project: ${widget.project.key}"),
         actions: <Widget>[
-          TextButton(onPressed: closePressed, child: const Text("Close")),
-          // PopupMenuButton<String>(
-          //   onSelected: popupItemSelected,
-          //   itemBuilder: createPopupItems,
-          // ),
+          PopupMenuButton<String>(
+            onSelected: popupRowItemSelected,
+            itemBuilder: createRowPopupItems,
+          ),
         ],
       ),
       body: SingleChildScrollView(
