@@ -1,0 +1,17 @@
+display_name: Flutter_google_datastore
+icon: assets/logo.png
+summary: Flutter_google_datastore
+group: Application/Utils
+vendor: Arran Ubels
+packager: Arran Ubels
+packagerEmail: arran4@gmail.com
+license: NA
+url: https://github.com/arran4/flutter_google_datastore
+
+
+categories:
+  - Utility
+
+generic_name: Misc Applications
+
+startup_notify: true

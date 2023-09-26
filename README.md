@@ -1,19 +1,21 @@
 # flutter_google_datastore
 
+![logo.png](assets/logo.png)
+
 A flutter project to browse a google datastore, namely the datastore emulator which seemed to lack
 a client however supports connecting to a cloud instance.
 
-![ksnip_20230926-200953.png](images%2Fksnip_20230926-200953.png)
+![ksnip_20230926-200953.png](images/ksnip_20230926-200953.png)
 
-![ksnip_20230926-201014.png](images%2Fksnip_20230926-201014.png)
+![ksnip_20230926-201014.png](images/ksnip_20230926-201014.png)
 
-![ksnip_20230926-201027.png](images%2Fksnip_20230926-201027.png)
+![ksnip_20230926-201027.png](images/ksnip_20230926-201027.png)
 
-![ksnip_20230926-201036.png](images%2Fksnip_20230926-201036.png)
+![ksnip_20230926-201036.png](images/ksnip_20230926-201036.png)
 
-![ksnip_20230926-210718.png](images%2Fksnip_20230926-210718.png)
+![ksnip_20230926-210718.png](images/ksnip_20230926-210718.png)
 
-![ksnip_20230926-220928.png](images%2Fksnip_20230926-220928.png)
+![ksnip_20230926-220928.png](images/ksnip_20230926-220928.png)
 
 See releases, should work on Linux, Mac, Windows, Android and iOS.
 

@@ -1,0 +1,12 @@
+display_name: Flutter_google_datastore
+
+icon: assets/logo.png
+
+generic_name: Misc Application
+
+categories:
+  - Utility
+
+startup_notify: true
+
+include: []
