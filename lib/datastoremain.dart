@@ -71,6 +71,26 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
     Navigator.pop(context);
   }
 
+  void popupItemSelected(String value) {
+    switch (value) {
+      case 'refresh':
+        setState(() {
+          listOfNamespaces = null;
+          listOfKinds = retrieveKinds();
+        });
+        break;
+    }
+  }
+
+  List<PopupMenuEntry<String>> createPopupItems(BuildContext context) {
+    return <PopupMenuEntry<String>>[
+      const PopupMenuItem<String>(
+        value: 'refresh',
+        child: Text('Refresh'),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,11 +101,10 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
             .inversePrimary,
         title: Text("Project: ${widget.project.key}"),
         actions: <Widget>[
-          TextButton(onPressed: closePressed, child: const Text("Close")),
-          // PopupMenuButton<String>(
-          //   onSelected: popupItemSelected,
-          //   itemBuilder: createPopupItems,
-          // ),
+          PopupMenuButton<String>(
+            onSelected: popupItemSelected,
+            itemBuilder: createPopupItems,
+          ),
         ],
       ),
       body: FutureBuilder(
