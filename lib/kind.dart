@@ -27,11 +27,9 @@ class KindContentsPage extends StatefulWidget {
 }
 
 class _KindContentsPageState extends State<KindContentsPage> {
-  int offset = 0;
   int limit = 100;
-  int pages = -1;
   String? startCursor;
-  Set<EntityRow> expanded = {};
+  Set<String> expanded = {};
   final PagingController<int, EntityRow> _pagingController =
       PagingController(firstPageKey: 0);
 
@@ -50,6 +48,26 @@ class _KindContentsPageState extends State<KindContentsPage> {
     super.initState();
   }
 
+  void popupItemSelected(String value) {
+    switch (value) {
+      case 'refresh':
+        setState(() {
+          startCursor = null;
+        });
+        _pagingController.refresh();
+        break;
+    }
+  }
+
+  List<PopupMenuEntry<String>> createPopupItems(BuildContext context) {
+    return <PopupMenuEntry<String>>[
+      const PopupMenuItem<String>(
+        value: 'refresh',
+        child: Text('Refresh'),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,11 +75,10 @@ class _KindContentsPageState extends State<KindContentsPage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text("${widget.kind.key} In Project: ${widget.project.key}"),
         actions: <Widget>[
-          TextButton(onPressed: closePressed, child: const Text("Close")),
-          // PopupMenuButton<String>(
-          //   onSelected: popupItemSelected,
-          //   itemBuilder: createPopupItems,
-          // ),
+          PopupMenuButton<String>(
+            onSelected: popupItemSelected,
+            itemBuilder: createPopupItems,
+          ),
         ],
       ),
       body: PagedListView<int, EntityRow>(
@@ -78,14 +95,14 @@ class _KindContentsPageState extends State<KindContentsPage> {
                           TextButton(
                               onPressed: () {
                                 setState(() {
-                                  if (expanded.contains(item)) {
-                                    expanded.remove(item);
+                                  if (expanded.contains(item.key)) {
+                                    expanded.remove(item.key);
                                   } else {
-                                    expanded.add(item);
+                                    expanded.add(item.key);
                                   }
                                 });
                               },
-                              child: expanded.contains(item)
+                              child: expanded.contains(item.key)
                                   ? const Text("Collapse")
                                   : const Text("Expand")),
                           TextButton(
@@ -99,7 +116,7 @@ class _KindContentsPageState extends State<KindContentsPage> {
                         ],
                       ),
                     ),
-                    ...(expanded.contains(item) ? [ViewEntity(
+                    ...(expanded.contains(item.key) ? [ViewEntity(
                         widget.project, widget.dsApi, widget.kind, item,
                         key: widget.key)] : [])
                   ],
@@ -118,7 +135,7 @@ class _KindContentsPageState extends State<KindContentsPage> {
               kind: [dsv1.KindExpression(name: widget.kind.name)],
               startCursor: startCursor,
               limit: limit,
-              offset: offset),
+            ),
           partitionId: widget.kind.namespace != null
               ? dsv1.PartitionId(namespaceId: widget.kind.namespace!.name)
               : null,
