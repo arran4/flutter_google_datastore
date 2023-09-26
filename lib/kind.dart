@@ -68,6 +68,34 @@ class _KindContentsPageState extends State<KindContentsPage> {
     ];
   }
 
+  void popupRowItemSelected(EntityRow entityRow, int index, String value) async {
+    switch (value) {
+      case 'refresh':
+        if (entityRow.entity.key == null) {
+          return;
+        }
+        EntityRow? newEntity = await refreshEntityRow(entityRow.entity.key!);
+        if (newEntity == null) {
+          return;
+        }
+        setState(() {
+          if (index < (_pagingController.value.itemList?.length??0) && _pagingController.value.itemList![index].key == newEntity.key) {
+            _pagingController.value.itemList![index] = newEntity;
+          }
+        });
+        break;
+    }
+  }
+
+  List<PopupMenuEntry<String>> createRowPopupItems(BuildContext context) {
+    return <PopupMenuEntry<String>>[
+      const PopupMenuItem<String>(
+        value: 'refresh',
+        child: Text('Refresh'),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -112,8 +140,14 @@ class _KindContentsPageState extends State<KindContentsPage> {
                                         ViewEntityPage(widget.project, widget.dsApi,
                                             widget.kind, item)));
                               },
-                              child: const Text("View")),
+                              child: const Text("View")
+                          ),
+                          PopupMenuButton<String>(
+                            onSelected: (String value) => popupRowItemSelected(item, index, value),
+                            itemBuilder: createRowPopupItems,
+                          ),
                         ],
+
                       ),
                     ),
                     ...(expanded.contains(item.key) ? [ViewEntity(
@@ -164,6 +198,14 @@ class _KindContentsPageState extends State<KindContentsPage> {
     } catch (error) {
       _pagingController.error = error;
     }
+  }
+
+  Future<EntityRow?> refreshEntityRow(dsv1.Key key) async {
+    dsv1.LookupResponse lookupResponse = await widget.dsApi!.projects.lookup(dsv1.LookupRequest(databaseId: widget.project.databaseId, keys: [key]), widget.project.projectId);
+    if (lookupResponse.found?.length != 1) {
+      throw Error.safeToString("no results found");
+    }
+    return EntityRow(entity: lookupResponse.found![0].entity!);
   }
 }
 

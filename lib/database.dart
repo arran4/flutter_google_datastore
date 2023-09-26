@@ -178,6 +178,8 @@ class Project {
 
   String get key => "$projectId @ ${endpointUrl ?? "default"}";
 
+  String get databaseId => ""; // TODO
+
   static bool validRow(Map<String, Object?> each) {
     for (String column in required) {
       if (!each.containsKey(column) || each[column] == null) {
