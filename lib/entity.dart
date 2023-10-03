@@ -13,7 +13,9 @@ class ViewEntityPage extends StatefulWidget {
   final int index;
   final EntityActions? actions;
 
-  const ViewEntityPage(this.project, this.dsApi, this.kind, this.entityRow, this.index, this.actions, {super.key});
+  const ViewEntityPage(this.project, this.dsApi, this.kind, this.entityRow,
+      this.index, this.actions,
+      {super.key});
 
   @override
   State createState() => _ViewEntityPageState();
@@ -21,7 +23,7 @@ class ViewEntityPage extends StatefulWidget {
 
 class _ViewEntityPageState extends State<ViewEntityPage> {
   late EntityRow entityRow;
-
+  int _loading = 0;
 
   @override
   void initState() {
@@ -41,29 +43,124 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
         value: 'refresh',
         child: Text('Refresh'),
       ),
+      const PopupMenuItem<String>(
+        value: 'delete',
+        child: Text('Delete'),
+      ),
     ];
   }
 
   void popupRowItemSelected(String value) async {
-    switch (value) {
-      case 'refresh':
-        if (widget.entityRow.entity.key == null) {
-          return;
-        }
-        if (widget.actions == null) {
-          return;
-        }
-        dsv1.Entity? newEntity = await widget.actions!.refreshEntity(widget.entityRow.entity.key!);
-        if (newEntity == null) {
-          return;
-        }
-        EntityRow? er = await widget.actions!.updateEntity(widget.index, newEntity);
-        if (er != null) {
-          setState(() {
-            entityRow = er;
-          });
-        }
-        break;
+    try {
+      setState(() {
+        _loading++;
+      });
+      switch (value) {
+        case 'refresh':
+          if (widget.entityRow.entity.key == null) {
+            return;
+          }
+          if (widget.actions == null) {
+            return;
+          }
+          dsv1.Entity? newEntity =
+              await widget.actions!.refreshEntity(widget.entityRow.entity.key!);
+          if (newEntity == null) {
+            return;
+          }
+          EntityRow? er =
+              await widget.actions!.replaceEntity(widget.index, newEntity);
+          if (er != null) {
+            setState(() {
+              entityRow = er;
+            });
+          }
+          break;
+        case 'delete':
+          if (widget.entityRow.entity.key == null) {
+            return;
+          }
+          if (widget.actions == null) {
+            return;
+          }
+          if (!context.mounted) break;
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text("Delete Confirmation"),
+                content:
+                    const Text("Are you sure you want to delete this item?"),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Close the dialog
+                      if (context.mounted) {
+                        if (this.context.mounted) {
+                          Navigator.of(this.context)
+                              .pop(); // Close the element window
+                        }
+                      }
+                    },
+                    child: const Text("Cancel"),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      try {
+                        _loading++;
+                        await widget.actions!.deleteEntity(
+                            widget.index, widget.entityRow!.entity);
+                      } catch (e) {
+                        if (context.mounted) {
+                          await ScaffoldMessenger.of(context)
+                              .showSnackBar(
+                                SnackBar(
+                                  content:
+                                      Text("Failed to delete the record. $e"),
+                                  action: SnackBarAction(
+                                    label: "OK",
+                                    onPressed: () {
+                                      ScaffoldMessenger.of(context)
+                                          .hideCurrentSnackBar();
+                                    },
+                                  ),
+                                ),
+                              )
+                              .closed;
+                          return;
+                        }
+                      } finally {
+                        setState(() {
+                          setState(() {
+                            _loading--;
+                          });
+                        });
+                        if (!context.mounted || !Navigator.canPop(context)) {
+                          return;
+                        }
+                        if (context.mounted) {
+                          Navigator.of(context).pop(); // Close the dialog
+                        }
+                      }
+                      if (context.mounted) {
+                        if (this.context.mounted) {
+                          Navigator.of(this.context)
+                              .pop(); // Close the element window
+                        }
+                      }
+                    },
+                    child: const Text("Delete"),
+                  ),
+                ],
+              );
+            },
+          );
+          break;
+      }
+    } finally {
+      setState(() {
+        _loading--;
+      });
     }
   }
 
@@ -82,9 +179,16 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
         ],
       ),
       body: SingleChildScrollView(
-        child: ViewEntity(
-            widget.project, widget.dsApi, widget.kind, widget.entityRow,
-            key: widget.key),
+        child: _loading > 0
+            ? const Opacity(
+                opacity: 0.4,
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            : ViewEntity(
+                widget.project, widget.dsApi, widget.kind, widget.entityRow,
+                key: widget.key),
       ),
     );
   }
@@ -130,7 +234,11 @@ class _ViewEntityState extends State<ViewEntity> {
                       const TableCell(
                         child: Padding(
                           padding: EdgeInsets.all(4.0),
-                          child: Text("Project Id", textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.bold),),
+                          child: Text(
+                            "Project Id",
+                            textAlign: TextAlign.end,
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
                       ),
                       TableCell(
@@ -145,13 +253,18 @@ class _ViewEntityState extends State<ViewEntity> {
                         const TableCell(
                           child: Padding(
                             padding: EdgeInsets.all(4.0),
-                            child: Text("End Point", textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.bold),),
+                            child: Text(
+                              "End Point",
+                              textAlign: TextAlign.end,
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                         TableCell(
                           child: Padding(
                             padding: const EdgeInsets.all(4.0),
-                            child: SelectableText(widget.project.endpointUrl ?? "Google Cloud"),
+                            child: SelectableText(
+                                widget.project.endpointUrl ?? "Google Cloud"),
                           ),
                         ),
                       ],
@@ -161,13 +274,18 @@ class _ViewEntityState extends State<ViewEntity> {
                         const TableCell(
                           child: Padding(
                             padding: EdgeInsets.all(4.0),
-                            child: Text("Namespace", textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.bold),),
+                            child: Text(
+                              "Namespace",
+                              textAlign: TextAlign.end,
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                         TableCell(
                           child: Padding(
                             padding: const EdgeInsets.all(4.0),
-                            child: SelectableText(widget.kind.namespace?.name ?? "Default namespace"),
+                            child: SelectableText(widget.kind.namespace?.name ??
+                                "Default namespace"),
                           ),
                         ),
                       ],
@@ -177,7 +295,11 @@ class _ViewEntityState extends State<ViewEntity> {
                         const TableCell(
                           child: Padding(
                             padding: EdgeInsets.all(4.0),
-                            child: Text("Kind", textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.bold),),
+                            child: Text(
+                              "Kind",
+                              textAlign: TextAlign.end,
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                         TableCell(
@@ -193,14 +315,19 @@ class _ViewEntityState extends State<ViewEntity> {
                         const TableCell(
                           child: Padding(
                             padding: EdgeInsets.all(4.0),
-                            child: Text("Database Id", textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.bold),),
+                            child: Text(
+                              "Database Id",
+                              textAlign: TextAlign.end,
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                         TableCell(
                           child: Padding(
                             padding: const EdgeInsets.all(4.0),
-                            child: SelectableText(widget.entityRow.entity.key?.partitionId?.databaseId ??
-                            ""),
+                            child: SelectableText(widget.entityRow.entity.key
+                                    ?.partitionId?.databaseId ??
+                                ""),
                           ),
                         ),
                       ],
@@ -210,7 +337,11 @@ class _ViewEntityState extends State<ViewEntity> {
                         const TableCell(
                           child: Padding(
                             padding: EdgeInsets.all(4.0),
-                            child: Text("Key Path", textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.bold),),
+                            child: Text(
+                              "Key Path",
+                              textAlign: TextAlign.end,
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                         TableCell(
@@ -289,12 +420,17 @@ class _ViewEntityState extends State<ViewEntity> {
                             } else {}
                             return TableRow(children: [
                               SelectableText.rich(
-                                TextSpan(
-                                  children: [
-                                    TextSpan(text: "($type${e.value.excludeFromIndexes == true ? "" : ", Indexed"}) ", style: const TextStyle(fontStyle: FontStyle.italic)),
-                                    TextSpan(text: "${e.key}: ", style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  ]
-                                ),
+                                TextSpan(children: [
+                                  TextSpan(
+                                      text:
+                                          "($type${e.value.excludeFromIndexes == true ? "" : ", Indexed"}) ",
+                                      style: const TextStyle(
+                                          fontStyle: FontStyle.italic)),
+                                  TextSpan(
+                                      text: "${e.key}: ",
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold)),
+                                ]),
                                 textAlign: TextAlign.end,
                               ),
                               SelectableText(displayValue),

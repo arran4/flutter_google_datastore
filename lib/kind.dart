@@ -30,7 +30,8 @@ class KindContentsPage extends StatefulWidget {
 
 abstract class EntityActions {
    Future<dsv1.Entity?> refreshEntity(dsv1.Key key);
-   Future<EntityRow?> updateEntity(int index, dsv1.Entity newEntity);
+   Future<EntityRow?> replaceEntity(int index, dsv1.Entity newEntity);
+   Future<bool> deleteEntity(int index, dsv1.Entity newEntity);
 }
 
 
@@ -86,7 +87,7 @@ class _KindContentsPageState extends State<KindContentsPage> implements EntityAc
         if (newEntity == null) {
           return;
         }
-        updateEntity(index, newEntity);
+        replaceEntity(index, newEntity);
         break;
     }
   }
@@ -210,7 +211,12 @@ class _KindContentsPageState extends State<KindContentsPage> implements EntityAc
     return lookupResponse.found![0].entity;
   }
 
-  Future<EntityRow?> updateEntity(int index, dsv1.Entity newEntity) async {
+  Future<bool> deleteEntity(int index, dsv1.Entity newEntity) async {
+    await widget.dsApi!.projects.commit(dsv1.CommitRequest(databaseId: widget.project.databaseId, mode: "NON_TRANSACTIONAL", mutations: [dsv1.Mutation(delete: newEntity.key)]), widget.project.projectId);
+    return await removeEntity(index, newEntity);
+  }
+
+  Future<EntityRow?> replaceEntity(int index, dsv1.Entity newEntity) async {
     if (index >= (_pagingController.value.itemList?.length??0)) {
       return null;
     }
@@ -222,6 +228,24 @@ class _KindContentsPageState extends State<KindContentsPage> implements EntityAc
           _pagingController.value.itemList![index] = er;
         }
         completer.complete(er);
+      });
+    return completer.future;
+  }
+
+  Future<bool> removeEntity(int index, dsv1.Entity newEntity) async {
+    if (index >= (_pagingController.value.itemList?.length??0)) {
+      return false;
+    }
+    EntityRow er = _pagingController.value.itemList![index];
+    Completer<bool> completer = Completer();
+      setState(() {
+        bool found = false;
+        if (index < (_pagingController.value.itemList?.length??0) && _pagingController.value.itemList![index].key == keyToString(newEntity.key)) {
+          found = true;
+          er.entity = newEntity!;
+          _pagingController.value.itemList!.removeAt(index);
+        }
+        completer.complete(found);
       });
     return completer.future;
   }
