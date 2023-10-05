@@ -41,3 +41,9 @@ flutter_launcher_icons:
   ios: true
   # optionally, as transparency is not allowed on app store
   # remove_alpha_ios: true
+  web:
+    generate: true
+  windows:
+    generate: true
+  macos:
+    generate: true
