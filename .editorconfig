@@ -1,0 +1,23 @@
+# Top-most EditorConfig file
+root = true
+
+# Default settings for all files
+[*]
+indent_style = space
+indent_size = 2
+charset = utf-8
+end_of_line = lf
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Dart files
+[*.dart]
+max_line_length = 220
+
+# Flutter specific files
+[*.yaml]
+max_line_length = 220
+
+# Ignore some files and directories
+[*.md]
+max_line_length = 0

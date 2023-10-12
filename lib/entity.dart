@@ -13,9 +13,7 @@ class ViewEntityPage extends StatefulWidget {
   final int index;
   final EntityActions? actions;
 
-  const ViewEntityPage(this.project, this.dsApi, this.kind, this.entityRow,
-      this.index, this.actions,
-      {super.key});
+  const ViewEntityPage(this.project, this.dsApi, this.kind, this.entityRow, this.index, this.actions, {super.key});
 
   @override
   State createState() => _ViewEntityPageState();
@@ -63,13 +61,11 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
           if (widget.actions == null) {
             return;
           }
-          dsv1.Entity? newEntity =
-              await widget.actions!.refreshEntity(widget.entityRow.entity.key!);
+          dsv1.Entity? newEntity = await widget.actions!.refreshEntity(widget.entityRow.entity.key!);
           if (newEntity == null) {
             return;
           }
-          EntityRow? er =
-              await widget.actions!.replaceEntity(widget.index, newEntity);
+          EntityRow? er = await widget.actions!.replaceEntity(widget.index, newEntity);
           if (er != null) {
             setState(() {
               entityRow = er;
@@ -89,16 +85,14 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
             builder: (BuildContext context) {
               return AlertDialog(
                 title: const Text("Delete Confirmation"),
-                content:
-                    const Text("Are you sure you want to delete this item?"),
+                content: const Text("Are you sure you want to delete this item?"),
                 actions: [
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pop(); // Close the dialog
                       if (context.mounted) {
                         if (this.context.mounted) {
-                          Navigator.of(this.context)
-                              .pop(); // Close the element window
+                          Navigator.of(this.context).pop(); // Close the element window
                         }
                       }
                     },
@@ -108,20 +102,17 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
                     onPressed: () async {
                       try {
                         _loading++;
-                        await widget.actions!.deleteEntity(
-                            widget.index, widget.entityRow!.entity);
+                        await widget.actions!.deleteEntity(widget.index, widget.entityRow!.entity);
                       } catch (e) {
                         if (context.mounted) {
                           await ScaffoldMessenger.of(context)
                               .showSnackBar(
                                 SnackBar(
-                                  content:
-                                      Text("Failed to delete the record. $e"),
+                                  content: Text("Failed to delete the record. $e"),
                                   action: SnackBarAction(
                                     label: "OK",
                                     onPressed: () {
-                                      ScaffoldMessenger.of(context)
-                                          .hideCurrentSnackBar();
+                                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                     },
                                   ),
                                 ),
@@ -144,8 +135,7 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
                       }
                       if (context.mounted) {
                         if (this.context.mounted) {
-                          Navigator.of(this.context)
-                              .pop(); // Close the element window
+                          Navigator.of(this.context).pop(); // Close the element window
                         }
                       }
                     },
@@ -169,8 +159,7 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(
-            "${widget.entityRow.key} In ${widget.kind.key} In Project: ${widget.project.key}"),
+        title: Text("${widget.entityRow.key} In ${widget.kind.key} In Project: ${widget.project.key}"),
         actions: <Widget>[
           PopupMenuButton<String>(
             onSelected: popupRowItemSelected,
@@ -186,9 +175,7 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
                   child: CircularProgressIndicator(),
                 ),
               )
-            : ViewEntity(
-                widget.project, widget.dsApi, widget.kind, widget.entityRow,
-                key: widget.key),
+            : ViewEntity(widget.project, widget.dsApi, widget.kind, widget.entityRow, key: widget.key),
       ),
     );
   }
@@ -200,8 +187,7 @@ class ViewEntity extends StatefulWidget {
   final Kind kind;
   final EntityRow entityRow;
 
-  const ViewEntity(this.project, this.dsApi, this.kind, this.entityRow,
-      {super.key});
+  const ViewEntity(this.project, this.dsApi, this.kind, this.entityRow, {super.key});
 
   @override
   State createState() => _ViewEntityState();
@@ -225,8 +211,7 @@ class _ViewEntityState extends State<ViewEntity> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Text("Details",
-                    style: Theme.of(context).textTheme.headlineSmall),
+                Text("Details", style: Theme.of(context).textTheme.headlineSmall),
                 Table(
                   defaultColumnWidth: const IntrinsicColumnWidth(flex: 1),
                   children: [
@@ -263,8 +248,7 @@ class _ViewEntityState extends State<ViewEntity> {
                         TableCell(
                           child: Padding(
                             padding: const EdgeInsets.all(4.0),
-                            child: SelectableText(
-                                widget.project.endpointUrl ?? "Google Cloud"),
+                            child: SelectableText(widget.project.endpointUrl ?? "Google Cloud"),
                           ),
                         ),
                       ],
@@ -284,8 +268,7 @@ class _ViewEntityState extends State<ViewEntity> {
                         TableCell(
                           child: Padding(
                             padding: const EdgeInsets.all(4.0),
-                            child: SelectableText(widget.kind.namespace?.name ??
-                                "Default namespace"),
+                            child: SelectableText(widget.kind.namespace?.name ?? "Default namespace"),
                           ),
                         ),
                       ],
@@ -325,9 +308,7 @@ class _ViewEntityState extends State<ViewEntity> {
                         TableCell(
                           child: Padding(
                             padding: const EdgeInsets.all(4.0),
-                            child: SelectableText(widget.entityRow.entity.key
-                                    ?.partitionId?.databaseId ??
-                                ""),
+                            child: SelectableText(widget.entityRow.entity.key?.partitionId?.databaseId ?? ""),
                           ),
                         ),
                       ],
@@ -364,79 +345,10 @@ class _ViewEntityState extends State<ViewEntity> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Text("Properties",
-                    style: Theme.of(context).textTheme.headlineSmall),
+                Text("Properties", style: Theme.of(context).textTheme.headlineSmall),
                 Table(
                   defaultColumnWidth: const IntrinsicColumnWidth(flex: 1),
-                  children:
-                      widget.entityRow.entity.properties?.entries.map((e) {
-                            String type = "unknown";
-                            String displayValue = "";
-                            if (e.value.arrayValue != null) {
-                              type = "array";
-                              // TODO Recursive....
-                              displayValue =
-                                  "[${e.value.arrayValue?.values?.join(" , ") ?? "#ERROR"}]";
-                            } else if (e.value.blobValue != null) {
-                              type = "blob";
-                              // TODO a way of looking at the content.
-                              displayValue =
-                                  "Blob Length: ${e.value.blobValue?.length ?? "#ERROR"}";
-                            } else if (e.value.booleanValue != null) {
-                              type = "boolean";
-                              displayValue =
-                                  e.value.booleanValue?.toString() ?? "#ERROR";
-                            } else if (e.value.doubleValue != null) {
-                              type = "double";
-                              displayValue =
-                                  "${e.value.doubleValue ?? "#ERROR"}";
-                            } else if (e.value.entityValue != null) {
-                              type = "entity";
-                              // TODO recursive
-                              displayValue = "#ERROR nested entity type";
-                            } else if (e.value.geoPointValue != null) {
-                              type = "geoPoint";
-                              displayValue =
-                                  "lat: ${e.value.geoPointValue?.latitude ?? "null"} long: ${e.value.geoPointValue?.latitude ?? "null"}";
-                            } else if (e.value.integerValue != null) {
-                              type = "integer";
-                              displayValue = e.value.integerValue ?? "null";
-                            } else if (e.value.keyValue != null) {
-                              type = "key";
-                              displayValue =
-                                  "Key: ${keyToString(e.value.keyValue)}";
-                            } else if (e.value.meaning != null) {
-                              type = "me";
-                              displayValue = "${e.value.meaning}";
-                            } else if (e.value.nullValue != null) {
-                              type = "null";
-                              displayValue = e.value.nullValue ?? "null";
-                            } else if (e.value.stringValue != null) {
-                              type = "string";
-                              displayValue = e.value.stringValue ?? "#ERROR";
-                            } else if (e.value.timestampValue != null) {
-                              type = "timestamp";
-                              displayValue = e.value.timestampValue ?? "#ERROR";
-                            } else {}
-                            return TableRow(children: [
-                              SelectableText.rich(
-                                TextSpan(children: [
-                                  TextSpan(
-                                      text:
-                                          "($type${e.value.excludeFromIndexes == true ? "" : ", Indexed"}) ",
-                                      style: const TextStyle(
-                                          fontStyle: FontStyle.italic)),
-                                  TextSpan(
-                                      text: "${e.key}: ",
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold)),
-                                ]),
-                                textAlign: TextAlign.end,
-                              ),
-                              SelectableText(displayValue),
-                            ]);
-                          }).toList() ??
-                          [],
+                  children: widget.entityRow.entity.properties?.entries.expand(expandProperties).toList() ?? [],
                 ),
               ],
             ),
@@ -444,5 +356,93 @@ class _ViewEntityState extends State<ViewEntity> {
         ),
       ],
     );
+  }
+
+  List<TableRow> expandProperties(MapEntry<String, dsv1.Value> e) {
+    String type = "unknown";
+    String displayValue = "";
+    List<TableRow> more = [];
+    if (e.value.blobValue != null) {
+      type = "blob";
+      // TODO a way of looking at the content.
+      displayValue = "Blob Length: ${e.value.blobValue?.length ?? "#ERROR"}";
+    } else if (e.value.arrayValue != null) {
+      type = "array";
+      // TODO Recursive....
+      displayValue = "[${e.value.arrayValue?.values?.map(valuesToString).join(" , ") ?? "#ERROR"}]";
+    } else if (e.value.booleanValue != null) {
+      type = "boolean";
+      displayValue = e.value.booleanValue?.toString() ?? "#ERROR";
+    } else if (e.value.doubleValue != null) {
+      type = "double";
+      displayValue = "${e.value.doubleValue ?? "#ERROR"}";
+    } else if (e.value.entityValue != null) {
+      type = "entity";
+      more = (e.value.entityValue!.properties ?? {}).entries.expand(expandProperties).toList();
+    } else if (e.value.geoPointValue != null) {
+      type = "geoPoint";
+      displayValue = "lat: ${e.value.geoPointValue?.latitude ?? "null"} long: ${e.value.geoPointValue?.latitude ?? "null"}";
+    } else if (e.value.integerValue != null) {
+      type = "integer";
+      displayValue = e.value.integerValue ?? "null";
+    } else if (e.value.keyValue != null) {
+      type = "key";
+      displayValue = "Key: ${keyToString(e.value.keyValue)}";
+    } else if (e.value.meaning != null) {
+      type = "me";
+      displayValue = "${e.value.meaning}";
+    } else if (e.value.nullValue != null) {
+      type = "null";
+      displayValue = e.value.nullValue ?? "null";
+    } else if (e.value.stringValue != null) {
+      type = "string";
+      displayValue = e.value.stringValue ?? "#ERROR";
+    } else if (e.value.timestampValue != null) {
+      type = "timestamp";
+      displayValue = e.value.timestampValue ?? "#ERROR";
+    } else {}
+    return [
+      TableRow(children: [
+        SelectableText.rich(
+          TextSpan(children: [
+            TextSpan(text: "($type${e.value.excludeFromIndexes == true ? "" : ", Indexed"}) ", style: const TextStyle(fontStyle: FontStyle.italic)),
+            TextSpan(text: "${e.key}: ", style: const TextStyle(fontWeight: FontWeight.bold)),
+          ]),
+          textAlign: TextAlign.end,
+        ),
+        SelectableText(displayValue),
+      ]),
+      ...more,
+    ];
+  }
+
+  String valuesToString(dsv1.Value e) {
+    if (e.blobValue != null) {
+      return "Blob Length: ${e.blobValue?.length ?? "#ERROR"}";
+    } else if (e.arrayValue != null) {
+      return "array:[${e.arrayValue?.values?.join(" , ") ?? "#ERROR"}]";
+    } else if (e.booleanValue != null) {
+      return "boolean:${e.booleanValue?.toString() ?? "#ERROR"}";
+    } else if (e.doubleValue != null) {
+      return "double:${e.doubleValue ?? "#ERROR"}";
+    } else if (e.entityValue != null) {
+      return "entity:{${(e.entityValue!.properties ?? {}).entries.map((e) => "${e.key}:${valuesToString(e.value)}",).toList()}";
+    } else if (e.geoPointValue != null) {
+      return "geoPoint:lat: ${e.geoPointValue?.latitude ?? "null"} long: ${e.geoPointValue?.latitude ?? "null"}";
+    } else if (e.integerValue != null) {
+      return "integer:${e.integerValue ?? "null"}";
+    } else if (e.keyValue != null) {
+      return "key:Key: ${keyToString(e.keyValue)}";
+    } else if (e.meaning != null) {
+      return "me:${e.meaning}";
+    } else if (e.nullValue != null) {
+      return "null:${e.nullValue ?? "null"}";
+    } else if (e.stringValue != null) {
+      return "string:${e.stringValue ?? "#ERROR"}";
+    } else if (e.timestampValue != null) {
+      return "timestamp:${e.timestampValue ?? "#ERROR"}";
+    } else {
+      return "unknown:#ERROR";
+    }
   }
 }
