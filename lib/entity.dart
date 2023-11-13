@@ -4,7 +4,8 @@ import 'package:flutter_google_datastore/kind.dart';
 import 'package:googleapis/datastore/v1.dart' as dsv1;
 import 'database.dart';
 import 'datastoremain.dart';
-import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz;
 
 class ViewEntityPage extends StatefulWidget {
   final Project project;
@@ -391,7 +392,7 @@ class _ViewEntityState extends State<ViewEntity> {
                               }
                               if (result is MapEntry<String, dsv1.Value?>) {
                                 setState(() {
-                                  newProperties ??= widget.entityRow.entity.properties ?? {};
+                                  newProperties ??= {...(widget.entityRow.entity.properties ?? {})};
                                   if (result.value != null) {
                                     newProperties![result.key] = result.value!;
                                   } else {
@@ -445,7 +446,7 @@ class _ViewEntityState extends State<ViewEntity> {
               }
               if (result is MapEntry<String, dsv1.Value?>) {
                 setState(() {
-                  newProperties ??= widget.entityRow.entity.properties ?? {};
+                  newProperties ??= {...(widget.entityRow.entity.properties ?? {})};
                   if (result.value != null) {
                     newProperties![result.key] = result.value!;
                   } else {
@@ -585,6 +586,16 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
   String _selectedType = "string";
   bool _indexData = false;
   bool? _booleanValue;
+  late String _selectedDateTime;
+  final TextEditingController _yearController = TextEditingController();
+  final TextEditingController _monthController = TextEditingController();
+  final TextEditingController _dayController = TextEditingController();
+  final TextEditingController _hourController = TextEditingController();
+  final TextEditingController _minuteController = TextEditingController();
+  final TextEditingController _secondController = TextEditingController();
+  final TextEditingController _millisecondController = TextEditingController();
+  final TextEditingController _microsecondController = TextEditingController();
+  final TextEditingController _timezoneController = TextEditingController();
 
   @override
   void initState() {
@@ -598,84 +609,121 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         break;
       case "blob":
         // TODO
+        break;
       case "array":
         // TODO
+        break;
       case "boolean":
         _booleanValue = widget.propertyEntry?.value.booleanValue;
+        break;
       case "double":
         _numberEditingController = TextEditingController(text: widget.propertyEntry?.value.doubleValue.toString() ?? "");
         break;
       case "entity":
         // TODO
+        break;
       case "geoPoint":
         // TODO
+        break;
       case "integer":
         _numberEditingController = TextEditingController(text: widget.propertyEntry?.value.integerValue.toString() ?? "");
         break;
       case "key":
         // TODO
+        break;
       case "me":
         // TODO
+        break;
       case "null":
-
+        break;
       case "timestamp":
-        // TODO
+        _selectedDateTime = widget.propertyEntry?.value.timestampValue ?? "";
+        DateTime? d = DateTime.tryParse(_selectedDateTime);
+        if (d != null) {
+          _yearController.text = d!.year.toString();
+          _monthController.text = d!.month.toString();
+          _dayController.text = d!.day.toString();
+          _hourController.text = d!.hour.toString();
+          _minuteController.text = d!.minute.toString();
+          _secondController.text = d!.second.toString();
+          _millisecondController.text = d!.millisecond.toString();
+          _microsecondController.text = d!.microsecond.toString();
+          _timezoneController.text = d!.timeZoneName;
+        }
+        break;
     }
+  }
+
+  Widget _buildDateTimeTextField(String label, TextEditingController controller) {
+    return Padding(
+      key: Key("DateTime:$label"),
+      padding: const EdgeInsets.all(8.0),
+      child: TextField(
+        controller: controller,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(labelText: label),
+        onChanged: (String value) {
+          _updateDateTime();
+        },
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.propertyEntry == null ? 'Add Property' : 'Edit Property'),
-      content: Column(
-        children: [
-          DropdownButton<String>(
-            value: _selectedType,
-            items: [
-              "blob",
-              "array",
-              "boolean",
-              "double",
-              "entity",
-              "geoPoint",
-              "integer",
-              "key",
-              "me",
-              "null",
-              "string",
-              "timestamp",
-            ].map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-            onChanged: (String? value) {
-              setState(() {
-                _selectedType = value ?? "string";
-              });
-            },
-          ),
-          TextField(
-            controller: _nameController,
-            decoration: const InputDecoration(labelText: 'Property Name'),
-          ),
-        ListTile(
-            title: const Text('Indexed?'),
-            trailing: Checkbox(
-              value: _indexData,
-              onChanged: (bool? v) {
-                if (v == null) {
-                  return;
-                }
+      content: SingleChildScrollView(
+        child: Column(
+          children: [
+            DropdownButton<String>(
+              value: _selectedType,
+              items: [
+                "blob",
+                "array",
+                "boolean",
+                "double",
+                "entity",
+                "geoPoint",
+                "integer",
+                "key",
+                "me",
+                "null",
+                "string",
+                "timestamp",
+              ].map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (String? value) {
                 setState(() {
-                  _indexData = v;
+                  _selectedType = value ?? "string";
                 });
               },
             ),
-          ),
-          ...(editComponent(context))
-        ],
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(labelText: 'Property Name'),
+            ),
+            ListTile(
+              title: const Text('Indexed?'),
+              trailing: Checkbox(
+                value: _indexData,
+                onChanged: (bool? v) {
+                  if (v == null) {
+                    return;
+                  }
+                  setState(() {
+                    _indexData = v;
+                  });
+                },
+              ),
+            ),
+            ...(editComponent(context))
+          ],
+        ),
       ),
       actions: [
         if (widget.propertyEntry != null)
@@ -743,23 +791,75 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       case "entity":
       case "geoPoint":
       case "integer":
-      return [
-        TextField(
-          key: Key(_selectedType),
-          controller: _numberEditingController,
-          decoration: const InputDecoration(labelText: 'Integer Value'),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
-      ];
+        return [
+          TextField(
+            key: Key(_selectedType),
+            controller: _numberEditingController,
+            decoration: const InputDecoration(labelText: 'Integer Value'),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+        ];
       case "key":
       case "me":
       case "null":
         return const [Text("Null")];
       case "timestamp":
+        return [
+          Text("Timestamp: $_selectedDateTime"),
+          _buildDateTimeTextField("Year", _yearController),
+          _buildDateTimeTextField("Month", _monthController),
+          _buildDateTimeTextField("Day", _dayController),
+          _buildDateTimeTextField("Hour", _hourController),
+          _buildDateTimeTextField("Minute", _minuteController),
+          _buildDateTimeTextField("Second", _secondController),
+          _buildDateTimeTextField("Millisecond", _millisecondController),
+          _buildDateTimeTextField("Microsecond", _microsecondController),
+          _buildDateTimeTextField("Timezone", _timezoneController),
+        ];
     }
     return [
       const Text("Not implemented"),
     ];
+  }
+
+  void _updateDateTime() {
+    DateTime d = convertToDateTime();
+
+    setState(() {
+      _selectedDateTime = d.toString();
+    });
+  }
+
+  DateTime convertToDateTime() {
+    int year = int.parse(_yearController.text);
+    int month = int.parse(_monthController.text);
+    int day = int.parse(_dayController.text);
+    int hour = int.parse(_hourController.text);
+    int minute = int.parse(_minuteController.text);
+    int second = int.parse(_secondController.text);
+    int millisecond = int.parse(_millisecondController.text);
+    int microsecond = int.parse(_microsecondController.text);
+    String timezone = _timezoneController.text;
+
+    // TODO a better library...
+    tz.Location location = tz.UTC;
+    if (timezone.isNotEmpty) {
+      location = tz.getLocation(timezone);
+    }
+
+    DateTime d = tz.TZDateTime(
+      location,
+      year,
+      month,
+      day,
+      hour,
+      minute,
+      second,
+      millisecond,
+      microsecond
+    );
+
+    return d;
   }
 
   dsv1.Value? createValue() {
@@ -767,7 +867,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
     switch (_selectedType) {
       case "string":
         value = dsv1.Value(
-            stringValue: _textEditingController?.text ?? "",
+          stringValue: _textEditingController?.text ?? "",
         );
       case "blob":
         throw UnimplementedError();
@@ -783,17 +883,20 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       case "entity":
       case "geoPoint":
       case "integer":
-      value = dsv1.Value(
-        integerValue: int.parse(_numberEditingController?.text ?? "").toString(),
-      );
+        value = dsv1.Value(
+          integerValue: int.parse(_numberEditingController?.text ?? "").toString(),
+        );
       case "key":
       case "me":
-      throw UnimplementedError();
+        throw UnimplementedError();
       case "null":
         value = dsv1.Value(
           nullValue: "NULL_VALUE",
         );
       case "timestamp":
+        value = dsv1.Value(
+          timestampValue: convertToDateTime().toIso8601String(),
+        );
     }
     if (value != null) {
       value.excludeFromIndexes = !_indexData;
