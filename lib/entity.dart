@@ -968,6 +968,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
   }
 }
 
+// I am aware the UI / UX is horrible.. If it is an issue I will fix it later or accept PRs to fix it.
 class KeyPatElementTextInputWidget extends StatefulWidget {
   final dsv1.PathElement each;
 
