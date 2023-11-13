@@ -736,7 +736,11 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
           ),
         TextButton(
           onPressed: () {
-            Navigator.of(context).pop(MapEntry<String, dsv1.Value?>(_nameController?.text ?? "", createValue()));
+            try {
+              Navigator.of(context).pop(MapEntry<String, dsv1.Value?>(_nameController?.text ?? "", createValue()));
+            } catch (e) {
+              _showErrorSnackbar("Error preparing to save changes: $e");
+            }
           },
           child: const Text('Save'),
         ),
@@ -906,5 +910,14 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       value.excludeFromIndexes = !_indexData;
     }
     return value;
+  }
+
+  void _showErrorSnackbar(String message) {
+    final snackBar = SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.red,
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 }
