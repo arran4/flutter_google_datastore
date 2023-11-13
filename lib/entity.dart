@@ -761,8 +761,8 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
             decoration: const InputDecoration(labelText: 'Value'),
           ),
         ];
-      case "blob":
-      case "array":
+      case "blob": break; // TODO
+      case "array": break; // TODO
       case "boolean":
         return [
           ListTile(
@@ -788,8 +788,8 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
         ];
-      case "entity":
-      case "geoPoint":
+      case "entity": break; // TODO
+      case "geoPoint": break; // TODO
       case "integer":
         return [
           TextField(
@@ -799,8 +799,8 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
         ];
-      case "key":
-      case "me":
+      case "key": break; // TODO
+      case "me": break; // TODO
       case "null":
         return const [Text("Null")];
       case "timestamp":
@@ -872,6 +872,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       case "blob":
         throw UnimplementedError();
       case "array":
+        throw UnimplementedError();
       case "boolean":
         value = dsv1.Value(
           booleanValue: _booleanValue,
@@ -881,12 +882,15 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
           doubleValue: double.tryParse(_numberEditingController?.text ?? ""),
         );
       case "entity":
+        throw UnimplementedError();
       case "geoPoint":
+        throw UnimplementedError();
       case "integer":
         value = dsv1.Value(
           integerValue: int.parse(_numberEditingController?.text ?? "").toString(),
         );
       case "key":
+        throw UnimplementedError();
       case "me":
         throw UnimplementedError();
       case "null":
