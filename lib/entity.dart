@@ -995,6 +995,7 @@ class _KeyPatElementTextInputWidgetState extends State<KeyPatElementTextInputWid
     var type = widget.each.id != null ? "id" : "name";
 
     return Column(
+      key: ObjectKey(widget.each),
       children: [
         Text("Kind: ${widget.each.kind}"),
         TextField(
