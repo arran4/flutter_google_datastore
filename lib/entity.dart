@@ -194,6 +194,8 @@ class ViewEntity extends StatefulWidget {
 }
 
 class _ViewEntityState extends State<ViewEntity> {
+  Map<String, dsv1.Value>? newProperties;
+
   void closePressed() async {
     if (!Navigator.canPop(context)) {
       return;
@@ -347,8 +349,41 @@ class _ViewEntityState extends State<ViewEntity> {
               children: [
                 Text("Properties", style: Theme.of(context).textTheme.headlineSmall),
                 Table(
-                  defaultColumnWidth: const IntrinsicColumnWidth(flex: 1),
-                  children: widget.entityRow.entity.properties?.entries.expand(expandProperties).toList() ?? [],
+                  columnWidths: const {
+                    0: IntrinsicColumnWidth(),
+                    1: FlexColumnWidth(1),
+                    2: IntrinsicColumnWidth(),
+                  },
+                  children: [
+                    ...((newProperties ?? widget.entityRow.entity.properties)?.entries.expand(expandProperties).toList() ?? []),
+                    TableRow(
+                      children: [
+                        const SizedBox(),
+                        const SizedBox(),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              dynamic result = await showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return const PropertyAddEditDeleteDialog(null);
+                                },
+                              );
+                              if (result == null) {
+                                return;
+                              }
+                              if (result is MapEntry<String, dsv1.Value>) {
+                                newProperties ??= widget.entityRow.entity.properties ?? {};
+                                newProperties![result.key] = result.value;
+                              }
+                            },
+                            child: const Icon(Icons.add),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -411,6 +446,31 @@ class _ViewEntityState extends State<ViewEntity> {
           textAlign: TextAlign.end,
         ),
         SelectableText(displayValue),
+        Align(
+          alignment: Alignment.centerRight,
+          child: IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () async {
+              dynamic result = await showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return PropertyAddEditDeleteDialog(e);
+                },
+              );
+              if (result == null) {
+                return;
+              }
+              if (result is MapEntry<String, dsv1.Value>) {
+                setState(() {
+                  newProperties ??= widget.entityRow.entity.properties ?? {};
+                  newProperties![result.key] = result.value;
+                });
+              }
+            },
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ),
       ]),
       ...more,
     ];
@@ -444,5 +504,39 @@ class _ViewEntityState extends State<ViewEntity> {
     } else {
       return "unknown:#ERROR";
     }
+  }
+}
+
+class PropertyAddEditDeleteDialog extends StatefulWidget {
+  const PropertyAddEditDeleteDialog(MapEntry<String, dsv1.Value>? e, {super.key});
+
+  @override
+  State<PropertyAddEditDeleteDialog> createState() => _PropertyAddEditDeleteDialogState();
+}
+
+class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialog> {
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Custom Dialog'),
+      content: Column(
+        children: [
+          Text('This is a custom dialog.'),
+          SizedBox(height: 10),
+          // Add any custom content you need
+          // For example, you can add text fields, buttons, images, etc.
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            // Close the dialog
+            Navigator.of(context).pop();
+          },
+          child: Text('Close'),
+        ),
+        // Add more buttons if needed
+      ],
+    );
   }
 }
