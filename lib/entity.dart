@@ -579,6 +579,7 @@ class PropertyAddEditDeleteDialog extends StatefulWidget {
 
 class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialog> {
   TextEditingController? _textEditingController;
+  TextEditingController? _numberEditingController;
   TextEditingController? _nameController;
   String _selectedType = "string";
   bool _indexData = false;
@@ -601,13 +602,13 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       case "boolean":
         _booleanValue = widget.propertyEntry?.value.booleanValue;
       case "double":
-        // TODO
+        _numberEditingController = TextEditingController(text: widget.propertyEntry?.value.doubleValue.toString() ?? "");
       case "entity":
         // TODO
       case "geoPoint":
         // TODO
       case "integer":
-        // TODO
+      _numberEditingController = TextEditingController(text: widget.propertyEntry?.value.integerValue.toString() ?? "");
       case "key":
         // TODO
       case "me":
@@ -725,9 +726,23 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
           ),
         ];
       case "double":
+        return [
+          TextField(
+            controller: _numberEditingController,
+            decoration: const InputDecoration(labelText: 'Double Value'),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+        ];
       case "entity":
       case "geoPoint":
       case "integer":
+      return [
+        TextField(
+          controller: _numberEditingController,
+          decoration: const InputDecoration(labelText: 'Integer Value'),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+      ];
       case "key":
       case "me":
       case "null":
@@ -754,9 +769,15 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
           booleanValue: _booleanValue,
         );
       case "double":
+        value = dsv1.Value(
+          doubleValue: double.tryParse(_numberEditingController?.text ?? ""),
+        );
       case "entity":
       case "geoPoint":
       case "integer":
+      value = dsv1.Value(
+        integerValue: int.parse(_numberEditingController?.text ?? "").toString(),
+      );
       case "key":
       case "me":
       throw UnimplementedError();
