@@ -582,6 +582,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
   TextEditingController? _nameController;
   String _selectedType = "string";
   bool _indexData = false;
+  bool? _booleanValue;
 
   @override
   void initState() {
@@ -598,7 +599,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       case "array":
         // TODO
       case "boolean":
-        // TODO
+        _booleanValue = widget.propertyEntry?.value.booleanValue;
       case "double":
         // TODO
       case "entity":
@@ -654,16 +655,19 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
             controller: _nameController,
             decoration: const InputDecoration(labelText: 'Property Name'),
           ),
-          Checkbox(
-            value: _indexData,
-            onChanged: (bool? v) {
-              if (v == null) {
-                return;
-              }
-              setState(() {
-                _indexData = v;
-              });
-            },
+        ListTile(
+            title: const Text('Indexed?'),
+            trailing: Checkbox(
+              value: _indexData,
+              onChanged: (bool? v) {
+                if (v == null) {
+                  return;
+                }
+                setState(() {
+                  _indexData = v;
+                });
+              },
+            ),
           ),
           ...(editComponent(context))
         ],
@@ -706,6 +710,20 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       case "blob":
       case "array":
       case "boolean":
+        return [
+          ListTile(
+            title: const Text('Boolean value'),
+            trailing: Checkbox(
+              value: _booleanValue ?? false,
+              onChanged: (bool? v) {
+                setState(() {
+                  _booleanValue = v;
+                });
+              },
+              // tristate: true,
+            ),
+          ),
+        ];
       case "double":
       case "entity":
       case "geoPoint":
@@ -729,20 +747,22 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
             stringValue: _textEditingController?.text ?? "",
         );
       case "blob":
-        // return dsv1.Value()..blobValue = null;
+        throw UnimplementedError();
       case "array":
-        // return dsv1.Value()..arrayValue = null;
       case "boolean":
-        // return dsv1.Value()..booleanValue = null;
+        value = dsv1.Value(
+          booleanValue: _booleanValue,
+        );
       case "double":
       case "entity":
       case "geoPoint":
       case "integer":
       case "key":
       case "me":
+      throw UnimplementedError();
       case "null":
         value = dsv1.Value(
-          stringValue: "NULL_VALUE",
+          nullValue: "NULL_VALUE",
         );
       case "timestamp":
     }
