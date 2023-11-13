@@ -4,6 +4,7 @@ import 'package:flutter_google_datastore/kind.dart';
 import 'package:googleapis/datastore/v1.dart' as dsv1;
 import 'database.dart';
 import 'datastoremain.dart';
+import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 
 class ViewEntityPage extends StatefulWidget {
   final Project project;
@@ -603,17 +604,20 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         _booleanValue = widget.propertyEntry?.value.booleanValue;
       case "double":
         _numberEditingController = TextEditingController(text: widget.propertyEntry?.value.doubleValue.toString() ?? "");
+        break;
       case "entity":
         // TODO
       case "geoPoint":
         // TODO
       case "integer":
-      _numberEditingController = TextEditingController(text: widget.propertyEntry?.value.integerValue.toString() ?? "");
+        _numberEditingController = TextEditingController(text: widget.propertyEntry?.value.integerValue.toString() ?? "");
+        break;
       case "key":
         // TODO
       case "me":
         // TODO
       case "null":
+
       case "timestamp":
         // TODO
     }
@@ -704,6 +708,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       case "string":
         return [
           TextField(
+            key: Key(_selectedType),
             controller: _textEditingController,
             decoration: const InputDecoration(labelText: 'Value'),
           ),
@@ -713,6 +718,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       case "boolean":
         return [
           ListTile(
+            key: Key(_selectedType),
             title: const Text('Boolean value'),
             trailing: Checkbox(
               value: _booleanValue ?? false,
@@ -728,6 +734,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       case "double":
         return [
           TextField(
+            key: Key(_selectedType),
             controller: _numberEditingController,
             decoration: const InputDecoration(labelText: 'Double Value'),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -738,6 +745,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       case "integer":
       return [
         TextField(
+          key: Key(_selectedType),
           controller: _numberEditingController,
           decoration: const InputDecoration(labelText: 'Integer Value'),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
