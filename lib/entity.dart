@@ -361,10 +361,17 @@ class _ViewEntityState extends State<ViewEntity> {
                         const SizedBox(),
                         newProperties != null
                             ? Align(
-                                alignment: Alignment.centerRight,
+                                alignment: Alignment.center,
                                 child: ElevatedButton(
                                   onPressed: _saveChanges,
-                                  child: const Text('Save Changes'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red, // Change to the color you prefer
+                                    textStyle: const TextStyle(fontSize: 18), // Change to the size you prefer
+                                  ),
+                                  child: const Text(
+                                    'Save Changes',
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
                                 ),
                               )
                             : const SizedBox(),
@@ -381,9 +388,15 @@ class _ViewEntityState extends State<ViewEntity> {
                               if (result == null) {
                                 return;
                               }
-                              if (result is MapEntry<String, dsv1.Value>) {
-                                newProperties ??= widget.entityRow.entity.properties ?? {};
-                                newProperties![result.key] = result.value;
+                              if (result is MapEntry<String, dsv1.Value?>) {
+                                setState(() {
+                                  newProperties ??= widget.entityRow.entity.properties ?? {};
+                                  if (result.value != null) {
+                                    newProperties![result.key] = result.value!;
+                                  } else {
+                                    newProperties!.remove(result.key);
+                                  }
+                                });
                               }
                             },
                             child: const Icon(Icons.add),
@@ -429,10 +442,14 @@ class _ViewEntityState extends State<ViewEntity> {
               if (result == null) {
                 return;
               }
-              if (result is MapEntry<String, dsv1.Value>) {
+              if (result is MapEntry<String, dsv1.Value?>) {
                 setState(() {
                   newProperties ??= widget.entityRow.entity.properties ?? {};
-                  newProperties![result.key] = result.value;
+                  if (result.value != null) {
+                    newProperties![result.key] = result.value!;
+                  } else {
+                    newProperties!.remove(result.key);
+                  }
                 });
               }
             },
@@ -562,14 +579,16 @@ class PropertyAddEditDeleteDialog extends StatefulWidget {
 
 class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialog> {
   TextEditingController? _textEditingController;
+  TextEditingController? _nameController;
   String _selectedType = "string";
-  String _name = "unnamed";
+  bool _indexData = false;
 
   @override
   void initState() {
     super.initState();
     _selectedType = getValueType(widget.propertyEntry?.value) ?? "string";
-    _name = widget.propertyEntry?.key ?? "unnamed";
+    _nameController = TextEditingController(text: widget.propertyEntry?.key ?? "unnamed");
+    _indexData = !(widget.propertyEntry?.value.excludeFromIndexes ?? false);
     switch (_selectedType) {
       case "string":
         _textEditingController = TextEditingController(text: widget.propertyEntry?.value.stringValue ?? "");
@@ -631,6 +650,21 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
               });
             },
           ),
+          TextField(
+            controller: _nameController,
+            decoration: const InputDecoration(labelText: 'Property Name'),
+          ),
+          Checkbox(
+            value: _indexData,
+            onChanged: (bool? v) {
+              if (v == null) {
+                return;
+              }
+              setState(() {
+                _indexData = v;
+              });
+            },
+          ),
           ...(editComponent(context))
         ],
       ),
@@ -639,14 +673,13 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
           TextButton(
             onPressed: () {
               // Delete the property
-              Navigator.of(context).pop({"delete": true});
+              Navigator.of(context).pop(MapEntry<String, dsv1.Value?>(_nameController?.text ?? "", null));
             },
             child: const Text('Delete'),
           ),
         TextButton(
           onPressed: () {
-            _textEditingController?.text ?? ""; // TODO <-- Make a dsv1 value from this and a new filed type
-            Navigator.of(context).pop(MapEntry<String, dsv1.Value?>(widget.propertyEntry?.key ?? "", createValue()));
+            Navigator.of(context).pop(MapEntry<String, dsv1.Value?>(_nameController?.text ?? "", createValue()));
           },
           child: const Text('Save'),
         ),
@@ -689,9 +722,12 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
   }
 
   dsv1.Value? createValue() {
+    dsv1.Value? value;
     switch (_selectedType) {
       case "string":
-        return dsv1.Value()..stringValue = _textEditingController?.text ?? "";
+        value = dsv1.Value(
+            stringValue: _textEditingController?.text ?? "",
+        );
       case "blob":
         // return dsv1.Value()..blobValue = null;
       case "array":
@@ -705,9 +741,14 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       case "key":
       case "me":
       case "null":
-        return dsv1.Value()..nullValue = "NULL_VALUE";
+        value = dsv1.Value(
+          stringValue: "NULL_VALUE",
+        );
       case "timestamp":
     }
-    return null;
+    if (value != null) {
+      value.excludeFromIndexes = !_indexData;
+    }
+    return value;
   }
 }
