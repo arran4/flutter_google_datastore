@@ -359,7 +359,15 @@ class _ViewEntityState extends State<ViewEntity> {
                     TableRow(
                       children: [
                         const SizedBox(),
-                        const SizedBox(),
+                        newProperties != null
+                            ? Align(
+                                alignment: Alignment.centerRight,
+                                child: ElevatedButton(
+                                  onPressed: _saveChanges,
+                                  child: const Text('Save Changes'),
+                                ),
+                              )
+                            : const SizedBox(),
                         Align(
                           alignment: Alignment.centerRight,
                           child: ElevatedButton(
@@ -394,48 +402,9 @@ class _ViewEntityState extends State<ViewEntity> {
   }
 
   List<TableRow> expandProperties(MapEntry<String, dsv1.Value> e) {
-    String type = "unknown";
-    String displayValue = "";
-    List<TableRow> more = [];
-    if (e.value.blobValue != null) {
-      type = "blob";
-      // TODO a way of looking at the content.
-      displayValue = "Blob Length: ${e.value.blobValue?.length ?? "#ERROR"}";
-    } else if (e.value.arrayValue != null) {
-      type = "array";
-      // TODO Recursive....
-      displayValue = "[${e.value.arrayValue?.values?.map(valuesToString).join(" , ") ?? "#ERROR"}]";
-    } else if (e.value.booleanValue != null) {
-      type = "boolean";
-      displayValue = e.value.booleanValue?.toString() ?? "#ERROR";
-    } else if (e.value.doubleValue != null) {
-      type = "double";
-      displayValue = "${e.value.doubleValue ?? "#ERROR"}";
-    } else if (e.value.entityValue != null) {
-      type = "entity";
-      more = (e.value.entityValue!.properties ?? {}).entries.expand(expandProperties).toList();
-    } else if (e.value.geoPointValue != null) {
-      type = "geoPoint";
-      displayValue = "lat: ${e.value.geoPointValue?.latitude ?? "null"} long: ${e.value.geoPointValue?.latitude ?? "null"}";
-    } else if (e.value.integerValue != null) {
-      type = "integer";
-      displayValue = e.value.integerValue ?? "null";
-    } else if (e.value.keyValue != null) {
-      type = "key";
-      displayValue = "Key: ${keyToString(e.value.keyValue)}";
-    } else if (e.value.meaning != null) {
-      type = "me";
-      displayValue = "${e.value.meaning}";
-    } else if (e.value.nullValue != null) {
-      type = "null";
-      displayValue = e.value.nullValue ?? "null";
-    } else if (e.value.stringValue != null) {
-      type = "string";
-      displayValue = e.value.stringValue ?? "#ERROR";
-    } else if (e.value.timestampValue != null) {
-      type = "timestamp";
-      displayValue = e.value.timestampValue ?? "#ERROR";
-    } else {}
+    String type = getValueType(e.value) ?? "unknown";
+    String displayValue = getValueDisplayValue(e.value);
+    List<TableRow> more = getValueMore(e.value);
     return [
       TableRow(children: [
         SelectableText.rich(
@@ -486,7 +455,9 @@ class _ViewEntityState extends State<ViewEntity> {
     } else if (e.doubleValue != null) {
       return "double:${e.doubleValue ?? "#ERROR"}";
     } else if (e.entityValue != null) {
-      return "entity:{${(e.entityValue!.properties ?? {}).entries.map((e) => "${e.key}:${valuesToString(e.value)}",).toList()}";
+      return "entity:{${(e.entityValue!.properties ?? {}).entries.map(
+            (e) => "${e.key}:${valuesToString(e.value)}",
+          ).toList()}";
     } else if (e.geoPointValue != null) {
       return "geoPoint:lat: ${e.geoPointValue?.latitude ?? "null"} long: ${e.geoPointValue?.latitude ?? "null"}";
     } else if (e.integerValue != null) {
@@ -505,38 +476,238 @@ class _ViewEntityState extends State<ViewEntity> {
       return "unknown:#ERROR";
     }
   }
+
+  String getValueDisplayValue(dsv1.Value value) {
+    if (value.blobValue != null) {
+      // TODO a way of looking at the content.
+      return "Blob Length: ${value.blobValue?.length ?? "#ERROR"}";
+    } else if (value.arrayValue != null) {
+      return "[${value.arrayValue?.values?.map(valuesToString).join(" , ") ?? "#ERROR"}]";
+    } else if (value.booleanValue != null) {
+      return value.booleanValue?.toString() ?? "#ERROR";
+    } else if (value.doubleValue != null) {
+      return "${value.doubleValue ?? "#ERROR"}";
+    } else if (value.entityValue != null) {
+      // MORE
+    } else if (value.geoPointValue != null) {
+      return "lat: ${value.geoPointValue?.latitude ?? "null"} long: ${value.geoPointValue?.latitude ?? "null"}";
+    } else if (value.integerValue != null) {
+      return value.integerValue ?? "null";
+    } else if (value.keyValue != null) {
+      return "Key: ${keyToString(value.keyValue)}";
+    } else if (value.meaning != null) {
+      return "${value.meaning}";
+    } else if (value.nullValue != null) {
+      return value.nullValue ?? "null";
+    } else if (value.stringValue != null) {
+      return value.stringValue ?? "#ERROR";
+    } else if (value.timestampValue != null) {
+      return value.timestampValue ?? "#ERROR";
+    } else {}
+    return "";
+  }
+
+  List<TableRow> getValueMore(dsv1.Value value) {
+    if (value.entityValue != null) {
+      return (value.entityValue!.properties ?? {}).entries.expand(expandProperties).toList();
+    }
+    return [];
+  }
+
+  void _saveChanges() {
+    // TODO
+  }
+}
+
+String? getValueType(dsv1.Value? value) {
+  if (value == null) {
+    return null;
+  }
+  if (value.blobValue != null) {
+    return "blob";
+  } else if (value.arrayValue != null) {
+    return "array";
+  } else if (value.booleanValue != null) {
+    return "boolean";
+  } else if (value.doubleValue != null) {
+    return "double";
+  } else if (value.entityValue != null) {
+    return "entity";
+  } else if (value.geoPointValue != null) {
+    return "geoPoint";
+  } else if (value.integerValue != null) {
+    return "integer";
+  } else if (value.keyValue != null) {
+    return "key";
+  } else if (value.meaning != null) {
+    return "me";
+  } else if (value.nullValue != null) {
+    return "null";
+  } else if (value.stringValue != null) {
+    return "string";
+  } else if (value.timestampValue != null) {
+    return "timestamp";
+  } else {}
+  return null;
 }
 
 class PropertyAddEditDeleteDialog extends StatefulWidget {
-  const PropertyAddEditDeleteDialog(MapEntry<String, dsv1.Value>? e, {super.key});
+  final MapEntry<String, dsv1.Value>? propertyEntry;
+
+  const PropertyAddEditDeleteDialog(this.propertyEntry, {Key? key}) : super(key: key);
 
   @override
   State<PropertyAddEditDeleteDialog> createState() => _PropertyAddEditDeleteDialogState();
 }
 
 class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialog> {
+  TextEditingController? _textEditingController;
+  String _selectedType = "string";
+  String _name = "unnamed";
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedType = getValueType(widget.propertyEntry?.value) ?? "string";
+    _name = widget.propertyEntry?.key ?? "unnamed";
+    switch (_selectedType) {
+      case "string":
+        _textEditingController = TextEditingController(text: widget.propertyEntry?.value.stringValue ?? "");
+        break;
+      case "blob":
+        // TODO
+      case "array":
+        // TODO
+      case "boolean":
+        // TODO
+      case "double":
+        // TODO
+      case "entity":
+        // TODO
+      case "geoPoint":
+        // TODO
+      case "integer":
+        // TODO
+      case "key":
+        // TODO
+      case "me":
+        // TODO
+      case "null":
+      case "timestamp":
+        // TODO
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Custom Dialog'),
+      title: Text(widget.propertyEntry == null ? 'Add Property' : 'Edit Property'),
       content: Column(
         children: [
-          Text('This is a custom dialog.'),
-          SizedBox(height: 10),
-          // Add any custom content you need
-          // For example, you can add text fields, buttons, images, etc.
+          DropdownButton<String>(
+            value: _selectedType,
+            items: [
+              "blob",
+              "array",
+              "boolean",
+              "double",
+              "entity",
+              "geoPoint",
+              "integer",
+              "key",
+              "me",
+              "null",
+              "string",
+              "timestamp",
+            ].map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+            onChanged: (String? value) {
+              setState(() {
+                _selectedType = value ?? "string";
+              });
+            },
+          ),
+          ...(editComponent(context))
         ],
       ),
       actions: [
+        if (widget.propertyEntry != null)
+          TextButton(
+            onPressed: () {
+              // Delete the property
+              Navigator.of(context).pop({"delete": true});
+            },
+            child: const Text('Delete'),
+          ),
         TextButton(
           onPressed: () {
-            // Close the dialog
+            _textEditingController?.text ?? ""; // TODO <-- Make a dsv1 value from this and a new filed type
+            Navigator.of(context).pop(MapEntry<String, dsv1.Value?>(widget.propertyEntry?.key ?? "", createValue()));
+          },
+          child: const Text('Save'),
+        ),
+        TextButton(
+          onPressed: () {
+            // Close the dialog without saving
             Navigator.of(context).pop();
           },
-          child: Text('Close'),
+          child: const Text('Close'),
         ),
-        // Add more buttons if needed
       ],
     );
+  }
+
+  List<Widget> editComponent(BuildContext context) {
+    switch (_selectedType) {
+      case "string":
+        return [
+          TextField(
+            controller: _textEditingController,
+            decoration: const InputDecoration(labelText: 'Value'),
+          ),
+        ];
+      case "blob":
+      case "array":
+      case "boolean":
+      case "double":
+      case "entity":
+      case "geoPoint":
+      case "integer":
+      case "key":
+      case "me":
+      case "null":
+        return const [Text("Null")];
+      case "timestamp":
+    }
+    return [
+      const Text("Not implemented"),
+    ];
+  }
+
+  dsv1.Value? createValue() {
+    switch (_selectedType) {
+      case "string":
+        return dsv1.Value()..stringValue = _textEditingController?.text ?? "";
+      case "blob":
+        // return dsv1.Value()..blobValue = null;
+      case "array":
+        // return dsv1.Value()..arrayValue = null;
+      case "boolean":
+        // return dsv1.Value()..booleanValue = null;
+      case "double":
+      case "entity":
+      case "geoPoint":
+      case "integer":
+      case "key":
+      case "me":
+      case "null":
+        return dsv1.Value()..nullValue = "NULL_VALUE";
+      case "timestamp":
+    }
+    return null;
   }
 }
