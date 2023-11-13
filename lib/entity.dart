@@ -107,18 +107,19 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
                         await widget.actions!.deleteEntity(widget.index, widget.entityRow!.entity);
                       } catch (e) {
                         if (context.mounted) {
-                          await ScaffoldMessenger.of(context)
+                          await ScaffoldMessenger
+                              .of(context)
                               .showSnackBar(
-                                SnackBar(
-                                  content: Text("Failed to delete the record. $e"),
-                                  action: SnackBarAction(
-                                    label: "OK",
-                                    onPressed: () {
-                                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                    },
-                                  ),
-                                ),
-                              )
+                            SnackBar(
+                              content: Text("Failed to delete the record. $e"),
+                              action: SnackBarAction(
+                                label: "OK",
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                },
+                              ),
+                            ),
+                          )
                               .closed;
                           return;
                         }
@@ -160,7 +161,10 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: Theme
+            .of(context)
+            .colorScheme
+            .inversePrimary,
         title: Text("${widget.entityRow.key} In ${widget.kind.key} In Project: ${widget.project.key}"),
         actions: <Widget>[
           PopupMenuButton<String>(
@@ -172,11 +176,11 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
       body: SingleChildScrollView(
         child: _loading > 0
             ? const Opacity(
-                opacity: 0.4,
-                child: Center(
-                  child: CircularProgressIndicator(),
-                ),
-              )
+          opacity: 0.4,
+          child: Center(
+            child: CircularProgressIndicator(),
+          ),
+        )
             : ViewEntity(widget.project, widget.dsApi, widget.kind, widget.entityRow, key: widget.key),
       ),
     );
@@ -215,7 +219,10 @@ class _ViewEntityState extends State<ViewEntity> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Text("Details", style: Theme.of(context).textTheme.headlineSmall),
+                Text("Details", style: Theme
+                    .of(context)
+                    .textTheme
+                    .headlineSmall),
                 Table(
                   defaultColumnWidth: const IntrinsicColumnWidth(flex: 1),
                   children: [
@@ -349,7 +356,10 @@ class _ViewEntityState extends State<ViewEntity> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Text("Properties", style: Theme.of(context).textTheme.headlineSmall),
+                Text("Properties", style: Theme
+                    .of(context)
+                    .textTheme
+                    .headlineSmall),
                 Table(
                   columnWidths: const {
                     0: IntrinsicColumnWidth(),
@@ -363,19 +373,19 @@ class _ViewEntityState extends State<ViewEntity> {
                         const SizedBox(),
                         newProperties != null
                             ? Align(
-                                alignment: Alignment.center,
-                                child: ElevatedButton(
-                                  onPressed: _saveChanges,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red, // Change to the color you prefer
-                                    textStyle: const TextStyle(fontSize: 18), // Change to the size you prefer
-                                  ),
-                                  child: const Text(
-                                    'Save Changes',
-                                    style: TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              )
+                          alignment: Alignment.center,
+                          child: ElevatedButton(
+                            onPressed: _saveChanges,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red, // Change to the color you prefer
+                              textStyle: const TextStyle(fontSize: 18), // Change to the size you prefer
+                            ),
+                            child: const Text(
+                              'Save Changes',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        )
                             : const SizedBox(),
                         Align(
                           alignment: Alignment.centerRight,
@@ -384,7 +394,7 @@ class _ViewEntityState extends State<ViewEntity> {
                               dynamic result = await showDialog(
                                 context: context,
                                 builder: (BuildContext context) {
-                                  return const PropertyAddEditDeleteDialog(null);
+                                  return PropertyAddEditDeleteDialog(null, widget.entityRow);
                                 },
                               );
                               if (result == null) {
@@ -438,7 +448,7 @@ class _ViewEntityState extends State<ViewEntity> {
               dynamic result = await showDialog(
                 context: context,
                 builder: (BuildContext context) {
-                  return PropertyAddEditDeleteDialog(e);
+                  return PropertyAddEditDeleteDialog(e, widget.entityRow);
                 },
               );
               if (result == null) {
@@ -476,7 +486,7 @@ class _ViewEntityState extends State<ViewEntity> {
     } else if (e.entityValue != null) {
       return "entity:{${(e.entityValue!.properties ?? {}).entries.map(
             (e) => "${e.key}:${valuesToString(e.value)}",
-          ).toList()}";
+      ).toList()}";
     } else if (e.geoPointValue != null) {
       return "geoPoint:lat: ${e.geoPointValue?.latitude ?? "null"} long: ${e.geoPointValue?.latitude ?? "null"}";
     } else if (e.integerValue != null) {
@@ -572,8 +582,9 @@ String? getValueType(dsv1.Value? value) {
 
 class PropertyAddEditDeleteDialog extends StatefulWidget {
   final MapEntry<String, dsv1.Value>? propertyEntry;
+  final EntityRow entityRow;
 
-  const PropertyAddEditDeleteDialog(this.propertyEntry, {Key? key}) : super(key: key);
+  const PropertyAddEditDeleteDialog(this.propertyEntry, this.entityRow, {Key? key}) : super(key: key);
 
   @override
   State<PropertyAddEditDeleteDialog> createState() => _PropertyAddEditDeleteDialogState();
@@ -596,6 +607,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
   final TextEditingController _millisecondController = TextEditingController();
   final TextEditingController _microsecondController = TextEditingController();
   final TextEditingController _timezoneController = TextEditingController();
+  List<dsv1.PathElement>? _keyPath;
 
   @override
   void initState() {
@@ -608,10 +620,10 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         _textEditingController = TextEditingController(text: widget.propertyEntry?.value.stringValue ?? "");
         break;
       case "blob":
-        // TODO
+      // TODO
         break;
       case "array":
-        // TODO
+      // TODO
         break;
       case "boolean":
         _booleanValue = widget.propertyEntry?.value.booleanValue;
@@ -620,19 +632,23 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         _numberEditingController = TextEditingController(text: widget.propertyEntry?.value.doubleValue.toString() ?? "");
         break;
       case "entity":
-        // TODO
+      // TODO
         break;
       case "geoPoint":
-        // TODO
+      // TODO
         break;
       case "integer":
         _numberEditingController = TextEditingController(text: widget.propertyEntry?.value.integerValue.toString() ?? "");
         break;
       case "key":
-        // TODO
+        if (widget.propertyEntry?.value.keyValue?.path != null) {
+          _keyPath = [...(widget.propertyEntry?.value.keyValue?.path ?? [])];
+        } else {
+          _keyPath = null;
+        }
         break;
       case "me":
-        // TODO
+      // TODO
         break;
       case "null":
         break;
@@ -765,8 +781,10 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
             decoration: const InputDecoration(labelText: 'Value'),
           ),
         ];
-      case "blob": break; // TODO
-      case "array": break; // TODO
+      case "blob":
+        break; // TODO
+      case "array":
+        break; // TODO
       case "boolean":
         return [
           ListTile(
@@ -792,8 +810,10 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
         ];
-      case "entity": break; // TODO
-      case "geoPoint": break; // TODO
+      case "entity":
+        break; // TODO
+      case "geoPoint":
+        break; // TODO
       case "integer":
         return [
           TextField(
@@ -803,8 +823,30 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
         ];
-      case "key": break; // TODO
-      case "me": break; // TODO
+      case "key":
+        return [
+          ...(_keyPath ?? []).reversed.map((dsv1.PathElement each) => KeyPatElementTextInputWidget(each: each, key: ValueKey(each))),
+          TextButton(
+              onPressed: () {
+                setState(() {
+                  _keyPath ??= [];
+                  _keyPath!.insert(0, dsv1.PathElement(kind: "New Kind", name: "New Id"));
+                });
+              },
+              child: const Text("Add parent")
+          ),
+          TextButton(
+              onPressed: () {
+                setState(() {
+                  _keyPath ??= [];
+                  _keyPath!.removeAt(0);
+                });
+              },
+              child: const Text("Remove parent")
+          ),
+        ];
+      case "me":
+        break; // TODO
       case "null":
         return const [Text("Null")];
       case "timestamp":
@@ -852,16 +894,15 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
     }
 
     DateTime d = tz.TZDateTime(
-      location,
-      year,
-      month,
-      day,
-      hour,
-      minute,
-      second,
-      millisecond,
-      microsecond
-    );
+        location,
+        year,
+        month,
+        day,
+        hour,
+        minute,
+        second,
+        millisecond,
+        microsecond);
 
     return d;
   }
@@ -894,7 +935,12 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
           integerValue: int.parse(_numberEditingController?.text ?? "").toString(),
         );
       case "key":
-        throw UnimplementedError();
+        value = dsv1.Value(
+          keyValue: dsv1.Key(
+            partitionId: widget.entityRow.entity.key!.partitionId,
+            path: _keyPath,
+          ),
+        );
       case "me":
         throw UnimplementedError();
       case "null":
@@ -920,4 +966,102 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
 
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
+}
+
+class KeyPatElementTextInputWidget extends StatefulWidget {
+  final dsv1.PathElement each;
+
+  const KeyPatElementTextInputWidget({required this.each, Key? key}) : super(key: key);
+
+  @override
+  _KeyPatElementTextInputWidgetState createState() => _KeyPatElementTextInputWidgetState();
+}
+
+class _KeyPatElementTextInputWidgetState extends State<KeyPatElementTextInputWidget> {
+  late TextEditingController _kindController;
+  late TextEditingController _idController;
+  late TextEditingController _nameController;
+
+  @override
+  void initState() {
+    super.initState();
+    _kindController = TextEditingController(text: widget.each.kind);
+    _idController = TextEditingController(text: widget.each.id ?? '');
+    _nameController = TextEditingController(text: widget.each.name ?? '');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var type = widget.each.id != null ? "id" : "name";
+
+    return Column(
+      children: [
+        Text("Kind: ${widget.each.kind}"),
+        TextField(
+          key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Kind")),
+          controller: _kindController,
+          decoration: const InputDecoration(labelText: 'Kind'),
+          onChanged: (String value) {
+            setState(() {
+              widget.each.kind = value;
+            });
+          },
+        ),
+        DropdownButton(
+          key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Type")),
+          items: const [
+            DropdownMenuItem(value: "id", child: Text("Id")),
+            DropdownMenuItem(value: "name", child: Text("Name")),
+          ],
+          value: type,
+          onChanged: (value) {
+            setState(() {
+              widget.each.id = value == "id" ? widget.each.id ?? "" : null;
+              widget.each.name = value == "name" ? widget.each.name ?? "" : null;
+            });
+          },
+        ),
+        if (type == "id")
+          TextField(
+            key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Id")),
+            controller: _idController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Id'),
+            onChanged: (String value) {
+              setState(() {
+                widget.each.id = value;
+              });
+            },
+          ),
+        if (type == "name")
+          TextField(
+            key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Name")),
+            controller: _nameController,
+            decoration: const InputDecoration(labelText: 'Name'),
+            onChanged: (String value) {
+              setState(() {
+                widget.each.name = value;
+              });
+            },
+          ),
+        const Text(
+          "Parent",
+          style: TextStyle(fontSize: 24),
+        ),
+      ],
+    );
+  }
+}
+
+class CompositeKey extends Key {
+  final Key key1;
+  final Key key2;
+
+  const CompositeKey({required this.key1, required this.key2}) : super.empty();
+
+  @override
+  int get hashCode => key1.hashCode ^ key2.hashCode;
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || other is CompositeKey && runtimeType == other.runtimeType && key1 == other.key1 && key2 == other.key2;
 }
