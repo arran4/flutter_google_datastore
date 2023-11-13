@@ -14,6 +14,8 @@ void main() {
 
 final db = DB();
 
+// Yes I know this is a mess I will clean it up when it becomes appropriate, it was quickly written to get the app working + using gpt etc didn't help at all.
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
