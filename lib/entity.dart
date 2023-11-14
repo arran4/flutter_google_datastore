@@ -420,20 +420,38 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
             newProperties != null && widget.onSaveChanges != null
                 ? Align(
                     alignment: Alignment.center,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (widget.onSaveChanges != null) {
-                          widget.onSaveChanges!(newProperties ?? {});
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red, // Change to the color you prefer
-                        textStyle: const TextStyle(fontSize: 18), // Change to the size you prefer
-                      ),
-                      child: const Text(
-                        'Save Changes',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            if (widget.onSaveChanges != null) {
+                              widget.onSaveChanges!(newProperties ?? {});
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red, // Change to the color you prefer
+                            textStyle: const TextStyle(fontSize: 18), // Change to the size you prefer
+                          ),
+                          child: const Text(
+                            'Save Changes',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              newProperties = null;
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            textStyle: const TextStyle(fontSize: 18), // Change to the size you prefer
+                          ),
+                          child: const Text(
+                            'Clear Changes',
+                          ),
+                        )
+                      ],
                     ),
                   )
                 : const SizedBox(),
@@ -475,7 +493,7 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
     String type = getValueType(prop.value) ?? "unknown";
     String displayValue = getValueDisplayValue(prop.value);
     return [
-      TableRow(children: [
+      TableRow(key: ValueKey(prop.key), children: [
         SelectableText.rich(
           TextSpan(children: [
             TextSpan(text: "($type${prop.value.excludeFromIndexes == true ? "" : ", Indexed"}) ", style: const TextStyle(fontStyle: FontStyle.italic)),
@@ -522,7 +540,6 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
       ]),
     ];
   }
-
 }
 
 String valuesToString(dsv1.Value e) {
@@ -1043,7 +1060,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         // TODO
         break;
       case "array":
-        _arrayValues = value?.arrayValue?.values ?? [];
+        _arrayValues = [...(value?.arrayValue?.values ?? [])];
         break;
       case "boolean":
         _booleanValue = value?.booleanValue;
