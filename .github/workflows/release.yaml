@@ -125,7 +125,7 @@ jobs:
           retention-days: 1
 
   macos:
-    runs-on: macos-12
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
       - uses: dart-lang/setup-dart@v1
@@ -144,7 +144,6 @@ jobs:
 
       - name: Package Macos App
         run: |
-          python3 -m pip install packaging
           npm install -g appdmg
           mkdir -p build/${{ env.BUILD_VERSION }}
           appdmg appdmg.json build/flutter_google_datastore-macos-universal.dmg
