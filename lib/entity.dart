@@ -107,19 +107,18 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
                         await widget.actions!.deleteEntity(widget.index, widget.entityRow!.entity);
                       } catch (e) {
                         if (context.mounted) {
-                          await ScaffoldMessenger
-                              .of(context)
+                          await ScaffoldMessenger.of(context)
                               .showSnackBar(
-                            SnackBar(
-                              content: Text("Failed to delete the record. $e"),
-                              action: SnackBarAction(
-                                label: "OK",
-                                onPressed: () {
-                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                },
-                              ),
-                            ),
-                          )
+                                SnackBar(
+                                  content: Text("Failed to delete the record. $e"),
+                                  action: SnackBarAction(
+                                    label: "OK",
+                                    onPressed: () {
+                                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                    },
+                                  ),
+                                ),
+                              )
                               .closed;
                           return;
                         }
@@ -161,10 +160,7 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme
-            .of(context)
-            .colorScheme
-            .inversePrimary,
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text("${widget.entityRow.key} In ${widget.kind.key} In Project: ${widget.project.key}"),
         actions: <Widget>[
           PopupMenuButton<String>(
@@ -176,11 +172,11 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
       body: SingleChildScrollView(
         child: _loading > 0
             ? const Opacity(
-          opacity: 0.4,
-          child: Center(
-            child: CircularProgressIndicator(),
-          ),
-        )
+                opacity: 0.4,
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              )
             : ViewEntity(widget.project, widget.dsApi, widget.kind, widget.entityRow, key: widget.key),
       ),
     );
@@ -219,10 +215,7 @@ class _ViewEntityState extends State<ViewEntity> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Text("Details", style: Theme
-                    .of(context)
-                    .textTheme
-                    .headlineSmall),
+                Text("Details", style: Theme.of(context).textTheme.headlineSmall),
                 Table(
                   defaultColumnWidth: const IntrinsicColumnWidth(flex: 1),
                   children: [
@@ -356,68 +349,8 @@ class _ViewEntityState extends State<ViewEntity> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Text("Properties", style: Theme
-                    .of(context)
-                    .textTheme
-                    .headlineSmall),
-                Table(
-                  columnWidths: const {
-                    0: IntrinsicColumnWidth(),
-                    1: FlexColumnWidth(1),
-                    2: IntrinsicColumnWidth(),
-                  },
-                  children: [
-                    ...((newProperties ?? widget.entityRow.entity.properties)?.entries.expand(expandProperties).toList() ?? []),
-                    TableRow(
-                      children: [
-                        const SizedBox(),
-                        newProperties != null
-                            ? Align(
-                          alignment: Alignment.center,
-                          child: ElevatedButton(
-                            onPressed: _saveChanges,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red, // Change to the color you prefer
-                              textStyle: const TextStyle(fontSize: 18), // Change to the size you prefer
-                            ),
-                            child: const Text(
-                              'Save Changes',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        )
-                            : const SizedBox(),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              dynamic result = await showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return PropertyAddEditDeleteDialog(null, widget.entityRow);
-                                },
-                              );
-                              if (result == null) {
-                                return;
-                              }
-                              if (result is MapEntry<String, dsv1.Value?>) {
-                                setState(() {
-                                  newProperties ??= {...(widget.entityRow.entity.properties ?? {})};
-                                  if (result.value != null) {
-                                    newProperties![result.key] = result.value!;
-                                  } else {
-                                    newProperties!.remove(result.key);
-                                  }
-                                });
-                              }
-                            },
-                            child: const Icon(Icons.add),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                Text("Properties", style: Theme.of(context).textTheme.headlineSmall),
+                PropertyViewWidget(widget.entityRow, properties: widget.entityRow.entity.properties ?? {}, onSaveChanges: _saveChanges),
               ],
             ),
           ),
@@ -426,16 +359,108 @@ class _ViewEntityState extends State<ViewEntity> {
     );
   }
 
-  List<TableRow> expandProperties(MapEntry<String, dsv1.Value> e) {
-    String type = getValueType(e.value) ?? "unknown";
-    String displayValue = getValueDisplayValue(e.value);
-    List<TableRow> more = getValueMore(e.value);
+  void _saveChanges(Map<String, dsv1.Value> np) {
+    // TODO
+  }
+}
+
+class PropertyViewWidget extends StatefulWidget {
+  final EntityRow entityRow;
+  final Map<String, dsv1.Value> properties;
+  final Function(Map<String, dsv1.Value> np)? onSaveChanges;
+  final Function(Map<String, dsv1.Value> np)? onUpdate;
+
+  const PropertyViewWidget(this.entityRow, {Key? key, required this.properties, this.onSaveChanges, this.onUpdate}) : super(key: key);
+
+  @override
+  State<PropertyViewWidget> createState() => _PropertyViewWidgetState();
+}
+
+class _PropertyViewWidgetState extends State<PropertyViewWidget> {
+  Map<String, dsv1.Value>? newProperties;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Table(
+      columnWidths: const {
+        0: IntrinsicColumnWidth(),
+        1: FlexColumnWidth(1),
+        2: IntrinsicColumnWidth(),
+      },
+      children: [
+        ...((newProperties ?? widget.properties).entries.expand(expandProperties).toList() ?? []),
+        TableRow(
+          children: [
+            const SizedBox(),
+            newProperties != null && widget.onSaveChanges != null
+                ? Align(
+                    alignment: Alignment.center,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (widget.onSaveChanges != null) {
+                          widget.onSaveChanges!(newProperties ?? {});
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red, // Change to the color you prefer
+                        textStyle: const TextStyle(fontSize: 18), // Change to the size you prefer
+                      ),
+                      child: const Text(
+                        'Save Changes',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  )
+                : const SizedBox(),
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton(
+                onPressed: () async {
+                  dynamic result = await showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return PropertyAddEditDeleteDialog(null, widget.entityRow);
+                    },
+                  );
+                  if (result == null) {
+                    return;
+                  }
+                  if (result is MapEntry<String, dsv1.Value?>) {
+                    setState(() {
+                      newProperties ??= {...(widget.properties ?? {})};
+                      if (result.value != null) {
+                        newProperties![result.key] = result.value!;
+                      }
+                    });
+                    if (widget.onUpdate != null) {
+                      widget.onUpdate!(newProperties ?? {});
+                    }
+                  }
+                },
+                child: const Icon(Icons.add),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  List<TableRow> expandProperties(MapEntry<String, dsv1.Value> prop) {
+    String type = getValueType(prop.value) ?? "unknown";
+    String displayValue = getValueDisplayValue(prop.value);
+    List<TableRow> more = getValueMore(prop.value);
     return [
       TableRow(children: [
         SelectableText.rich(
           TextSpan(children: [
-            TextSpan(text: "($type${e.value.excludeFromIndexes == true ? "" : ", Indexed"}) ", style: const TextStyle(fontStyle: FontStyle.italic)),
-            TextSpan(text: "${e.key}: ", style: const TextStyle(fontWeight: FontWeight.bold)),
+            TextSpan(text: "($type${prop.value.excludeFromIndexes == true ? "" : ", Indexed"}) ", style: const TextStyle(fontStyle: FontStyle.italic)),
+            TextSpan(text: "${prop.key}: ", style: const TextStyle(fontWeight: FontWeight.bold)),
           ]),
           textAlign: TextAlign.end,
         ),
@@ -448,7 +473,7 @@ class _ViewEntityState extends State<ViewEntity> {
               dynamic result = await showDialog(
                 context: context,
                 builder: (BuildContext context) {
-                  return PropertyAddEditDeleteDialog(e, widget.entityRow);
+                  return PropertyAddEditDeleteDialog(prop, widget.entityRow);
                 },
               );
               if (result == null) {
@@ -459,8 +484,14 @@ class _ViewEntityState extends State<ViewEntity> {
                   newProperties ??= {...(widget.entityRow.entity.properties ?? {})};
                   if (result.value != null) {
                     newProperties![result.key] = result.value!;
+                    if (result.key != prop.key) {
+                      newProperties!.remove(prop.key);
+                    }
                   } else {
                     newProperties!.remove(result.key);
+                  }
+                  if (widget.onUpdate != null) {
+                    widget.onUpdate!(newProperties ?? {});
                   }
                 });
               }
@@ -480,10 +511,6 @@ class _ViewEntityState extends State<ViewEntity> {
     }
     return [];
   }
-
-  void _saveChanges() {
-    // TODO
-  }
 }
 
 String valuesToString(dsv1.Value e) {
@@ -498,7 +525,7 @@ String valuesToString(dsv1.Value e) {
   } else if (e.entityValue != null) {
     return "entity:{${(e.entityValue!.properties ?? {}).entries.map(
           (e) => "${e.key}:${valuesToString(e.value)}",
-    ).toList()}";
+        ).toList()}";
   } else if (e.geoPointValue != null) {
     return "geoPoint:lat: ${e.geoPointValue?.latitude ?? "null"} long: ${e.geoPointValue?.latitude ?? "null"}";
   } else if (e.integerValue != null) {
@@ -517,7 +544,6 @@ String valuesToString(dsv1.Value e) {
     return "unknown:#ERROR";
   }
 }
-
 
 String getValueDisplayValue(dsv1.Value value) {
   if (value.blobValue != null) {
@@ -548,7 +574,6 @@ String getValueDisplayValue(dsv1.Value value) {
   } else {}
   return "";
 }
-
 
 String? getValueType(dsv1.Value? value) {
   if (value == null) {
@@ -613,13 +638,14 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
   final TextEditingController _timezoneController = TextEditingController();
   List<dsv1.PathElement>? _keyPath;
   List<dsv1.Value> _arrayValues = [];
+  Map<String, dsv1.Value> newProperties = {};
 
   @override
   void initState() {
     super.initState();
-    if (widget.propertyEntry?.key != null) {
-      _nameController = TextEditingController(text: widget.propertyEntry!.key);
-    }
+    _nameController = TextEditingController(text: widget.propertyEntry?.key ?? "");
+    _selectedType = getValueType(widget.propertyEntry?.value) ?? "string";
+    _indexData = !(widget.propertyEntry?.value?.excludeFromIndexes ?? false);
     extractValue(widget.propertyEntry?.value);
   }
 
@@ -640,85 +666,81 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
 
   @override
   Widget build(BuildContext context) {
+    var height = MediaQuery.of(context).size.height;
+    var width = MediaQuery.of(context).size.width;
     return AlertDialog(
+      scrollable: true,
       title: Text(widget.propertyEntry == null ? 'Add ${widget.type}' : 'Edit ${widget.type}'),
-      content: SingleChildScrollView(
-        child: Column(
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(labelText: '${widget.type} Name'),
-              readOnly: widget.readonlyName,
-            ),
-            DropdownButton<String>(
-              value: _selectedType,
-              items: [
-                "blob",
-                "array",
-                "boolean",
-                "double",
-                "entity",
-                "geoPoint",
-                "integer",
-                "key",
-                "me",
-                "null",
-                "string",
-                "timestamp",
-              ].map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (String? value) {
-                setState(() {
-                  _selectedType = value ?? "string";
-                  switch (_selectedType) {
-                    case "timestamp":
-                      refreshTimestampControllers();
-                      break;
-                  }
-                });
-              },
-            ),
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Property Name'),
-            ),
-            ListTile(
-              title: const Text('Indexed?'),
-              trailing: Checkbox(
-                value: _indexData,
-                onChanged: (bool? v) {
-                  if (v == null) {
-                    return;
-                  }
+      content: SizedBox(
+          height: height - 80,
+          width: width - 80,
+          child: Column(
+            children: [
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(labelText: '${widget.type} Name'),
+                readOnly: widget.readonlyName,
+              ),
+              DropdownButton<String>(
+                value: _selectedType,
+                items: [
+                  "blob",
+                  "array",
+                  "boolean",
+                  "double",
+                  "entity",
+                  "geoPoint",
+                  "integer",
+                  "key",
+                  "me",
+                  "null",
+                  "string",
+                  "timestamp",
+                ].map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (String? value) {
                   setState(() {
-                    _indexData = v;
+                    _selectedType = value ?? "string";
+                    extractValue(widget.propertyEntry?.value);
                   });
                 },
               ),
-            ),
-            ...(editComponent(context))
-          ],
-        ),
-      ),
+              ListTile(
+                title: const Text('Indexed?'),
+                trailing: Checkbox(
+                  value: _indexData,
+                  onChanged: (bool? v) {
+                    if (v == null) {
+                      return;
+                    }
+                    setState(() {
+                      _indexData = v;
+                    });
+                  },
+                ),
+              ),
+              ...(editComponent(context))
+            ],
+          )),
       actions: [
         if (widget.propertyEntry != null)
           TextButton(
             onPressed: () {
               // Delete the property
-              Navigator.of(context).pop(MapEntry<String, dsv1.Value?>(_nameController?.text ?? "", null));
+              Navigator.of(context).pop(MapEntry<String, dsv1.Value?>(_nameController?.text ?? widget.propertyEntry?.key ?? "", null));
             },
             child: const Text('Delete'),
           ),
         TextButton(
           onPressed: () {
             try {
-              Navigator.of(context).pop(MapEntry<String, dsv1.Value?>(_nameController?.text ?? "", createValue()));
+              Navigator.of(context).pop(MapEntry<String, dsv1.Value?>(_nameController?.text ?? widget.propertyEntry?.key ?? "", createValue()));
             } catch (e) {
-              _showErrorSnackbar("Error preparing to save changes: $e");
+              _showErrorSnackBar("Error preparing to save changes: $e");
             }
           },
           child: const Text('Save'),
@@ -754,30 +776,36 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
                 dynamic result = await showDialog(
                   context: context,
                   builder: (BuildContext context) {
-                    return PropertyAddEditDeleteDialog(MapEntry<String, dsv1.Value>("Replace Element of ${widget.propertyEntry?.key}", each), widget.entityRow, readonlyName: true, type: "Element",);
+                    return PropertyAddEditDeleteDialog(
+                      MapEntry<String, dsv1.Value>("Replace Element of ${widget.propertyEntry?.key}", each),
+                      widget.entityRow,
+                      readonlyName: true,
+                      type: "Element",
+                    );
                   },
                 );
                 if (result != null && result is MapEntry<String, dsv1.Value?>) {
                   setState(() {
                     if (result.value != null) {
-                      _arrayValues = _arrayValues
-                          .map((e) => e == each ? result.value! : e)
-                          .toList();
+                      _arrayValues = _arrayValues.map((e) => e == each ? result.value! : e).toList();
                     } else {
                       _arrayValues.remove(each);
                     }
                   });
                 }
-
               },
-              key: ValueKey(each)
-          )),
+              key: ValueKey(each))),
           TextButton(
               onPressed: () async {
                 dynamic result = await showDialog(
                   context: context,
                   builder: (BuildContext context) {
-                    return PropertyAddEditDeleteDialog(MapEntry<String, dsv1.Value>("New Element to ${widget.propertyEntry?.key}", dsv1.Value()), widget.entityRow, readonlyName: true, type: "Element",);
+                    return PropertyAddEditDeleteDialog(
+                      MapEntry<String, dsv1.Value>("New Element to ${widget.propertyEntry?.key}", dsv1.Value()),
+                      widget.entityRow,
+                      readonlyName: true,
+                      type: "Element",
+                    );
                   },
                 );
                 if (result != null && result is MapEntry<String, dsv1.Value?> && result.value != null) {
@@ -786,16 +814,14 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
                   });
                 }
               },
-              child: const Text("Add Value")
-          ),
+              child: const Text("Add Value")),
           TextButton(
               onPressed: () {
                 setState(() {
                   _arrayValues.removeLast();
                 });
               },
-              child: const Text("Remove Value")
-          ),
+              child: const Text("Remove Value")),
         ];
         break;
       case "boolean":
@@ -824,7 +850,17 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
           ),
         ];
       case "entity":
-        break; // TODO
+        return [
+          PropertyViewWidget(
+            widget.entityRow,
+            properties: newProperties ?? {},
+            onUpdate: (Map<String, dsv1.Value> np) {
+              setState(() {
+                newProperties = {...(np ?? {})};
+              });
+            },
+          ),
+        ];
       case "geoPoint":
         break; // TODO
       case "integer":
@@ -846,8 +882,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
                   _keyPath!.insert(0, dsv1.PathElement(kind: "New Kind", name: "New Id"));
                 });
               },
-              child: const Text("Add parent")
-          ),
+              child: const Text("Add parent")),
           TextButton(
               onPressed: () {
                 setState(() {
@@ -855,8 +890,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
                   _keyPath!.removeAt(0);
                 });
               },
-              child: const Text("Remove parent")
-          ),
+              child: const Text("Remove parent")),
         ];
       case "me":
         break; // TODO
@@ -906,16 +940,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       location = tz.getLocation(timezone);
     }
 
-    DateTime d = tz.TZDateTime(
-        location,
-        year,
-        month,
-        day,
-        hour,
-        minute,
-        second,
-        millisecond,
-        microsecond);
+    DateTime d = tz.TZDateTime(location, year, month, day, hour, minute, second, millisecond, microsecond);
 
     return d;
   }
@@ -941,12 +966,19 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         value = dsv1.Value(
           booleanValue: _booleanValue,
         );
+        break;
       case "double":
         value = dsv1.Value(
           doubleValue: double.tryParse(_numberEditingController?.text ?? ""),
         );
+        break;
       case "entity":
-        throw UnimplementedError();
+        value = dsv1.Value(
+          entityValue: dsv1.Entity(
+            properties: newProperties,
+          ),
+        );
+        break;
       case "geoPoint":
         throw UnimplementedError();
       case "integer":
@@ -981,7 +1013,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
     return value;
   }
 
-  void _showErrorSnackbar(String message) {
+  void _showErrorSnackBar(String message) {
     final snackBar = SnackBar(
       content: Text(message),
       backgroundColor: Colors.red,
@@ -991,50 +1023,45 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
   }
 
   void extractValue(dsv1.Value? value) {
-    _selectedType = getValueType(value) ?? "string";
-    if (value == null) {
-      return;
-    }
-    _indexData = !(value.excludeFromIndexes ?? false);
     switch (_selectedType) {
       case "string":
-        _textEditingController = TextEditingController(text: value.stringValue ?? "");
+        _textEditingController = TextEditingController(text: value?.stringValue ?? "");
         break;
       case "blob":
-      // TODO
+        // TODO
         break;
       case "array":
-        _arrayValues = value.arrayValue?.values ?? [];
+        _arrayValues = value?.arrayValue?.values ?? [];
         break;
       case "boolean":
-        _booleanValue = value.booleanValue;
+        _booleanValue = value?.booleanValue;
         break;
       case "double":
-        _numberEditingController = TextEditingController(text: value.doubleValue.toString() ?? "");
+        _numberEditingController = TextEditingController(text: value?.doubleValue.toString() ?? "");
         break;
       case "entity":
-      // TODO
+        newProperties = {...(value?.entityValue?.properties ?? {})};
         break;
       case "geoPoint":
-      // TODO
+        // TODO
         break;
       case "integer":
-        _numberEditingController = TextEditingController(text: value.integerValue.toString() ?? "");
+        _numberEditingController = TextEditingController(text: value?.integerValue.toString() ?? "");
         break;
       case "key":
-        if (value.keyValue?.path != null) {
-          _keyPath = [...(value.keyValue?.path ?? [])];
+        if (value?.keyValue?.path != null) {
+          _keyPath = [...(value?.keyValue?.path ?? [])];
         } else {
           _keyPath = null;
         }
         break;
       case "me":
-      // TODO
+        // TODO
         break;
       case "null":
         break;
       case "timestamp":
-        _selectedDateTime = value.timestampValue ?? "";
+        _selectedDateTime = value?.timestampValue ?? "";
         refreshTimestampControllers();
         break;
     }
