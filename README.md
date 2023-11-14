@@ -33,7 +33,6 @@ See releases, should work on Linux, Mac, Windows, Android and iOS.
 
 # Roadmap
 * More authentication methods including android compatible Oauth2
-* Ability to edit an entity
 * Ability to create an entity
 * Export and import of multiple types both datastore / could and it's own
 
