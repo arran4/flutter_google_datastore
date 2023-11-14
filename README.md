@@ -15,6 +15,18 @@ a client however supports connecting to a cloud instance.
 
 ![ksnip_20230926-210718.png](images/ksnip_20230926-210718.png)
 
+(UI is in need of some adjustments but it works for me right now)
+
+![ksnip_20231114-142327.png](images%2Fksnip_20231114-142327.png)
+
+![ksnip_20231114-142358.png](images%2Fksnip_20231114-142358.png)
+
+![ksnip_20231114-142408.png](images%2Fksnip_20231114-142408.png)
+
+![ksnip_20231114-142542.png](images%2Fksnip_20231114-142542.png)
+
+![ksnip_20231114-142553.png](images%2Fksnip_20231114-142553.png)
+
 ![ksnip_20230926-220928.png](images/ksnip_20230926-220928.png)
 
 See releases, should work on Linux, Mac, Windows, Android and iOS.
