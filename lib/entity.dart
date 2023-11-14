@@ -5,7 +5,6 @@ import 'package:googleapis/datastore/v1.dart' as dsv1;
 import 'database.dart';
 import 'datastoremain.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tz;
 
 class ViewEntityPage extends StatefulWidget {
   final Project project;
@@ -135,11 +134,6 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
                           Navigator.of(context).pop(); // Close the dialog
                         }
                       }
-                      if (context.mounted) {
-                        if (this.context.mounted) {
-                          Navigator.of(this.context).pop(); // Close the element window
-                        }
-                      }
                     },
                     child: const Text("Delete"),
                   ),
@@ -177,9 +171,38 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
                   child: CircularProgressIndicator(),
                 ),
               )
-            : ViewEntity(widget.project, widget.dsApi, widget.kind, widget.entityRow, key: widget.key),
+            : ViewEntity(widget.project, widget.dsApi, widget.kind, widget.entityRow, key: widget.key, saveEntityPropertyUpdates: saveEntityPropertyUpdates),
       ),
     );
+  }
+
+  saveEntityPropertyUpdates(Map<String, dsv1.Value> props) async {
+    try {
+      setState(() {
+        _loading++;
+      });
+      if (widget.actions == null) {
+        return;
+      }
+      await widget.actions!.updateEntity(widget.entityRow.entity.key!, props);
+      dsv1.Entity? newEntity = await widget.actions!.refreshEntity(widget.entityRow.entity.key!);
+      if (newEntity == null) {
+        return;
+      }
+      if (newEntity == null) {
+        return;
+      }
+      EntityRow? er = await widget.actions!.replaceEntity(widget.index, newEntity);
+      if (er != null) {
+        setState(() {
+          entityRow = er;
+        });
+      }
+    } finally {
+      setState(() {
+        _loading--;
+      });
+    }
   }
 }
 
@@ -188,8 +211,9 @@ class ViewEntity extends StatefulWidget {
   final dsv1.DatastoreApi dsApi;
   final Kind kind;
   final EntityRow entityRow;
+  final Function(Map<String, dsv1.Value> props)? saveEntityPropertyUpdates;
 
-  const ViewEntity(this.project, this.dsApi, this.kind, this.entityRow, {super.key});
+  const ViewEntity(this.project, this.dsApi, this.kind, this.entityRow, {super.key, this.saveEntityPropertyUpdates});
 
   @override
   State createState() => _ViewEntityState();
@@ -350,17 +374,13 @@ class _ViewEntityState extends State<ViewEntity> {
             child: Column(
               children: [
                 Text("Properties", style: Theme.of(context).textTheme.headlineSmall),
-                PropertyViewWidget(widget.entityRow, properties: widget.entityRow.entity.properties ?? {}, onSaveChanges: _saveChanges),
+                PropertyViewWidget(widget.entityRow, properties: widget.entityRow.entity.properties ?? {}, onSaveChanges: widget.saveEntityPropertyUpdates),
               ],
             ),
           ),
         ),
       ],
     );
-  }
-
-  void _saveChanges(Map<String, dsv1.Value> np) {
-    // TODO
   }
 }
 

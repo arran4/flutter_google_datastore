@@ -32,6 +32,7 @@ abstract class EntityActions {
    Future<dsv1.Entity?> refreshEntity(dsv1.Key key);
    Future<EntityRow?> replaceEntity(int index, dsv1.Entity newEntity);
    Future<bool> deleteEntity(int index, dsv1.Entity newEntity);
+   Future<bool> updateEntity(dsv1.Key key, Map<String, dsv1.Value> props);
 }
 
 
@@ -209,6 +210,11 @@ class _KindContentsPageState extends State<KindContentsPage> implements EntityAc
       throw Error.safeToString("no results found");
     }
     return lookupResponse.found![0].entity;
+  }
+
+  Future<bool> updateEntity(dsv1.Key key, Map<String, dsv1.Value> props) async {
+    var r = await widget.dsApi!.projects.commit(dsv1.CommitRequest(databaseId: widget.project.databaseId, mode: "NON_TRANSACTIONAL", mutations: [dsv1.Mutation(update: dsv1.Entity(key: key, properties: props))]), widget.project.projectId);
+    return r.mutationResults?[0]?.key != null;
   }
 
   Future<bool> deleteEntity(int index, dsv1.Entity newEntity) async {
