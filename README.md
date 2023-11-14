@@ -27,6 +27,8 @@ a client however supports connecting to a cloud instance.
 
 ![ksnip_20231114-142553.png](images%2Fksnip_20231114-142553.png)
 
+![ksnip_20231114-152238.png](images%2Fksnip_20231114-152238.png)
+
 ![ksnip_20230926-220928.png](images/ksnip_20230926-220928.png)
 
 See releases, should work on Linux, Mac, Windows, Android and iOS.

@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/kind.dart';
@@ -5,6 +8,8 @@ import 'package:googleapis/datastore/v1.dart' as dsv1;
 import 'database.dart';
 import 'datastoremain.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:file_picker/file_picker.dart';
+
 
 class ViewEntityPage extends StatefulWidget {
   final Project project;
@@ -222,6 +227,16 @@ class ViewEntity extends StatefulWidget {
 class _ViewEntityState extends State<ViewEntity> {
   Map<String, dsv1.Value>? newProperties;
 
+  @override
+  void didUpdateWidget(ViewEntity oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    setState(() {
+      // TODO consider if this killing values that are being edited is okay.
+      newProperties = null;
+    });
+  }
+
+
   void closePressed() async {
     if (!Navigator.canPop(context)) {
       return;
@@ -371,10 +386,51 @@ class _ViewEntityState extends State<ViewEntity> {
           margin: const EdgeInsets.all(16.0),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
+            child: Stack(
               children: [
-                Text("Properties", style: Theme.of(context).textTheme.headlineSmall),
-                PropertyViewWidget(widget.entityRow, properties: widget.entityRow.entity.properties ?? {}, onSaveChanges: widget.saveEntityPropertyUpdates),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start, // Align children to the start
+                  children: [
+                    SizedBox(
+                      child: Center(
+                        child: Text("Properties", style: Theme.of(context).textTheme.headlineSmall),
+                      ),
+                    ), // Adjust the space according to your layout
+                    PropertyViewWidget(widget.entityRow, properties: widget.entityRow.entity.properties ?? {}, onSaveChanges: widget.saveEntityPropertyUpdates, newProperties: newProperties),
+                  ],
+                ),
+                Align(
+                  alignment: Alignment.topRight,
+                  child: PopupMenuButton<String>(
+                    itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                      const PopupMenuItem<String>(
+                        value: 'propsDownJson',
+                        child: Text('Download properties as Json'),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'propsReplaceJson',
+                        child: Text('Replace properties with Json'),
+                      ),
+                    ],
+                    onSelected: (String value) async {
+                      // Handle the selected action
+                      switch (value) {
+                        case 'propsDownJson':
+                          await downloadPropertiesAsJson(newProperties ?? widget.entityRow.entity.properties ?? {});
+                          break;
+                        case 'propsReplaceJson':
+                          var np = await replacePropertiesWithJson();
+                          if (np != null) {
+                            setState(() {
+                              newProperties = np;
+                            });
+                          }
+                          break;
+                      }
+                    },
+                    icon: const Icon(Icons.more_vert), // Three-dot icon
+                  ),
+                ),
               ],
             ),
           ),
@@ -382,15 +438,91 @@ class _ViewEntityState extends State<ViewEntity> {
       ],
     );
   }
+
+  Future<void> downloadPropertiesAsJson(Map<String, dsv1.Value> map) async {
+    String? filePath = await FilePicker.platform.saveFile(
+      dialogTitle: "Save JSON data to file",
+      fileName: "${widget.entityRow.entity.key?.path?[0].kind}-${widget.entityRow.entity.key?.path?[0].id??widget.entityRow.entity.key?.path?[0].name}.json",
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+    );
+    if (filePath == null) {
+      return;
+    }
+    String jsonString = jsonEncode(map);
+    File file = File(filePath);
+    await file.writeAsString(jsonString);
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('JSON data saved to file: $filePath'),
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'OK',
+          onPressed: () {},
+        ),
+      ),
+    );
+  }
+
+  Future<Map<String, dsv1.Value>?> replacePropertiesWithJson() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+    );
+    if (result == null) {
+      return null;
+    }
+    try {
+      String filePath = result.files.single.path!;
+      String jsonContent = await File(filePath).readAsString();
+      Map<String, dynamic> jsonData = jsonDecode(jsonContent);
+      Map<String, dsv1.Value> resultProps = {};
+      jsonData.forEach((key, value) {
+        dsv1.Value newValue = dsv1.Value.fromJson(value);
+        resultProps[key] = newValue;
+      });
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('JSON data read from file: $filePath'),
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'OK',
+              onPressed: () {},
+            ),
+          ),
+        );
+      }
+      return resultProps;
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading JSON file: $e'),
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'OK',
+              onPressed: () {},
+            ),
+          ),
+        );
+      }
+      return null;
+    }
+  }
 }
 
 class PropertyViewWidget extends StatefulWidget {
   final EntityRow entityRow;
   final Map<String, dsv1.Value> properties;
+  final Map<String, dsv1.Value>? newProperties;
   final Function(Map<String, dsv1.Value> np)? onSaveChanges;
   final Function(Map<String, dsv1.Value> np)? onUpdate;
 
-  const PropertyViewWidget(this.entityRow, {Key? key, required this.properties, this.onSaveChanges, this.onUpdate}) : super(key: key);
+  const PropertyViewWidget(this.entityRow, {Key? key, required this.properties, this.onSaveChanges, this.onUpdate, this.newProperties}) : super(key: key);
 
   @override
   State<PropertyViewWidget> createState() => _PropertyViewWidgetState();
@@ -402,6 +534,18 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
   @override
   void initState() {
     super.initState();
+    newProperties = widget.newProperties;
+  }
+
+
+  @override
+  void didUpdateWidget(PropertyViewWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.newProperties != widget.newProperties) {
+      setState(() {
+        newProperties = widget.newProperties;
+      });
+    }
   }
 
   @override
