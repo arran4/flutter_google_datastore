@@ -474,68 +474,6 @@ class _ViewEntityState extends State<ViewEntity> {
     ];
   }
 
-  String valuesToString(dsv1.Value e) {
-    if (e.blobValue != null) {
-      return "Blob Length: ${e.blobValue?.length ?? "#ERROR"}";
-    } else if (e.arrayValue != null) {
-      return "array:[${e.arrayValue?.values?.join(" , ") ?? "#ERROR"}]";
-    } else if (e.booleanValue != null) {
-      return "boolean:${e.booleanValue?.toString() ?? "#ERROR"}";
-    } else if (e.doubleValue != null) {
-      return "double:${e.doubleValue ?? "#ERROR"}";
-    } else if (e.entityValue != null) {
-      return "entity:{${(e.entityValue!.properties ?? {}).entries.map(
-            (e) => "${e.key}:${valuesToString(e.value)}",
-      ).toList()}";
-    } else if (e.geoPointValue != null) {
-      return "geoPoint:lat: ${e.geoPointValue?.latitude ?? "null"} long: ${e.geoPointValue?.latitude ?? "null"}";
-    } else if (e.integerValue != null) {
-      return "integer:${e.integerValue ?? "null"}";
-    } else if (e.keyValue != null) {
-      return "key:Key: ${keyToString(e.keyValue)}";
-    } else if (e.meaning != null) {
-      return "me:${e.meaning}";
-    } else if (e.nullValue != null) {
-      return "null:${e.nullValue ?? "null"}";
-    } else if (e.stringValue != null) {
-      return "string:${e.stringValue ?? "#ERROR"}";
-    } else if (e.timestampValue != null) {
-      return "timestamp:${e.timestampValue ?? "#ERROR"}";
-    } else {
-      return "unknown:#ERROR";
-    }
-  }
-
-  String getValueDisplayValue(dsv1.Value value) {
-    if (value.blobValue != null) {
-      // TODO a way of looking at the content.
-      return "Blob Length: ${value.blobValue?.length ?? "#ERROR"}";
-    } else if (value.arrayValue != null) {
-      return "[${value.arrayValue?.values?.map(valuesToString).join(" , ") ?? "#ERROR"}]";
-    } else if (value.booleanValue != null) {
-      return value.booleanValue?.toString() ?? "#ERROR";
-    } else if (value.doubleValue != null) {
-      return "${value.doubleValue ?? "#ERROR"}";
-    } else if (value.entityValue != null) {
-      // MORE
-    } else if (value.geoPointValue != null) {
-      return "lat: ${value.geoPointValue?.latitude ?? "null"} long: ${value.geoPointValue?.latitude ?? "null"}";
-    } else if (value.integerValue != null) {
-      return value.integerValue ?? "null";
-    } else if (value.keyValue != null) {
-      return "Key: ${keyToString(value.keyValue)}";
-    } else if (value.meaning != null) {
-      return "${value.meaning}";
-    } else if (value.nullValue != null) {
-      return value.nullValue ?? "null";
-    } else if (value.stringValue != null) {
-      return value.stringValue ?? "#ERROR";
-    } else if (value.timestampValue != null) {
-      return value.timestampValue ?? "#ERROR";
-    } else {}
-    return "";
-  }
-
   List<TableRow> getValueMore(dsv1.Value value) {
     if (value.entityValue != null) {
       return (value.entityValue!.properties ?? {}).entries.expand(expandProperties).toList();
@@ -547,6 +485,70 @@ class _ViewEntityState extends State<ViewEntity> {
     // TODO
   }
 }
+
+String valuesToString(dsv1.Value e) {
+  if (e.blobValue != null) {
+    return "Blob Length: ${e.blobValue?.length ?? "#ERROR"}";
+  } else if (e.arrayValue != null) {
+    return "array:[${e.arrayValue?.values?.join(" , ") ?? "#ERROR"}]";
+  } else if (e.booleanValue != null) {
+    return "boolean:${e.booleanValue?.toString() ?? "#ERROR"}";
+  } else if (e.doubleValue != null) {
+    return "double:${e.doubleValue ?? "#ERROR"}";
+  } else if (e.entityValue != null) {
+    return "entity:{${(e.entityValue!.properties ?? {}).entries.map(
+          (e) => "${e.key}:${valuesToString(e.value)}",
+    ).toList()}";
+  } else if (e.geoPointValue != null) {
+    return "geoPoint:lat: ${e.geoPointValue?.latitude ?? "null"} long: ${e.geoPointValue?.latitude ?? "null"}";
+  } else if (e.integerValue != null) {
+    return "integer:${e.integerValue ?? "null"}";
+  } else if (e.keyValue != null) {
+    return "key:Key: ${keyToString(e.keyValue)}";
+  } else if (e.meaning != null) {
+    return "me:${e.meaning}";
+  } else if (e.nullValue != null) {
+    return "null:${e.nullValue ?? "null"}";
+  } else if (e.stringValue != null) {
+    return "string:${e.stringValue ?? "#ERROR"}";
+  } else if (e.timestampValue != null) {
+    return "timestamp:${e.timestampValue ?? "#ERROR"}";
+  } else {
+    return "unknown:#ERROR";
+  }
+}
+
+
+String getValueDisplayValue(dsv1.Value value) {
+  if (value.blobValue != null) {
+    // TODO a way of looking at the content.
+    return "Blob Length: ${value.blobValue?.length ?? "#ERROR"}";
+  } else if (value.arrayValue != null) {
+    return "[${value.arrayValue?.values?.map(valuesToString).join(" , ") ?? "#ERROR"}]";
+  } else if (value.booleanValue != null) {
+    return value.booleanValue?.toString() ?? "#ERROR";
+  } else if (value.doubleValue != null) {
+    return "${value.doubleValue ?? "#ERROR"}";
+  } else if (value.entityValue != null) {
+    // MORE
+  } else if (value.geoPointValue != null) {
+    return "lat: ${value.geoPointValue?.latitude ?? "null"} long: ${value.geoPointValue?.latitude ?? "null"}";
+  } else if (value.integerValue != null) {
+    return value.integerValue ?? "null";
+  } else if (value.keyValue != null) {
+    return "Key: ${keyToString(value.keyValue)}";
+  } else if (value.meaning != null) {
+    return "${value.meaning}";
+  } else if (value.nullValue != null) {
+    return value.nullValue ?? "null";
+  } else if (value.stringValue != null) {
+    return value.stringValue ?? "#ERROR";
+  } else if (value.timestampValue != null) {
+    return value.timestampValue ?? "#ERROR";
+  } else {}
+  return "";
+}
+
 
 String? getValueType(dsv1.Value? value) {
   if (value == null) {
@@ -583,8 +585,10 @@ String? getValueType(dsv1.Value? value) {
 class PropertyAddEditDeleteDialog extends StatefulWidget {
   final MapEntry<String, dsv1.Value>? propertyEntry;
   final EntityRow entityRow;
+  final String type;
+  final bool readonlyName;
 
-  const PropertyAddEditDeleteDialog(this.propertyEntry, this.entityRow, {Key? key}) : super(key: key);
+  const PropertyAddEditDeleteDialog(this.propertyEntry, this.entityRow, {Key? key, this.type = "Property", this.readonlyName = false}) : super(key: key);
 
   @override
   State<PropertyAddEditDeleteDialog> createState() => _PropertyAddEditDeleteDialogState();
@@ -597,7 +601,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
   String _selectedType = "string";
   bool _indexData = false;
   bool? _booleanValue;
-  late String _selectedDateTime;
+  String _selectedDateTime = DateTime.now().toUtc().toString();
   final TextEditingController _yearController = TextEditingController();
   final TextEditingController _monthController = TextEditingController();
   final TextEditingController _dayController = TextEditingController();
@@ -608,66 +612,15 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
   final TextEditingController _microsecondController = TextEditingController();
   final TextEditingController _timezoneController = TextEditingController();
   List<dsv1.PathElement>? _keyPath;
+  List<dsv1.Value> _arrayValues = [];
 
   @override
   void initState() {
     super.initState();
-    _selectedType = getValueType(widget.propertyEntry?.value) ?? "string";
-    _nameController = TextEditingController(text: widget.propertyEntry?.key ?? "unnamed");
-    _indexData = !(widget.propertyEntry?.value.excludeFromIndexes ?? false);
-    switch (_selectedType) {
-      case "string":
-        _textEditingController = TextEditingController(text: widget.propertyEntry?.value.stringValue ?? "");
-        break;
-      case "blob":
-      // TODO
-        break;
-      case "array":
-      // TODO
-        break;
-      case "boolean":
-        _booleanValue = widget.propertyEntry?.value.booleanValue;
-        break;
-      case "double":
-        _numberEditingController = TextEditingController(text: widget.propertyEntry?.value.doubleValue.toString() ?? "");
-        break;
-      case "entity":
-      // TODO
-        break;
-      case "geoPoint":
-      // TODO
-        break;
-      case "integer":
-        _numberEditingController = TextEditingController(text: widget.propertyEntry?.value.integerValue.toString() ?? "");
-        break;
-      case "key":
-        if (widget.propertyEntry?.value.keyValue?.path != null) {
-          _keyPath = [...(widget.propertyEntry?.value.keyValue?.path ?? [])];
-        } else {
-          _keyPath = null;
-        }
-        break;
-      case "me":
-      // TODO
-        break;
-      case "null":
-        break;
-      case "timestamp":
-        _selectedDateTime = widget.propertyEntry?.value.timestampValue ?? "";
-        DateTime? d = DateTime.tryParse(_selectedDateTime);
-        if (d != null) {
-          _yearController.text = d!.year.toString();
-          _monthController.text = d!.month.toString();
-          _dayController.text = d!.day.toString();
-          _hourController.text = d!.hour.toString();
-          _minuteController.text = d!.minute.toString();
-          _secondController.text = d!.second.toString();
-          _millisecondController.text = d!.millisecond.toString();
-          _microsecondController.text = d!.microsecond.toString();
-          _timezoneController.text = d!.timeZoneName;
-        }
-        break;
+    if (widget.propertyEntry?.key != null) {
+      _nameController = TextEditingController(text: widget.propertyEntry!.key);
     }
+    extractValue(widget.propertyEntry?.value);
   }
 
   Widget _buildDateTimeTextField(String label, TextEditingController controller) {
@@ -688,10 +641,15 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.propertyEntry == null ? 'Add Property' : 'Edit Property'),
+      title: Text(widget.propertyEntry == null ? 'Add ${widget.type}' : 'Edit ${widget.type}'),
       content: SingleChildScrollView(
         child: Column(
           children: [
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(labelText: '${widget.type} Name'),
+              readOnly: widget.readonlyName,
+            ),
             DropdownButton<String>(
               value: _selectedType,
               items: [
@@ -716,6 +674,11 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
               onChanged: (String? value) {
                 setState(() {
                   _selectedType = value ?? "string";
+                  switch (_selectedType) {
+                    case "timestamp":
+                      refreshTimestampControllers();
+                      break;
+                  }
                 });
               },
             ),
@@ -784,7 +747,57 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       case "blob":
         break; // TODO
       case "array":
-        break; // TODO
+        return [
+          ..._arrayValues.map((dsv1.Value each) => ValueAddEditRow(
+              value: each,
+              onEdit: () async {
+                dynamic result = await showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return PropertyAddEditDeleteDialog(MapEntry<String, dsv1.Value>("Replace Element of ${widget.propertyEntry?.key}", each), widget.entityRow, readonlyName: true, type: "Element",);
+                  },
+                );
+                if (result != null && result is MapEntry<String, dsv1.Value?>) {
+                  setState(() {
+                    if (result.value != null) {
+                      _arrayValues = _arrayValues
+                          .map((e) => e == each ? result.value! : e)
+                          .toList();
+                    } else {
+                      _arrayValues.remove(each);
+                    }
+                  });
+                }
+
+              },
+              key: ValueKey(each)
+          )),
+          TextButton(
+              onPressed: () async {
+                dynamic result = await showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return PropertyAddEditDeleteDialog(MapEntry<String, dsv1.Value>("New Element to ${widget.propertyEntry?.key}", dsv1.Value()), widget.entityRow, readonlyName: true, type: "Element",);
+                  },
+                );
+                if (result != null && result is MapEntry<String, dsv1.Value?> && result.value != null) {
+                  setState(() {
+                    _arrayValues.add(result.value!);
+                  });
+                }
+              },
+              child: const Text("Add Value")
+          ),
+          TextButton(
+              onPressed: () {
+                setState(() {
+                  _arrayValues.removeLast();
+                });
+              },
+              child: const Text("Remove Value")
+          ),
+        ];
+        break;
       case "boolean":
         return [
           ListTile(
@@ -914,10 +927,16 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         value = dsv1.Value(
           stringValue: _textEditingController?.text ?? "",
         );
+        break;
       case "blob":
         throw UnimplementedError();
       case "array":
-        throw UnimplementedError();
+        value = dsv1.Value(
+          arrayValue: dsv1.ArrayValue(
+            values: _arrayValues,
+          ),
+        );
+        break;
       case "boolean":
         value = dsv1.Value(
           booleanValue: _booleanValue,
@@ -934,6 +953,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         value = dsv1.Value(
           integerValue: int.parse(_numberEditingController?.text ?? "").toString(),
         );
+        break;
       case "key":
         value = dsv1.Value(
           keyValue: dsv1.Key(
@@ -941,16 +961,19 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
             path: _keyPath,
           ),
         );
+        break;
       case "me":
         throw UnimplementedError();
       case "null":
         value = dsv1.Value(
           nullValue: "NULL_VALUE",
         );
+        break;
       case "timestamp":
         value = dsv1.Value(
           timestampValue: convertToDateTime().toIso8601String(),
         );
+        break;
     }
     if (value != null) {
       value.excludeFromIndexes = !_indexData;
@@ -965,6 +988,71 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
     );
 
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  void extractValue(dsv1.Value? value) {
+    _selectedType = getValueType(value) ?? "string";
+    if (value == null) {
+      return;
+    }
+    _indexData = !(value.excludeFromIndexes ?? false);
+    switch (_selectedType) {
+      case "string":
+        _textEditingController = TextEditingController(text: value.stringValue ?? "");
+        break;
+      case "blob":
+      // TODO
+        break;
+      case "array":
+        _arrayValues = value.arrayValue?.values ?? [];
+        break;
+      case "boolean":
+        _booleanValue = value.booleanValue;
+        break;
+      case "double":
+        _numberEditingController = TextEditingController(text: value.doubleValue.toString() ?? "");
+        break;
+      case "entity":
+      // TODO
+        break;
+      case "geoPoint":
+      // TODO
+        break;
+      case "integer":
+        _numberEditingController = TextEditingController(text: value.integerValue.toString() ?? "");
+        break;
+      case "key":
+        if (value.keyValue?.path != null) {
+          _keyPath = [...(value.keyValue?.path ?? [])];
+        } else {
+          _keyPath = null;
+        }
+        break;
+      case "me":
+      // TODO
+        break;
+      case "null":
+        break;
+      case "timestamp":
+        _selectedDateTime = value.timestampValue ?? "";
+        refreshTimestampControllers();
+        break;
+    }
+  }
+
+  void refreshTimestampControllers() {
+    DateTime? d = DateTime.tryParse(_selectedDateTime);
+    if (d != null) {
+      _yearController.text = d!.year.toString();
+      _monthController.text = d!.month.toString();
+      _dayController.text = d!.day.toString();
+      _hourController.text = d!.hour.toString();
+      _minuteController.text = d!.minute.toString();
+      _secondController.text = d!.second.toString();
+      _millisecondController.text = d!.millisecond.toString();
+      _microsecondController.text = d!.microsecond.toString();
+      _timezoneController.text = d!.timeZoneName;
+    }
   }
 }
 
@@ -1066,4 +1154,49 @@ class CompositeKey extends Key {
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is CompositeKey && runtimeType == other.runtimeType && key1 == other.key1 && key2 == other.key2;
+}
+
+class ValueAddEditRow extends StatelessWidget {
+  final dsv1.Value value;
+  final Function()? onEdit;
+
+  const ValueAddEditRow({Key? key, required this.value, this.onEdit}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: SelectableText.rich(
+              TextSpan(children: [
+                TextSpan(
+                  text: "${value.excludeFromIndexes == true ? "" : "Indexed"} ",
+                  style: const TextStyle(fontStyle: FontStyle.italic),
+                ),
+                TextSpan(text: getValueType(value) ?? "unknown"),
+              ]),
+              textAlign: TextAlign.end,
+            ),
+          ),
+          Expanded(
+            flex: 4,
+            child: SelectableText(getValueDisplayValue(value), style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          Expanded(
+            flex: 1,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: onEdit,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
