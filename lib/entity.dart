@@ -454,7 +454,6 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
   List<TableRow> expandProperties(MapEntry<String, dsv1.Value> prop) {
     String type = getValueType(prop.value) ?? "unknown";
     String displayValue = getValueDisplayValue(prop.value);
-    List<TableRow> more = getValueMore(prop.value);
     return [
       TableRow(children: [
         SelectableText.rich(
@@ -501,16 +500,9 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
           ),
         ),
       ]),
-      ...more,
     ];
   }
 
-  List<TableRow> getValueMore(dsv1.Value value) {
-    if (value.entityValue != null) {
-      return (value.entityValue!.properties ?? {}).entries.expand(expandProperties).toList();
-    }
-    return [];
-  }
 }
 
 String valuesToString(dsv1.Value e) {
@@ -556,7 +548,7 @@ String getValueDisplayValue(dsv1.Value value) {
   } else if (value.doubleValue != null) {
     return "${value.doubleValue ?? "#ERROR"}";
   } else if (value.entityValue != null) {
-    // MORE
+    return value.entityValue?.toJson().toString() ?? "#ERROR";
   } else if (value.geoPointValue != null) {
     return "lat: ${value.geoPointValue?.latitude ?? "null"} long: ${value.geoPointValue?.latitude ?? "null"}";
   } else if (value.integerValue != null) {
