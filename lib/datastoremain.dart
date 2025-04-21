@@ -179,7 +179,7 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
         AccessToken accessToken = AccessToken("", "", DateTime.now().subtract(const Duration(days: 1)).toUtc());
         AccessCredentials accessCredentials = AccessCredentials(accessToken, creds["refresh_token"], datastoreRequiredScopes);
         accessCredentials = await refreshCredentials(clientId, accessCredentials, client);
-        client = AutoRefreshingClient(client, clientId, accessCredentials);
+        client = AutoRefreshingClient(client, GoogleAuthEndpoints(), clientId, accessCredentials);
         break;
     }
     if (widget.project.endpointUrl != null) {

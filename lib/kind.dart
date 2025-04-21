@@ -116,6 +116,7 @@ class _KindContentsPageState extends State<KindContentsPage> implements EntityAc
         ],
       ),
       body: PagedListView<int, EntityRow>(
+
         pagingController: _pagingController,
         builderDelegate: PagedChildBuilderDelegate<EntityRow>(
             itemBuilder: (BuildContext context, EntityRow item, int index) =>
