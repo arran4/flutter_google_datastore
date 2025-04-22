@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.arran4.flutter.googledatastoreui.flutter_google_datastore"
+    namespace = "com.example.flutter_google_datastore"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.arran4.flutter.googledatastoreui.flutter_google_datastore"
+        applicationId = "com.example.flutter_google_datastore"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
