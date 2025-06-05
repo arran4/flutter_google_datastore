@@ -40,8 +40,7 @@ class _KindContentsPageState extends State<KindContentsPage> implements EntityAc
   int limit = 100;
   String? startCursor;
   Set<String> expanded = {};
-  final PagingController<int, EntityRow> _pagingController =
-      PagingController(firstPageKey: 0);
+  late final PagingController<int, EntityRow> _pagingController;
 
   void closePressed() async {
     if (!Navigator.canPop(context)) {
@@ -52,9 +51,10 @@ class _KindContentsPageState extends State<KindContentsPage> implements EntityAc
 
   @override
   void initState() {
-    _pagingController.addPageRequestListener((pageKey) {
-      _fetchPage(pageKey);
-    });
+    _pagingController = PagingController<int, EntityRow>(
+      getNextPageKey: (state) => (state.keys?.last ?? -1) + 1,
+      fetchPage: _fetchPage,
+    );
     super.initState();
   }
 
@@ -115,10 +115,12 @@ class _KindContentsPageState extends State<KindContentsPage> implements EntityAc
           ),
         ],
       ),
-      body: PagedListView<int, EntityRow>(
-
-        pagingController: _pagingController,
-        builderDelegate: PagedChildBuilderDelegate<EntityRow>(
+      body: PagingListener<int, EntityRow>(
+        controller: _pagingController,
+        builder: (context, state, fetchNextPage) => PagedListView<int, EntityRow>(
+          state: state,
+          fetchNextPage: fetchNextPage,
+          builderDelegate: PagedChildBuilderDelegate<EntityRow>(
             itemBuilder: (BuildContext context, EntityRow item, int index) =>
                 Column(
                   children: [
@@ -160,6 +162,7 @@ class _KindContentsPageState extends State<KindContentsPage> implements EntityAc
                         key: widget.key)] : [])
                   ],
                 )
+          ),
         ),
       ),
     );
@@ -190,18 +193,18 @@ class _KindContentsPageState extends State<KindContentsPage> implements EntityAc
     return results;
   }
 
-  void _fetchPage(int pageKey) async {
+  Future<List<EntityRow>> _fetchPage(int pageKey) async {
     try {
       final newItems = await retrieveRows();
-      final isLastPage = newItems.length < limit;
-      if (isLastPage) {
-        _pagingController.appendLastPage(newItems);
-      } else {
-        final nextPageKey = pageKey + newItems.length;
-        _pagingController.appendPage(newItems, nextPageKey);
+      if (newItems.length < limit) {
+        _pagingController.value =
+            _pagingController.value.copyWith(hasNextPage: false);
       }
+      return newItems;
     } catch (error) {
-      _pagingController.error = error;
+      _pagingController.value =
+          _pagingController.value.copyWith(error: error);
+      return [];
     }
   }
 
@@ -224,15 +227,18 @@ class _KindContentsPageState extends State<KindContentsPage> implements EntityAc
   }
 
   Future<EntityRow?> replaceEntity(int index, dsv1.Entity newEntity) async {
-    if (index >= (_pagingController.value.itemList?.length??0)) {
+    if (index >= (_pagingController.value.items?.length ?? 0)) {
       return null;
     }
-    EntityRow er = _pagingController.value.itemList![index];
+    EntityRow er = _pagingController.value.items![index];
     Completer<EntityRow?> completer = Completer();
       setState(() {
-        if (index < (_pagingController.value.itemList?.length??0) && _pagingController.value.itemList![index].key == keyToString(newEntity.key)) {
+        if (index < (_pagingController.value.items?.length ?? 0) &&
+            _pagingController.value.items![index].key ==
+                keyToString(newEntity.key)) {
           er.entity = newEntity!;
-          _pagingController.value.itemList![index] = er;
+          _pagingController.mapItems(
+              (item) => item.key == er.key ? er : item);
         }
         completer.complete(er);
       });
@@ -240,17 +246,20 @@ class _KindContentsPageState extends State<KindContentsPage> implements EntityAc
   }
 
   Future<bool> removeEntity(int index, dsv1.Entity newEntity) async {
-    if (index >= (_pagingController.value.itemList?.length??0)) {
+    if (index >= (_pagingController.value.items?.length ?? 0)) {
       return false;
     }
-    EntityRow er = _pagingController.value.itemList![index];
+    EntityRow er = _pagingController.value.items![index];
     Completer<bool> completer = Completer();
       setState(() {
         bool found = false;
-        if (index < (_pagingController.value.itemList?.length??0) && _pagingController.value.itemList![index].key == keyToString(newEntity.key)) {
+        if (index < (_pagingController.value.items?.length ?? 0) &&
+            _pagingController.value.items![index].key ==
+                keyToString(newEntity.key)) {
           found = true;
           er.entity = newEntity!;
-          _pagingController.value.itemList!.removeAt(index);
+          _pagingController.value = _pagingController.value
+              .filterItems((item) => item.key != er.key);
         }
         completer.complete(found);
       });
