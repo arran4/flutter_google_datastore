@@ -7,7 +7,7 @@ permissions:
   contents: write
 
 env:
-  FLUTTER_VERSION: '3.29.3'
+  FLUTTER_SDK_VERSION: stable
 
 jobs:
   windows:
@@ -15,17 +15,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.7.0'
       - uses: subosito/flutter-action@v2
         with:
           cache: true
-          flutter-version: ${{ env.FLUTTER_VERSION  }}
+          flutter-version: ${{ env.FLUTTER_SDK_VERSION }}
 
       - name: Set up environment vars
         shell: bash
         run: |
           TAG_NAME=$(echo ${GITHUB_REF#refs/tags/v})
+          VERSION="${TAG_NAME}+${GITHUB_RUN_NUMBER}"
           echo "SEMANTIC_VERSION=$TAG_NAME" >> $GITHUB_ENV
-          echo "FLUTTER_VERSION=${TAG_NAME}+${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
+          echo "FLUTTER_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "FLUTTER_APP_VERSION=$VERSION" >> $GITHUB_ENV
           echo "GITHUB_REPOSITORY_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
 
       - name: Update version number
@@ -49,10 +53,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.7.0'
       - uses: subosito/flutter-action@v2
         with:
           cache: true
-          flutter-version: ${{ env.FLUTTER_VERSION  }}
+          flutter-version: ${{ env.FLUTTER_SDK_VERSION }}
 
       - name: Install Dependencies
         run: |
@@ -68,8 +74,10 @@ jobs:
       - name: Set up environment vars
         run: |
           TAG_NAME=$(echo ${GITHUB_REF#refs/tags/v})
+          VERSION="${TAG_NAME}+${GITHUB_RUN_NUMBER}"
           echo "SEMANTIC_VERSION=$TAG_NAME" >> $GITHUB_ENV
-          echo "FLUTTER_VERSION=${TAG_NAME}+${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
+          echo "FLUTTER_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "FLUTTER_APP_VERSION=$VERSION" >> $GITHUB_ENV
           echo "GITHUB_REPOSITORY_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
 
       - name: Update version number
@@ -91,10 +99,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.7.0'
       - uses: subosito/flutter-action@v2
         with:
           cache: true
-          flutter-version: ${{ env.FLUTTER_VERSION  }}
+          flutter-version: ${{ env.FLUTTER_SDK_VERSION }}
 
       - name: Dependencies
         run: |
@@ -104,8 +114,10 @@ jobs:
       - name: Set version environment vars
         run: |
           TAG_NAME=$(echo ${GITHUB_REF#refs/tags/v})
+          VERSION="${TAG_NAME}+${GITHUB_RUN_NUMBER}"
           echo "SEMANTIC_VERSION=$TAG_NAME" >> $GITHUB_ENV
-          echo "FLUTTER_VERSION=${TAG_NAME}+${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
+          echo "FLUTTER_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "FLUTTER_APP_VERSION=$VERSION" >> $GITHUB_ENV
           echo "GITHUB_REPOSITORY_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
 
       - name: Update version number

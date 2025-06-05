@@ -33,6 +33,13 @@ a client however supports connecting to a cloud instance.
 
 See releases, should work on Linux, Mac, Windows, Android and iOS.
 
+## Building
+This project uses [FastForge](https://pub.dev/packages/fastforge) (formerly
+Flutter Distributor) to package releases. The workflow in
+`.github/workflows/release.yaml` runs FastForge automatically. For local
+builds you can install the tool with `dart pub global activate fastforge` and
+invoke `fastforge release` for the desired target.
+
 # Roadmap
 * More authentication methods including android compatible Oauth2
 * Ability to create an entity
