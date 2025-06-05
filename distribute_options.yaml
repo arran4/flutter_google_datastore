@@ -69,10 +69,10 @@ releases:
           args:
             repo-owner: arran4
             repo-name: flutter_google_datastore
-      - name: web-direct
+      - name: web-zip
         package:
           platform: web
-          target: direct
+          target: zip
         publish:
           target: github
           args:
