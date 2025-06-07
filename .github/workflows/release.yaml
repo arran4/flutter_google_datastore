@@ -26,7 +26,7 @@ jobs:
         shell: bash
         run: |
           TAG_NAME=$(echo ${GITHUB_REF#refs/tags/v})
-          VERSION="${TAG_NAME}+${GITHUB_RUN_NUMBER}"
+          VERSION="$TAG_NAME"
           echo "SEMANTIC_VERSION=$TAG_NAME" >> $GITHUB_ENV
           echo "FLUTTER_VERSION=$VERSION" >> $GITHUB_ENV
           echo "FLUTTER_APP_VERSION=$VERSION" >> $GITHUB_ENV
@@ -36,8 +36,7 @@ jobs:
         shell: bash
         run: |
           choco install sed make yq -y
-          yq -i ".version |= \"${SEMANTIC_VERSION}+\"" pubspec.yaml
-          yq -i '.version += strenv(GITHUB_RUN_NUMBER)' pubspec.yaml
+          yq -i '.version = strenv(SEMANTIC_VERSION)' pubspec.yaml
 
       - name: Release On Windows
         run: |
@@ -74,7 +73,7 @@ jobs:
       - name: Set up environment vars
         run: |
           TAG_NAME=$(echo ${GITHUB_REF#refs/tags/v})
-          VERSION="${TAG_NAME}+${GITHUB_RUN_NUMBER}"
+          VERSION="$TAG_NAME"
           echo "SEMANTIC_VERSION=$TAG_NAME" >> $GITHUB_ENV
           echo "FLUTTER_VERSION=$VERSION" >> $GITHUB_ENV
           echo "FLUTTER_APP_VERSION=$VERSION" >> $GITHUB_ENV
@@ -83,8 +82,7 @@ jobs:
       - name: Update version number
         run: |
           curl -sS https://webi.sh/yq | sh
-          yq -i ".version |= \"${SEMANTIC_VERSION}+\"" pubspec.yaml
-          yq -i '.version += strenv(GITHUB_RUN_NUMBER)' pubspec.yaml
+          yq -i '.version = strenv(SEMANTIC_VERSION)' pubspec.yaml
 
       - name: Release On Linux
         run: |
@@ -114,7 +112,7 @@ jobs:
       - name: Set version environment vars
         run: |
           TAG_NAME=$(echo ${GITHUB_REF#refs/tags/v})
-          VERSION="${TAG_NAME}+${GITHUB_RUN_NUMBER}"
+          VERSION="$TAG_NAME"
           echo "SEMANTIC_VERSION=$TAG_NAME" >> $GITHUB_ENV
           echo "FLUTTER_VERSION=$VERSION" >> $GITHUB_ENV
           echo "FLUTTER_APP_VERSION=$VERSION" >> $GITHUB_ENV
@@ -123,8 +121,7 @@ jobs:
       - name: Update version number
         run: |
           brew install yq
-          yq -i ".version |= \"${SEMANTIC_VERSION}+\"" pubspec.yaml
-          yq -i '.version += strenv(GITHUB_RUN_NUMBER)' pubspec.yaml
+          yq -i '.version = strenv(SEMANTIC_VERSION)' pubspec.yaml
 
       - name: Release On Mac OS X
         run: |
