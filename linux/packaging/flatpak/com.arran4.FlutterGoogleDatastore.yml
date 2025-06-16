@@ -1,0 +1,23 @@
+app-id: com.arran4.FlutterGoogleDatastore
+runtime: org.freedesktop.Platform
+runtime-version: '23.08'
+sdk: org.freedesktop.Sdk
+command: flutter_google_datastore
+finish-args:
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  - --device=dri
+  - --filesystem=home
+modules:
+  - name: flutter_google_datastore
+    buildsystem: simple
+    build-commands:
+      - git clone https://github.com/flutter/flutter.git -b stable flutter
+      - flutter/bin/flutter config --enable-linux-desktop
+      - flutter/bin/flutter pub get
+      - flutter/bin/flutter build linux --release
+      - install -Dm755 build/linux/x64/release/bundle/flutter_google_datastore /app/bin/flutter_google_datastore
+    sources:
+      - type: dir
+        path: .
