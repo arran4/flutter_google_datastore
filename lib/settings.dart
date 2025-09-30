@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/main.dart';
 import 'package:settings_ui/settings_ui.dart';
@@ -39,9 +41,11 @@ class SettingsWidgetState extends State<SettingsWidget> {
                 title: const Text('Delete Database'),
                 description: Text("SQLFile: $fp"),
                 onPressed: (BuildContext context) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const DeleteDatabaseScreen(),
+                  unawaited(
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const DeleteDatabaseScreen(),
+                      ),
                     ),
                   );
                 },
