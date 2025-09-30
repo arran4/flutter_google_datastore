@@ -143,12 +143,21 @@ class _KindContentsPageState extends State<KindContentsPage> implements EntityAc
                                   ? const Text("Collapse")
                                   : const Text("Expand")),
                           TextButton(
-                              onPressed: () {
-                                Navigator.of(context).push(MaterialPageRoute(
-                                    builder: (BuildContext context) =>
-                                        ViewEntityPage(widget.project, widget.dsApi, widget.kind, item, index, this)));
-                              },
-                              child: const Text("View")
+                            onPressed: () async {
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (BuildContext context) => ViewEntityPage(
+                                    widget.project,
+                                    widget.dsApi,
+                                    widget.kind,
+                                    item,
+                                    index,
+                                    this,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: const Text("View"),
                           ),
                           PopupMenuButton<String>(
                             onSelected: (String value) => popupRowItemSelected(item, index, value),
