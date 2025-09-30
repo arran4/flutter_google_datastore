@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -215,7 +216,7 @@ class GCloudCLICredentialDiscover {
 }
 
   GCloudCLICredentialDiscover() {
-    loadConfigDir();
+    unawaited(loadConfigDir());
   }
 
   Future<void> loadConfigDir() async {
