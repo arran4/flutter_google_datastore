@@ -76,7 +76,9 @@ class DeleteDatabaseScreen extends StatelessWidget {
                   child: const Text("Don't Delete"),
                 ),
                 ElevatedButton(
-                  onPressed: () => deleteProject(context),
+                  onPressed: () async {
+                    await deleteProject(context);
+                  },
                   style: ButtonStyle(
                     backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.red),
                   ),
@@ -95,8 +97,8 @@ class DeleteDatabaseScreen extends StatelessWidget {
     Navigator.of(context).pop();
   }
 
-  void deleteProject(BuildContext context) async {
-    db.deleteEntireDatabase();
+  Future<void> deleteProject(BuildContext context) async {
+    await db.deleteEntireDatabase();
     if (context.mounted) {
       Navigator.of(context).pop();
     }
