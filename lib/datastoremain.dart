@@ -261,7 +261,7 @@ class GCloudCLICredentialDiscover {
       }
       return result;
     } finally {
-      db.close();
+      await db.close();
     }
   }
 }
