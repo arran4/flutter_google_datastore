@@ -127,8 +127,8 @@ class DB {
     if (authMode != null) {
       values["authMode"] = authMode;
     }
-    db.update(Project.name, values, where: "id=?", whereArgs: <Object?>[id]);
-    return getProject(id);
+    await db.update(Project.name, values, where: "id=?", whereArgs: <Object?>[id]);
+    return await getProject(id);
   }
 }
 
