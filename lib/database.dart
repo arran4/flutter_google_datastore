@@ -72,7 +72,7 @@ class DB {
     return project;
   }
 
-  void deleteEntireDatabase() async {
+  Future<void> deleteEntireDatabase() async {
     String fn = await filepath();
     Database db = await _db;
     await db.close();
