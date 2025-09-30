@@ -78,7 +78,8 @@ class _KindContentsPageState extends State<KindContentsPage> implements EntityAc
     ];
   }
 
-  void popupRowItemSelected(EntityRow entityRow, int index, String value) async {
+  Future<void> popupRowItemSelected(
+      EntityRow entityRow, int index, String value) async {
     switch (value) {
       case 'refresh':
         if (entityRow.entity.key == null) {
@@ -88,7 +89,7 @@ class _KindContentsPageState extends State<KindContentsPage> implements EntityAc
         if (newEntity == null) {
           return;
         }
-        replaceEntity(index, newEntity);
+        await replaceEntity(index, newEntity);
         break;
     }
   }
@@ -151,7 +152,9 @@ class _KindContentsPageState extends State<KindContentsPage> implements EntityAc
                               child: const Text("View")
                           ),
                           PopupMenuButton<String>(
-                            onSelected: (String value) => popupRowItemSelected(item, index, value),
+                            onSelected: (String value) {
+                              unawaited(popupRowItemSelected(item, index, value));
+                            },
                             itemBuilder: createRowPopupItems,
                           ),
                         ],
