@@ -52,10 +52,10 @@ class _ProjectPageState extends State<ProjectPage> {
     return db.getProjects;
   }
 
-  void popupItemSelected(String value) {
+  Future<void> popupItemSelected(String value) async {
     switch (value) {
       case 'add':
-        addProjectPressed();
+        await addProjectPressed();
         break;
       case 'refresh':
           setState(() {
@@ -63,13 +63,13 @@ class _ProjectPageState extends State<ProjectPage> {
           });
         break;
       case 'settings':
-        Navigator.push(context,
+        await Navigator.push(context,
             MaterialPageRoute<bool>(builder: (BuildContext context) {
           return const SettingsWidget();
-        })).then((dynamic value) {
-          setState(() {
-            projects = _loadEntries();
-          });
+        }));
+        if (!mounted) return;
+        setState(() {
+          projects = _loadEntries();
         });
         break;
     }
@@ -92,16 +92,16 @@ class _ProjectPageState extends State<ProjectPage> {
     ];
   }
 
-  void itemPopupItemSelected(Project project, String value) {
+  Future<void> itemPopupItemSelected(Project project, String value) async {
     switch (value) {
       case 'connect':
-        connectPressed(project);
+        await connectPressed(project);
         break;
       case 'edit':
-        editProjectPressed(project);
+        await editProjectPressed(project);
         break;
       case 'delete':
-        deletePressed(project);
+        await deletePressed(project);
         break;
     }
   }
@@ -123,23 +123,25 @@ class _ProjectPageState extends State<ProjectPage> {
     ];
   }
 
-  addProjectPressed() async {
+  Future<void> addProjectPressed() async {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const AddEditProjectScreen(),
       ),
     );
+    if (!mounted) return;
     setState(() {
       projects = _loadEntries();
     });
   }
 
-  editProjectPressed(Project project) async {
+  Future<void> editProjectPressed(Project project) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => AddEditProjectScreen(project: project),
       ),
     );
+    if (!mounted) return;
     setState(() {
       projects = _loadEntries();
     });
@@ -153,7 +155,9 @@ class _ProjectPageState extends State<ProjectPage> {
         title: const Text("Datastore Project"),
         actions: <Widget>[
           PopupMenuButton<String>(
-            onSelected: popupItemSelected,
+            onSelected: (value) async {
+              await popupItemSelected(value);
+            },
             itemBuilder: createPopupItems,
           ),
         ],
@@ -178,13 +182,14 @@ class _ProjectPageState extends State<ProjectPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       TextButton(
-                          onPressed: () {
-                            connectPressed(projects[index]);
+                          onPressed: () async {
+                            await connectPressed(projects[index]);
                           },
                           child: const Text("Connect")),
                       PopupMenuButton<String>(
-                        onSelected: (String value) =>
-                            itemPopupItemSelected(projects[index], value),
+                        onSelected: (String value) async {
+                          await itemPopupItemSelected(projects[index], value);
+                        },
                         itemBuilder: createItemPopupItems,
                       ),
                     ],
@@ -196,14 +201,16 @@ class _ProjectPageState extends State<ProjectPage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: addProjectPressed,
+        onPressed: () async {
+          await addProjectPressed();
+        },
         tooltip: 'Add Project',
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  void connectPressed(Project project) async {
+  Future<void> connectPressed(Project project) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => DatastoreMainPage(
@@ -213,7 +220,7 @@ class _ProjectPageState extends State<ProjectPage> {
     );
   }
 
-  void deletePressed(Project project) async {
+  Future<void> deletePressed(Project project) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => DeleteProjectScreen(
@@ -221,6 +228,7 @@ class _ProjectPageState extends State<ProjectPage> {
         ),
       ),
     );
+    if (!mounted) return;
     setState(() {
       projects = _loadEntries();
     });
