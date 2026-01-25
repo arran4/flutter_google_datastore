@@ -16,19 +16,19 @@ dependencies:
   sqflite_common_ffi_web: ^1.0.0
   ulid4d: ^2.0.0
   settings_ui: ^2.0.2
-  googleapis: ^14.0.0
+  googleapis: ^15.0.0
   path_provider: ^2.1.5
-  extension_google_sign_in_as_googleapis_auth: ^2.0.13
-  google_sign_in: ^6.3.0
-  google_sign_in_android: ^6.2.1
-  google_sign_in_ios: ^5.9.0
-  google_sign_in_platform_interface: ^2.5.0
-  google_sign_in_web: ^0.12.4+4
+  extension_google_sign_in_as_googleapis_auth: ^3.0.0
+  google_sign_in: ^7.2.0
+  google_sign_in_android: ^7.2.7
+  google_sign_in_ios: ^6.2.5
+  google_sign_in_platform_interface: ^3.1.0
+  google_sign_in_web: ^1.1.0
   googleapis_auth: ^2.0.0
-  toml: ^0.16.0
+  toml: ^0.18.0
   ini: ^2.1.0
   infinite_scroll_pagination: ^5.0.0
-  timezone: ^0.10.1
+  timezone: ^0.11.0
   file_picker: ^10.1.9
 
 dev_dependencies:
