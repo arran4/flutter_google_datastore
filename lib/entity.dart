@@ -971,6 +971,21 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
                   onPressed: _uploadBlob,
                   tooltip: "Upload File",
                 ),
+                IconButton(
+                  icon: const Icon(Icons.edit_note),
+                  onPressed: () async {
+                    List<int>? result = await showDialog<List<int>>(
+                      context: context,
+                      builder: (context) => HexEditorDialog(initialBytes: _blobValue),
+                    );
+                    if (result != null) {
+                      setState(() {
+                        _blobValue = result;
+                      });
+                    }
+                  },
+                  tooltip: "Edit Hex",
+                ),
                 if (_blobValue != null)
                   IconButton(
                     icon: const Icon(Icons.clear),
@@ -1300,6 +1315,92 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       _microsecondController.text = d!.microsecond.toString();
       _timezoneController.text = d!.timeZoneName;
     }
+  }
+}
+
+class HexEditorDialog extends StatefulWidget {
+  final List<int>? initialBytes;
+
+  const HexEditorDialog({Key? key, this.initialBytes}) : super(key: key);
+
+  @override
+  State<HexEditorDialog> createState() => _HexEditorDialogState();
+}
+
+class _HexEditorDialogState extends State<HexEditorDialog> {
+  late TextEditingController _controller;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    String hexString = "";
+    if (widget.initialBytes != null) {
+      hexString = widget.initialBytes!.map((b) => b.toRadixString(16).padLeft(2, '0')).join(" ");
+    }
+    _controller = TextEditingController(text: hexString);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text("Hex Viewer/Editor"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text("Edit hex values (space separated)"),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _controller,
+            maxLines: 10,
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              errorText: _error,
+            ),
+            style: const TextStyle(fontFamily: 'Courier New'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text("Cancel"),
+        ),
+        TextButton(
+          onPressed: () {
+            try {
+              String text = _controller.text.replaceAll(RegExp(r'\s+'), '');
+              if (text.length % 2 != 0) {
+                setState(() {
+                  _error = "Hex string must have an even length";
+                });
+                return;
+              }
+              List<int> bytes = [];
+              for (int i = 0; i < text.length; i += 2) {
+                String byteString = text.substring(i, i + 2);
+                int? byte = int.tryParse(byteString, radix: 16);
+                if (byte == null) {
+                  setState(() {
+                    _error = "Invalid hex character: $byteString";
+                  });
+                  return;
+                }
+                bytes.add(byte);
+              }
+              Navigator.of(context).pop(bytes);
+            } catch (e) {
+              setState(() {
+                _error = "Error parsing hex: $e";
+              });
+            }
+          },
+          child: const Text("Save"),
+        ),
+      ],
+    );
   }
 }
 
