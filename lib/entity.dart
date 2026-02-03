@@ -1173,6 +1173,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       } catch (e) {
         // Fallback to UTC if timezone is invalid
         location = tz.UTC;
+        _showErrorSnackBar("Invalid timezone: '$timezone'. Defaulting to UTC.");
       }
     }
 
