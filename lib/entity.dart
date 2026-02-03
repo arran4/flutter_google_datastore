@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/kind.dart';
 import 'package:googleapis/datastore/v1.dart' as dsv1;
+import 'blob_viewer_dialog.dart';
 import 'database.dart';
 import 'datastoremain.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -663,37 +664,66 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
         SelectableText(displayValue),
         Align(
           alignment: Alignment.centerRight,
-          child: IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () async {
-              dynamic result = await showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return PropertyAddEditDeleteDialog(prop, widget.entityRow);
-                },
-              );
-              if (result == null) {
-                return;
-              }
-              if (result is MapEntry<String, dsv1.Value?>) {
-                setState(() {
-                  newProperties ??= {...(widget.entityRow.entity.properties ?? {})};
-                  if (result.value != null) {
-                    newProperties![result.key] = result.value!;
-                    if (result.key != prop.key) {
-                      newProperties!.remove(prop.key);
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (prop.value.blobValue != null)
+                IconButton(
+                  icon: const Icon(Icons.visibility),
+                  onPressed: () async {
+                    var newValue = await showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return BlobViewerDialog(prop.value.blobValue!);
+                      },
+                    );
+                    if (newValue != null && newValue is String) {
+                      setState(() {
+                        newProperties ??= {...(widget.entityRow.entity.properties ?? {})};
+                        newProperties![prop.key] = dsv1.Value(
+                          blobValue: newValue,
+                          excludeFromIndexes: prop.value.excludeFromIndexes,
+                        );
+                        if (widget.onUpdate != null) {
+                          widget.onUpdate!(newProperties ?? {});
+                        }
+                      });
                     }
-                  } else {
-                    newProperties!.remove(result.key);
+                  },
+                ),
+              IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () async {
+                  dynamic result = await showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return PropertyAddEditDeleteDialog(prop, widget.entityRow);
+                    },
+                  );
+                  if (result == null) {
+                    return;
                   }
-                  if (widget.onUpdate != null) {
-                    widget.onUpdate!(newProperties ?? {});
+                  if (result is MapEntry<String, dsv1.Value?>) {
+                    setState(() {
+                      newProperties ??= {...(widget.entityRow.entity.properties ?? {})};
+                      if (result.value != null) {
+                        newProperties![result.key] = result.value!;
+                        if (result.key != prop.key) {
+                          newProperties!.remove(prop.key);
+                        }
+                      } else {
+                        newProperties!.remove(result.key);
+                      }
+                      if (widget.onUpdate != null) {
+                        widget.onUpdate!(newProperties ?? {});
+                      }
+                    });
                   }
-                });
-              }
-            },
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
+                },
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
           ),
         ),
       ]),
@@ -1002,6 +1032,11 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
                     }
                   });
                 }
+              },
+              onUpdate: (dsv1.Value newValue) {
+                setState(() {
+                  _arrayValues = _arrayValues.map((e) => e == each ? newValue : e).toList();
+                });
               },
               key: ValueKey(each))),
           TextButton(
@@ -1443,8 +1478,9 @@ class CompositeKey extends Key {
 class ValueAddEditRow extends StatelessWidget {
   final dsv1.Value value;
   final Function()? onEdit;
+  final Function(dsv1.Value)? onUpdate;
 
-  const ValueAddEditRow({Key? key, required this.value, this.onEdit}) : super(key: key);
+  const ValueAddEditRow({Key? key, required this.value, this.onEdit, this.onUpdate}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -1473,9 +1509,34 @@ class ValueAddEditRow extends StatelessWidget {
             flex: 1,
             child: Align(
               alignment: Alignment.centerRight,
-              child: IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: onEdit,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (value.blobValue != null)
+                    IconButton(
+                      icon: const Icon(Icons.visibility),
+                      onPressed: () async {
+                        var newValue = await showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return BlobViewerDialog(value.blobValue!);
+                          },
+                        );
+                        if (newValue != null && newValue is String) {
+                          if (onUpdate != null) {
+                            onUpdate!(dsv1.Value(
+                              blobValue: newValue,
+                              excludeFromIndexes: value.excludeFromIndexes,
+                            ));
+                          }
+                        }
+                      },
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: onEdit,
+                  ),
+                ],
               ),
             ),
           ),
