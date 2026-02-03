@@ -812,6 +812,25 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
   List<dsv1.PathElement>? _keyPath;
   List<dsv1.Value> _arrayValues = [];
   Map<String, dsv1.Value> newProperties = {};
+  List<int>? _blobValue;
+
+  Future<void> _uploadBlob() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    if (result != null) {
+      PlatformFile file = result.files.single;
+      List<int> bytes;
+      if (file.bytes != null) {
+        bytes = file.bytes!;
+      } else if (file.path != null) {
+        bytes = await File(file.path!).readAsBytes();
+      } else {
+        return;
+      }
+      setState(() {
+        _blobValue = bytes;
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -940,7 +959,32 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
           ),
         ];
       case "blob":
-        break; // TODO
+        return [
+          ListTile(
+            title: Text("Blob Content (${_blobValue?.length ?? 0} bytes)"),
+            subtitle: _blobValue == null ? const Text("No data") : const Text("Data present"),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.upload_file),
+                  onPressed: _uploadBlob,
+                  tooltip: "Upload File",
+                ),
+                if (_blobValue != null)
+                  IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      setState(() {
+                        _blobValue = null;
+                      });
+                    },
+                    tooltip: "Clear",
+                  ),
+              ],
+            ),
+          ),
+        ];
       case "array":
         return [
           ..._arrayValues.map((dsv1.Value each) => ValueAddEditRow(
@@ -1127,7 +1171,10 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         );
         break;
       case "blob":
-        throw UnimplementedError();
+        value = dsv1.Value(
+          blobValue: _blobValue != null ? base64Encode(_blobValue!) : null,
+        );
+        break;
       case "array":
         value = dsv1.Value(
           arrayValue: dsv1.ArrayValue(
@@ -1201,7 +1248,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         _textEditingController = TextEditingController(text: value?.stringValue ?? "");
         break;
       case "blob":
-        // TODO
+        _blobValue = value?.blobValue != null ? base64Decode(value!.blobValue!) : null;
         break;
       case "array":
         _arrayValues = [...(value?.arrayValue?.values ?? [])];
