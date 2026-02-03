@@ -230,10 +230,11 @@ class _ViewEntityState extends State<ViewEntity> {
   @override
   void didUpdateWidget(ViewEntity oldWidget) {
     super.didUpdateWidget(oldWidget);
-    setState(() {
-      // TODO consider if this killing values that are being edited is okay.
-      newProperties = null;
-    });
+    if (oldWidget.entityRow != widget.entityRow) {
+      setState(() {
+        newProperties = null;
+      });
+    }
   }
 
 
@@ -396,7 +397,16 @@ class _ViewEntityState extends State<ViewEntity> {
                         child: Text("Properties", style: Theme.of(context).textTheme.headlineSmall),
                       ),
                     ), // Adjust the space according to your layout
-                    PropertyViewWidget(widget.entityRow, properties: widget.entityRow.entity.properties ?? {}, onSaveChanges: widget.saveEntityPropertyUpdates, newProperties: newProperties),
+                    PropertyViewWidget(widget.entityRow, properties: widget.entityRow.entity.properties ?? {}, onSaveChanges: (props) async {
+                      if (widget.saveEntityPropertyUpdates != null) {
+                        await widget.saveEntityPropertyUpdates!(props);
+                        if (mounted) {
+                          setState(() {
+                            newProperties = null;
+                          });
+                        }
+                      }
+                    }, newProperties: newProperties),
                   ],
                 ),
                 Align(
@@ -568,9 +578,14 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         ElevatedButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (widget.onSaveChanges != null) {
-                              widget.onSaveChanges!(newProperties ?? {});
+                              await widget.onSaveChanges!(newProperties ?? {});
+                              if (mounted) {
+                                setState(() {
+                                  newProperties = null;
+                                });
+                              }
                             }
                           },
                           style: ElevatedButton.styleFrom(
