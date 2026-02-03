@@ -112,8 +112,8 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
         future: listOfKinds,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            if (snapshot.error.runtimeType == dsv1.DetailedApiRequestError) {
-              return SelectableText('Authentication Error: ${snapshot.error}'); // TODO self provide details.
+            if (snapshot.error is dsv1.DetailedApiRequestError) {
+              return SelectableText(_getErrorMessage(snapshot.error as dsv1.DetailedApiRequestError));
             }
             return SelectableText('Error: ${snapshot.error}');
           } else if (snapshot.hasData) {
@@ -200,6 +200,24 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
     query: dsv1.Query(kind: [dsv1.KindExpression(name: "__namespace__")]),
     ), widget.project.projectId);
     return response?.batch?.entityResults?.map((e) => e.entity)?.whereType<dsv1.Entity>()?.map((e) => Namespace.fromEntity(e))?.toList() ?? [];
+  }
+
+  String _getErrorMessage(dsv1.DetailedApiRequestError error) {
+    final buffer = StringBuffer();
+    buffer.writeln('Authentication Error:');
+    buffer.writeln('Status: ${error.status}');
+    buffer.writeln('Message: ${error.message}');
+    if (error.errors.isNotEmpty) {
+      buffer.writeln('Details:');
+      for (var e in error.errors) {
+        buffer.writeln('- Reason: ${e.reason}');
+        buffer.writeln('  Message: ${e.message}');
+        if (e.domain != null) {
+          buffer.writeln('  Domain: ${e.domain}');
+        }
+      }
+    }
+    return buffer.toString();
   }
 }
 
