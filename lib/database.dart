@@ -35,7 +35,7 @@ class DB {
     return fullFn;
   }
 
-  Future<Project> createNewProject(String? endpointUrl, String projectId, String authMode, String? googleCliProfile) async {
+  Future<Project> createNewProject(String? endpointUrl, String projectId, String authMode, String? googleCliProfile, String? databaseId) async {
     Database db = await _db;
     Map<String, Object?> values = <String, Object?>{};
     if (endpointUrl != null) {
@@ -43,6 +43,9 @@ class DB {
     }
     if (googleCliProfile != null) {
       values["googleCliProfile"] = googleCliProfile;
+    }
+    if (databaseId != null) {
+      values["databaseId"] = databaseId;
     }
     values["projectId"] = projectId;
     values["authMode"] = authMode;
@@ -85,16 +88,16 @@ class DB {
     String fullFn = await filepath();
     return await openDatabase(
       fullFn,
-      version: 2,
+      version: 3,
       onCreate: (Database db, int version) async {
         await db.execute(Project.createSql);
       },
       onUpgrade: (Database db, int oldVersion, int newVersion) async {
-        switch (oldVersion) {
-          case 0:
-          // await db.execute();
-          case 1:
+        if (oldVersion < 2) {
           await db.execute(Project.dbV1toV2);
+        }
+        if (oldVersion < 3) {
+          await db.execute(Project.dbAddDatabaseId);
         }
       },
     );
@@ -112,7 +115,7 @@ class DB {
     return;
   }
 
-  Future<Project> updateProject(int id, String? endpointUrl, String? projectId, String? authMode, String? googleCliProfile) async {
+  Future<Project> updateProject(int id, String? endpointUrl, String? projectId, String? authMode, String? googleCliProfile, String? databaseId) async {
     Database db = await _db;
     Map<String, Object?> values = <String, Object?>{};
     if (endpointUrl != null) {
@@ -127,6 +130,9 @@ class DB {
     if (authMode != null) {
       values["authMode"] = authMode;
     }
+    if (databaseId != null) {
+      values["databaseId"] = databaseId;
+    }
     await db.update(Project.name, values, where: "id=?", whereArgs: <Object?>[id]);
     return await getProject(id);
   }
@@ -138,6 +144,7 @@ class Project {
   final String projectId;
   final String authMode;
   final String? googleCliProfile;
+  final String databaseId;
   DateTime created;
   DateTime updated;
   DateTime? deleted;
@@ -152,7 +159,8 @@ class Project {
             endpointUrl STRING DEFAULT NULL,
             googleCliProfile STRING DEFAULT NULL,
             authMode STRING DEFAULT "none" NOT NULL,
-            projectId STRING NOT NULL
+            projectId STRING NOT NULL,
+            databaseId STRING DEFAULT ""
           );
       ''';
   static const dbV1toV2 = '''
@@ -161,10 +169,13 @@ class Project {
   static const dbV2toV3 = '''
     ALTER TABLE ${Project.name} ADD COLUMN googleCliProfile STRING DEFAULT NULL;
   ''';
-  static const List<String> columns = <String>["id", "created", "updated", "deleted", "endpointUrl", "projectId", "authMode", "googleCliProfile"];
+  static const dbAddDatabaseId = '''
+    ALTER TABLE ${Project.name} ADD COLUMN databaseId STRING DEFAULT "";
+  ''';
+  static const List<String> columns = <String>["id", "created", "updated", "deleted", "endpointUrl", "projectId", "authMode", "googleCliProfile", "databaseId"];
   static const List<String> required = <String>["id", "projectId"];
 
-  Project({required this.id, required this.created, required this.updated, this.deleted, required this.endpointUrl, required this.projectId, required this.authMode, required this.googleCliProfile});
+  Project({required this.id, required this.created, required this.updated, this.deleted, required this.endpointUrl, required this.projectId, required this.authMode, required this.googleCliProfile, required this.databaseId});
 
   Project.fromRow(Map<String, Object?> each)
       : id = int.parse(each["id"].toString()),
@@ -174,11 +185,10 @@ class Project {
         endpointUrl = each.containsKey("endpointUrl") && each["endpointUrl"] != null ? each["endpointUrl"].toString() : null,
         googleCliProfile = each.containsKey("googleCliProfile") && each["googleCliProfile"] != null ? each["googleCliProfile"].toString() : null,
         authMode = each["authMode"].toString() ?? "none",
-        projectId = each["projectId"].toString();
+        projectId = each["projectId"].toString(),
+        databaseId = each["databaseId"]?.toString() ?? "";
 
   String get key => "$projectId @ ${endpointUrl ?? "default"}";
-
-  String get databaseId => ""; // TODO
 
   static bool validRow(Map<String, Object?> each) {
     for (String column in required) {

@@ -259,6 +259,7 @@ class AddEditProjectScreen extends StatefulWidget {
 class AddEditProjectScreenState extends State<AddEditProjectScreen> {
   final TextEditingController endpointUrlController = TextEditingController();
   final TextEditingController projectIdController = TextEditingController();
+  final TextEditingController databaseIdController = TextEditingController();
   String authMode = "none";
   GCloudCLICredentialDiscover gCloudCLICredentialDiscover = GCloudCLICredentialDiscover();
   String? googleCliProfile;
@@ -268,6 +269,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
     if (endpointUrl.isEmpty) {
       endpointUrl = null;
     }
+    String databaseId = databaseIdController.text;
     var project = widget.project;
     if (project == null) {
       await db.createNewProject(
@@ -275,6 +277,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
         projectIdController.text,
         authMode,
         googleCliProfile,
+        databaseId,
       );
     } else {
       await db.updateProject(
@@ -283,6 +286,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
         projectIdController.text,
         authMode,
         googleCliProfile,
+        databaseId,
       );
     }
 
@@ -294,6 +298,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
   void initState() {
     projectIdController.text = widget.project?.projectId ?? "";
     endpointUrlController.text = widget.project?.endpointUrl ?? "";
+    databaseIdController.text = widget.project?.databaseId ?? "";
     authMode = widget.project?.authMode ?? "none";
     googleCliProfile = widget.project?.googleCliProfile ?? "default";
   }
@@ -317,6 +322,10 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
             TextField(
               controller: projectIdController,
               decoration: const InputDecoration(labelText: 'Project'),
+            ),
+            TextField(
+              controller: databaseIdController,
+              decoration: const InputDecoration(labelText: 'Database ID (blank for default)'),
             ),
             DropdownButtonFormField<String>(
               value: authMode,
