@@ -795,6 +795,8 @@ class PropertyAddEditDeleteDialog extends StatefulWidget {
 class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialog> {
   TextEditingController? _textEditingController;
   TextEditingController? _numberEditingController;
+  TextEditingController? _latitudeController;
+  TextEditingController? _longitudeController;
   TextEditingController? _nameController;
   String _selectedType = "string";
   bool _indexData = false;
@@ -820,6 +822,25 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
     _selectedType = getValueType(widget.propertyEntry?.value) ?? "string";
     _indexData = !(widget.propertyEntry?.value?.excludeFromIndexes ?? false);
     extractValue(widget.propertyEntry?.value);
+  }
+
+  @override
+  void dispose() {
+    _textEditingController?.dispose();
+    _numberEditingController?.dispose();
+    _latitudeController?.dispose();
+    _longitudeController?.dispose();
+    _nameController?.dispose();
+    _yearController.dispose();
+    _monthController.dispose();
+    _dayController.dispose();
+    _hourController.dispose();
+    _minuteController.dispose();
+    _secondController.dispose();
+    _millisecondController.dispose();
+    _microsecondController.dispose();
+    _timezoneController.dispose();
+    super.dispose();
   }
 
   Widget _buildDateTimeTextField(String label, TextEditingController controller) {
@@ -1035,7 +1056,20 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
           ),
         ];
       case "geoPoint":
-        break; // TODO
+        return [
+          TextField(
+            key: Key("${_selectedType}_lat"),
+            controller: _latitudeController,
+            decoration: const InputDecoration(labelText: 'Latitude'),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+          ),
+          TextField(
+            key: Key("${_selectedType}_long"),
+            controller: _longitudeController,
+            decoration: const InputDecoration(labelText: 'Longitude'),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+          ),
+        ];
       case "integer":
         return [
           TextField(
@@ -1153,7 +1187,13 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         );
         break;
       case "geoPoint":
-        throw UnimplementedError();
+        value = dsv1.Value(
+          geoPointValue: dsv1.LatLng(
+            latitude: double.tryParse(_latitudeController?.text ?? ""),
+            longitude: double.tryParse(_longitudeController?.text ?? ""),
+          ),
+        );
+        break;
       case "integer":
         value = dsv1.Value(
           integerValue: int.parse(_numberEditingController?.text ?? "").toString(),
@@ -1216,7 +1256,8 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         newProperties = {...(value?.entityValue?.properties ?? {})};
         break;
       case "geoPoint":
-        // TODO
+        _latitudeController = TextEditingController(text: value?.geoPointValue?.latitude?.toString() ?? "");
+        _longitudeController = TextEditingController(text: value?.geoPointValue?.longitude?.toString() ?? "");
         break;
       case "integer":
         _numberEditingController = TextEditingController(text: value?.integerValue.toString() ?? "");
