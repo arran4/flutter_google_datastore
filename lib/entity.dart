@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import 'database.dart';
 import 'datastoremain.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:file_picker/file_picker.dart';
+import 'hex_editor.dart';
 
 
 class ViewEntityPage extends StatefulWidget {
@@ -949,6 +951,8 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
               const SizedBox(width: 8),
               ElevatedButton(onPressed: _blobValue == null ? null : _downloadBlob, child: const Text("Download")),
               const SizedBox(width: 8),
+              ElevatedButton(onPressed: _editHex, child: const Text("Hex Edit")),
+              const SizedBox(width: 8),
               ElevatedButton(
                   onPressed: () {
                     setState(() {
@@ -1250,6 +1254,28 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
           label: 'OK',
           onPressed: () {},
         ),
+      ),
+    );
+  }
+
+  Future<void> _editHex() async {
+    Uint8List? data;
+    if (_blobValue != null) {
+      data = base64Decode(_blobValue!);
+    }
+    await showDialog(
+      context: context,
+      builder: (context) => HexEditor(
+        data: data,
+        onSave: (Uint8List? newData) {
+          setState(() {
+            if (newData != null) {
+              _blobValue = base64Encode(newData);
+            } else {
+              _blobValue = null;
+            }
+          });
+        },
       ),
     );
   }
