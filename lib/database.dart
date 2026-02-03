@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:dartobjectutils/dartobjectutils.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
@@ -177,16 +177,18 @@ class Project {
 
   Project({required this.id, required this.created, required this.updated, this.deleted, required this.endpointUrl, required this.projectId, required this.authMode, required this.googleCliProfile, required this.databaseId});
 
-  Project.fromRow(Map<String, Object?> each)
-      : id = int.parse(each["id"].toString()),
-        created = DateTime.tryParse(each["created"].toString()) ?? DateTime.timestamp(),
-        updated = DateTime.tryParse(each["updated"].toString()) ?? DateTime.timestamp(),
-        deleted = each["deleted"] != null ? DateTime.tryParse(each["deleted"].toString()) : null,
-        endpointUrl = each.containsKey("endpointUrl") && each["endpointUrl"] != null ? each["endpointUrl"].toString() : null,
-        googleCliProfile = each.containsKey("googleCliProfile") && each["googleCliProfile"] != null ? each["googleCliProfile"].toString() : null,
-        authMode = each["authMode"].toString() ?? "none",
-        projectId = each["projectId"].toString(),
-        databaseId = each["databaseId"]?.toString() ?? "";
+  Project.fromRow(Map<String, Object?> each) : this.fromMap(each.cast<String, dynamic>());
+
+  Project.fromMap(Map<String, dynamic> each)
+      : id = getNumberPropOrThrow(each, "id")!.toInt(),
+        created = getDatePropOrDefault(each, "created", DateTime.timestamp()),
+        updated = getDatePropOrDefault(each, "updated", DateTime.timestamp()),
+        deleted = getDatePropOrDefault(each, "deleted", null),
+        endpointUrl = getStringPropOrDefault(each, "endpointUrl", null),
+        googleCliProfile = getStringPropOrDefault(each, "googleCliProfile", null),
+        authMode = getStringPropOrDefault(each, "authMode", "none"),
+        projectId = getStringPropOrThrow(each, "projectId"),
+        databaseId = getStringPropOrDefault(each, "databaseId", "");
 
   String get key => "$projectId @ ${endpointUrl ?? "default"}";
 
