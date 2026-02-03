@@ -1339,62 +1339,80 @@ class _KeyPatElementTextInputWidgetState extends State<KeyPatElementTextInputWid
   Widget build(BuildContext context) {
     var type = widget.each.id != null ? "id" : "name";
 
-    return Column(
-      key: ObjectKey(widget.each),
-      children: [
-        Text("Kind: ${widget.each.kind}"),
-        TextField(
-          key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Kind")),
-          controller: _kindController,
-          decoration: const InputDecoration(labelText: 'Kind'),
-          onChanged: (String value) {
-            setState(() {
-              widget.each.kind = value;
-            });
-          },
-        ),
-        DropdownButton(
-          key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Type")),
-          items: const [
-            DropdownMenuItem(value: "id", child: Text("Id")),
-            DropdownMenuItem(value: "name", child: Text("Name")),
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          key: ObjectKey(widget.each),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Kind")),
+              controller: _kindController,
+              decoration: const InputDecoration(
+                labelText: 'Kind',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (String value) {
+                setState(() {
+                  widget.each.kind = value;
+                });
+              },
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                SegmentedButton<String>(
+                  segments: const <ButtonSegment<String>>[
+                    ButtonSegment<String>(value: 'id', label: Text('ID')),
+                    ButtonSegment<String>(value: 'name', label: Text('Name')),
+                  ],
+                  selected: <String>{type},
+                  onSelectionChanged: (Set<String> newSelection) {
+                    setState(() {
+                      var value = newSelection.first;
+                      widget.each.id = value == "id" ? widget.each.id ?? "" : null;
+                      widget.each.name = value == "name" ? widget.each.name ?? "" : null;
+                    });
+                  },
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: type == "id"
+                      ? TextField(
+                          key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Id")),
+                          controller: _idController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Id',
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (String value) {
+                            setState(() {
+                              widget.each.id = value;
+                            });
+                          },
+                        )
+                      : TextField(
+                          key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Name")),
+                          controller: _nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Name',
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (String value) {
+                            setState(() {
+                              widget.each.name = value;
+                            });
+                          },
+                        ),
+                ),
+              ],
+            ),
           ],
-          value: type,
-          onChanged: (value) {
-            setState(() {
-              widget.each.id = value == "id" ? widget.each.id ?? "" : null;
-              widget.each.name = value == "name" ? widget.each.name ?? "" : null;
-            });
-          },
         ),
-        if (type == "id")
-          TextField(
-            key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Id")),
-            controller: _idController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Id'),
-            onChanged: (String value) {
-              setState(() {
-                widget.each.id = value;
-              });
-            },
-          ),
-        if (type == "name")
-          TextField(
-            key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Name")),
-            controller: _nameController,
-            decoration: const InputDecoration(labelText: 'Name'),
-            onChanged: (String value) {
-              setState(() {
-                widget.each.name = value;
-              });
-            },
-          ),
-        const Text(
-          "Parent",
-          style: TextStyle(fontSize: 24),
-        ),
-      ],
+      ),
     );
   }
 }
