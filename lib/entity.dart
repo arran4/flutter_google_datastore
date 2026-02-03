@@ -812,6 +812,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
   List<dsv1.PathElement>? _keyPath;
   List<dsv1.Value> _arrayValues = [];
   Map<String, dsv1.Value> newProperties = {};
+  String? _blobValue;
 
   @override
   void initState() {
@@ -940,7 +941,24 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
           ),
         ];
       case "blob":
-        break; // TODO
+        return [
+          Text("Blob Length: ${_blobValue?.length ?? 0}"),
+          Row(
+            children: [
+              ElevatedButton(onPressed: _uploadBlob, child: const Text("Upload")),
+              const SizedBox(width: 8),
+              ElevatedButton(onPressed: _blobValue == null ? null : _downloadBlob, child: const Text("Download")),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _blobValue = null;
+                    });
+                  },
+                  child: const Text("Clear")),
+            ],
+          )
+        ];
       case "array":
         return [
           ..._arrayValues.map((dsv1.Value each) => ValueAddEditRow(
@@ -1127,7 +1145,10 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         );
         break;
       case "blob":
-        throw UnimplementedError();
+        value = dsv1.Value(
+          blobValue: _blobValue,
+        );
+        break;
       case "array":
         value = dsv1.Value(
           arrayValue: dsv1.ArrayValue(
@@ -1186,6 +1207,53 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
     return value;
   }
 
+  Future<void> _uploadBlob() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+    if (result != null) {
+      if (result.files.first.bytes != null) {
+        setState(() {
+          _blobValue = base64Encode(result.files.first.bytes!);
+        });
+      } else if (result.files.single.path != null) {
+        File file = File(result.files.single.path!);
+        List<int> bytes = await file.readAsBytes();
+        setState(() {
+          _blobValue = base64Encode(bytes);
+        });
+      }
+    }
+  }
+
+  Future<void> _downloadBlob() async {
+    if (_blobValue == null) {
+      return;
+    }
+    String? filePath = await FilePicker.platform.saveFile(
+      dialogTitle: "Save Blob to file",
+      fileName: "blob.bin",
+    );
+    if (filePath == null) {
+      return;
+    }
+    List<int> bytes = base64Decode(_blobValue!);
+    File file = File(filePath);
+    await file.writeAsBytes(bytes);
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Blob saved to file: $filePath'),
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'OK',
+          onPressed: () {},
+        ),
+      ),
+    );
+  }
+
   void _showErrorSnackBar(String message) {
     final snackBar = SnackBar(
       content: Text(message),
@@ -1201,7 +1269,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         _textEditingController = TextEditingController(text: value?.stringValue ?? "");
         break;
       case "blob":
-        // TODO
+        _blobValue = value?.blobValue;
         break;
       case "array":
         _arrayValues = [...(value?.arrayValue?.values ?? [])];
