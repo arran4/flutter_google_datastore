@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/database.dart';
 import 'package:googleapis/datastore/v1.dart' as dsv1;
@@ -215,12 +216,33 @@ class GCloudCLICredentialDiscover {
     return profiles.contains(defaultProfileName);
 }
 
-  GCloudCLICredentialDiscover() {
-    unawaited(loadConfigDir());
+  final String? overrideConfigDir;
+  late final Future<void> initFuture;
+
+  GCloudCLICredentialDiscover({this.overrideConfigDir}) {
+    initFuture = loadConfigDir();
   }
 
   Future<void> loadConfigDir() async {
-    if (Platform.isLinux) {
+    if (overrideConfigDir != null) {
+      configDir = overrideConfigDir!;
+    } else if (kIsWeb) {
+      return;
+    } else if (Platform.isWindows) {
+      final appData = Platform.environment['APPDATA'];
+      if (appData != null) {
+        configDir = path.join(appData, "gcloud");
+      } else {
+        configDir = path.join(Directory.systemTemp.path, "gcloud");
+      }
+    } else if (Platform.isMacOS) {
+      final home = Platform.environment['HOME'];
+      if (home != null) {
+        configDir = path.join(home, ".config", "gcloud");
+      } else {
+        configDir = path.join((await ppath.getLibraryDirectory()).path, "gcloud");
+      }
+    } else if (Platform.isLinux) {
       configDir = path.join(xdg.configHome.path, "gcloud");
     } else {
       configDir = path.join((await ppath.getLibraryDirectory()).path, "gcloud");
@@ -246,12 +268,23 @@ class GCloudCLICredentialDiscover {
     ini.Config inic = ini.Config.fromString(fileContents);
 
     dynamic account = inic.get("core", "account");
-    // TODO expand to other platforms.
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-    Database db = await openDatabase(credentialsDBFile, readOnly: true);
+
+    if (kIsWeb) {
+      throw UnsupportedError("GCloud CLI credentials not supported on Web");
+    }
+
+    DatabaseFactory dbFactory;
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      sqfliteFfiInit();
+      dbFactory = databaseFactoryFfi;
+    } else {
+      dbFactory = databaseFactory;
+    }
+    Database db = await dbFactory.openDatabase(credentialsDBFile,
+        options: OpenDatabaseOptions(readOnly: true));
     try {
-      List<Map<String,Object?>> results = await db.query("credentials", where: "account_id=?", whereArgs: [account], limit: 1, columns: ["value"]);
+      List<Map<String, Object?>> results = await db.query("credentials",
+          where: "account_id=?", whereArgs: [account], limit: 1, columns: ["value"]);
       if (results.length != 1) {
         throw Error.safeToString("Credentials for profile not found");
       }

@@ -230,10 +230,11 @@ class _ViewEntityState extends State<ViewEntity> {
   @override
   void didUpdateWidget(ViewEntity oldWidget) {
     super.didUpdateWidget(oldWidget);
-    setState(() {
-      // TODO consider if this killing values that are being edited is okay.
-      newProperties = null;
-    });
+    if (oldWidget.entityRow != widget.entityRow) {
+      setState(() {
+        newProperties = null;
+      });
+    }
   }
 
 
@@ -396,7 +397,16 @@ class _ViewEntityState extends State<ViewEntity> {
                         child: Text("Properties", style: Theme.of(context).textTheme.headlineSmall),
                       ),
                     ), // Adjust the space according to your layout
-                    PropertyViewWidget(widget.entityRow, properties: widget.entityRow.entity.properties ?? {}, onSaveChanges: widget.saveEntityPropertyUpdates, newProperties: newProperties),
+                    PropertyViewWidget(widget.entityRow, properties: widget.entityRow.entity.properties ?? {}, onSaveChanges: (props) async {
+                      if (widget.saveEntityPropertyUpdates != null) {
+                        await widget.saveEntityPropertyUpdates!(props);
+                        if (mounted) {
+                          setState(() {
+                            newProperties = null;
+                          });
+                        }
+                      }
+                    }, newProperties: newProperties),
                   ],
                 ),
                 Align(
@@ -568,9 +578,14 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         ElevatedButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (widget.onSaveChanges != null) {
-                              widget.onSaveChanges!(newProperties ?? {});
+                              await widget.onSaveChanges!(newProperties ?? {});
+                              if (mounted) {
+                                setState(() {
+                                  newProperties = null;
+                                });
+                              }
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -795,6 +810,8 @@ class PropertyAddEditDeleteDialog extends StatefulWidget {
 class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialog> {
   TextEditingController? _textEditingController;
   TextEditingController? _numberEditingController;
+  TextEditingController? _latitudeController;
+  TextEditingController? _longitudeController;
   TextEditingController? _nameController;
   String _selectedType = "string";
   bool _indexData = false;
@@ -820,6 +837,25 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
     _selectedType = getValueType(widget.propertyEntry?.value) ?? "string";
     _indexData = !(widget.propertyEntry?.value?.excludeFromIndexes ?? false);
     extractValue(widget.propertyEntry?.value);
+  }
+
+  @override
+  void dispose() {
+    _textEditingController?.dispose();
+    _numberEditingController?.dispose();
+    _latitudeController?.dispose();
+    _longitudeController?.dispose();
+    _nameController?.dispose();
+    _yearController.dispose();
+    _monthController.dispose();
+    _dayController.dispose();
+    _hourController.dispose();
+    _minuteController.dispose();
+    _secondController.dispose();
+    _millisecondController.dispose();
+    _microsecondController.dispose();
+    _timezoneController.dispose();
+    super.dispose();
   }
 
   Widget _buildDateTimeTextField(String label, TextEditingController controller) {
@@ -1035,7 +1071,20 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
           ),
         ];
       case "geoPoint":
-        break; // TODO
+        return [
+          TextField(
+            key: Key("${_selectedType}_lat"),
+            controller: _latitudeController,
+            decoration: const InputDecoration(labelText: 'Latitude'),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+          ),
+          TextField(
+            key: Key("${_selectedType}_long"),
+            controller: _longitudeController,
+            decoration: const InputDecoration(labelText: 'Longitude'),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+          ),
+        ];
       case "integer":
         return [
           TextField(
@@ -1160,7 +1209,13 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         );
         break;
       case "geoPoint":
-        throw UnimplementedError();
+        value = dsv1.Value(
+          geoPointValue: dsv1.LatLng(
+            latitude: double.tryParse(_latitudeController?.text ?? ""),
+            longitude: double.tryParse(_longitudeController?.text ?? ""),
+          ),
+        );
+        break;
       case "integer":
         value = dsv1.Value(
           integerValue: int.parse(_numberEditingController?.text ?? "").toString(),
@@ -1176,7 +1231,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         break;
       case "me":
         value = dsv1.Value(
-          meaning: int.parse(_numberEditingController?.text ?? ""),
+          meaning: int.tryParse(_numberEditingController?.text ?? ""),
         );
         break;
       case "null":
@@ -1226,7 +1281,8 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         newProperties = {...(value?.entityValue?.properties ?? {})};
         break;
       case "geoPoint":
-        // TODO
+        _latitudeController = TextEditingController(text: value?.geoPointValue?.latitude?.toString() ?? "");
+        _longitudeController = TextEditingController(text: value?.geoPointValue?.longitude?.toString() ?? "");
         break;
       case "integer":
         _numberEditingController = TextEditingController(text: value?.integerValue.toString() ?? "");
@@ -1293,62 +1349,80 @@ class _KeyPatElementTextInputWidgetState extends State<KeyPatElementTextInputWid
   Widget build(BuildContext context) {
     var type = widget.each.id != null ? "id" : "name";
 
-    return Column(
-      key: ObjectKey(widget.each),
-      children: [
-        Text("Kind: ${widget.each.kind}"),
-        TextField(
-          key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Kind")),
-          controller: _kindController,
-          decoration: const InputDecoration(labelText: 'Kind'),
-          onChanged: (String value) {
-            setState(() {
-              widget.each.kind = value;
-            });
-          },
-        ),
-        DropdownButton(
-          key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Type")),
-          items: const [
-            DropdownMenuItem(value: "id", child: Text("Id")),
-            DropdownMenuItem(value: "name", child: Text("Name")),
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          key: ObjectKey(widget.each),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Kind")),
+              controller: _kindController,
+              decoration: const InputDecoration(
+                labelText: 'Kind',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (String value) {
+                setState(() {
+                  widget.each.kind = value;
+                });
+              },
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                SegmentedButton<String>(
+                  segments: const <ButtonSegment<String>>[
+                    ButtonSegment<String>(value: 'id', label: Text('ID')),
+                    ButtonSegment<String>(value: 'name', label: Text('Name')),
+                  ],
+                  selected: <String>{type},
+                  onSelectionChanged: (Set<String> newSelection) {
+                    setState(() {
+                      var value = newSelection.first;
+                      widget.each.id = value == "id" ? widget.each.id ?? "" : null;
+                      widget.each.name = value == "name" ? widget.each.name ?? "" : null;
+                    });
+                  },
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: type == "id"
+                      ? TextField(
+                          key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Id")),
+                          controller: _idController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Id',
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (String value) {
+                            setState(() {
+                              widget.each.id = value;
+                            });
+                          },
+                        )
+                      : TextField(
+                          key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Name")),
+                          controller: _nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Name',
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (String value) {
+                            setState(() {
+                              widget.each.name = value;
+                            });
+                          },
+                        ),
+                ),
+              ],
+            ),
           ],
-          value: type,
-          onChanged: (value) {
-            setState(() {
-              widget.each.id = value == "id" ? widget.each.id ?? "" : null;
-              widget.each.name = value == "name" ? widget.each.name ?? "" : null;
-            });
-          },
         ),
-        if (type == "id")
-          TextField(
-            key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Id")),
-            controller: _idController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Id'),
-            onChanged: (String value) {
-              setState(() {
-                widget.each.id = value;
-              });
-            },
-          ),
-        if (type == "name")
-          TextField(
-            key: CompositeKey(key1: ObjectKey(widget.each), key2: const Key("Name")),
-            controller: _nameController,
-            decoration: const InputDecoration(labelText: 'Name'),
-            onChanged: (String value) {
-              setState(() {
-                widget.each.name = value;
-              });
-            },
-          ),
-        const Text(
-          "Parent",
-          style: TextStyle(fontSize: 24),
-        ),
-      ],
+      ),
     );
   }
 }
