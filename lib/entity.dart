@@ -1066,7 +1066,14 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
               child: const Text("Remove parent")),
         ];
       case "me":
-        break; // TODO
+        return [
+          TextField(
+            key: Key(_selectedType),
+            controller: _numberEditingController,
+            decoration: const InputDecoration(labelText: 'Meaning (Integer)'),
+            keyboardType: const TextInputType.numberWithOptions(decimal: false),
+          ),
+        ];
       case "null":
         return const [Text("Null")];
       case "timestamp":
@@ -1168,7 +1175,10 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         );
         break;
       case "me":
-        throw UnimplementedError();
+        value = dsv1.Value(
+          meaning: int.tryParse(_numberEditingController?.text ?? ""),
+        );
+        break;
       case "null":
         value = dsv1.Value(
           nullValue: "NULL_VALUE",
@@ -1229,7 +1239,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         }
         break;
       case "me":
-        // TODO
+        _numberEditingController = TextEditingController(text: value?.meaning?.toString() ?? "");
         break;
       case "null":
         break;
