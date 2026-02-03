@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dartobjectutils/dartobjectutils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/database.dart';
@@ -173,13 +174,13 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
     switch (widget.project.authMode) {
       case gcloudCliAuthMode:
         final credsJson = await gCloudCLICredentials.getJsonCredentials(widget.project.googleCliProfile??"default");
-        var creds = jsonDecode(credsJson);
+        var creds = jsonDecode(credsJson) as Map<String, dynamic>;
         ClientId clientId = ClientId(
-          creds["client_id"],
-          creds["client_secret"],
+          getStringPropOrThrow(creds, "client_id"),
+          getStringPropOrThrow(creds, "client_secret"),
         );
         AccessToken accessToken = AccessToken("", "", DateTime.now().subtract(const Duration(days: 1)).toUtc());
-        AccessCredentials accessCredentials = AccessCredentials(accessToken, creds["refresh_token"], datastoreRequiredScopes);
+        AccessCredentials accessCredentials = AccessCredentials(accessToken, getStringPropOrDefault(creds, "refresh_token", null), datastoreRequiredScopes);
         accessCredentials = await refreshCredentials(clientId, accessCredentials, client);
         client = AutoRefreshingClient(client, GoogleAuthEndpoints(), clientId, accessCredentials);
         break;
