@@ -1080,7 +1080,65 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
           _buildDateTimeTextField("Second", _secondController),
           _buildDateTimeTextField("Millisecond", _millisecondController),
           _buildDateTimeTextField("Microsecond", _microsecondController),
-          _buildDateTimeTextField("Timezone", _timezoneController),
+          Padding(
+            key: const Key("DateTime:Timezone"),
+            padding: const EdgeInsets.all(8.0),
+            child: RawAutocomplete<String>(
+              textEditingController: _timezoneController,
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                if (textEditingValue.text == '') {
+                  return const Iterable<String>.empty();
+                }
+                return tz.timeZoneDatabase.locations.keys.where((String option) {
+                  return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                });
+              },
+              onSelected: (String selection) {
+                _timezoneController.text = selection;
+                _updateDateTime();
+              },
+              fieldViewBuilder: (BuildContext context, TextEditingController textEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
+                return TextField(
+                  controller: textEditingController,
+                  focusNode: focusNode,
+                  onSubmitted: (String value) {
+                    onFieldSubmitted();
+                  },
+                  decoration: const InputDecoration(labelText: 'Timezone'),
+                  onChanged: (String value) {
+                    _updateDateTime();
+                  },
+                );
+              },
+              optionsViewBuilder: (BuildContext context, AutocompleteOnSelected<String> onSelected, Iterable<String> options) {
+                return Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 4.0,
+                    child: SizedBox(
+                      height: 200.0,
+                      width: 300.0, // Limit width
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(8.0),
+                        itemCount: options.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          final String option = options.elementAt(index);
+                          return GestureDetector(
+                            onTap: () {
+                              onSelected(option);
+                            },
+                            child: ListTile(
+                              title: Text(option),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         ];
     }
     return [
@@ -1110,7 +1168,12 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
     // TODO a better library...
     tz.Location location = tz.UTC;
     if (timezone.isNotEmpty) {
-      location = tz.getLocation(timezone);
+      try {
+        location = tz.getLocation(timezone);
+      } catch (e) {
+        // Fallback to UTC if timezone is invalid
+        location = tz.UTC;
+      }
     }
 
     DateTime d = tz.TZDateTime(location, year, month, day, hour, minute, second, millisecond, microsecond);
