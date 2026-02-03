@@ -795,6 +795,8 @@ class PropertyAddEditDeleteDialog extends StatefulWidget {
 class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialog> {
   TextEditingController? _textEditingController;
   TextEditingController? _numberEditingController;
+  TextEditingController? _latController;
+  TextEditingController? _lngController;
   TextEditingController? _nameController;
   String _selectedType = "string";
   bool _indexData = false;
@@ -1035,7 +1037,20 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
           ),
         ];
       case "geoPoint":
-        break; // TODO
+        return [
+          TextField(
+            key: Key("${_selectedType}Lat"),
+            controller: _latController,
+            decoration: const InputDecoration(labelText: 'Latitude'),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+          TextField(
+            key: Key("${_selectedType}Lng"),
+            controller: _lngController,
+            decoration: const InputDecoration(labelText: 'Longitude'),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+        ];
       case "integer":
         return [
           TextField(
@@ -1153,7 +1168,13 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         );
         break;
       case "geoPoint":
-        throw UnimplementedError();
+        value = dsv1.Value(
+          geoPointValue: dsv1.LatLng(
+            latitude: double.tryParse(_latController?.text ?? ""),
+            longitude: double.tryParse(_lngController?.text ?? ""),
+          ),
+        );
+        break;
       case "integer":
         value = dsv1.Value(
           integerValue: int.parse(_numberEditingController?.text ?? "").toString(),
@@ -1216,7 +1237,8 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         newProperties = {...(value?.entityValue?.properties ?? {})};
         break;
       case "geoPoint":
-        // TODO
+        _latController = TextEditingController(text: value?.geoPointValue?.latitude?.toString() ?? "");
+        _lngController = TextEditingController(text: value?.geoPointValue?.longitude?.toString() ?? "");
         break;
       case "integer":
         _numberEditingController = TextEditingController(text: value?.integerValue.toString() ?? "");
