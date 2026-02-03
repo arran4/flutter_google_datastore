@@ -17,6 +17,9 @@ class BlobViewerDialog extends StatefulWidget {
 class _BlobViewerDialogState extends State<BlobViewerDialog> {
   late Uint8List bytes;
   int _selectedView = 0; // 0: Text, 1: Image, 2: Hex
+  bool _isEditing = false;
+  late TextEditingController _textController;
+  late TextEditingController _hexController;
 
   @override
   void initState() {
@@ -26,6 +29,64 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
     } catch (e) {
       bytes = Uint8List(0);
     }
+    _textController = TextEditingController();
+    _hexController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    _hexController.dispose();
+    super.dispose();
+  }
+
+  void _enterEditMode() {
+    setState(() {
+      _isEditing = true;
+      if (_selectedView == 0) {
+        // Text
+        try {
+          _textController.text = utf8.decode(bytes);
+        } catch (e) {
+          _textController.text = ""; // Or show error?
+        }
+      } else if (_selectedView == 2) {
+        // Hex
+        _hexController.text = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
+      }
+    });
+  }
+
+  void _saveChanges() {
+    if (_isEditing) {
+      try {
+        if (_selectedView == 0) {
+          bytes = Uint8List.fromList(utf8.encode(_textController.text));
+        } else if (_selectedView == 2) {
+          String cleanHex = _hexController.text.replaceAll(RegExp(r'\s+'), '');
+          if (cleanHex.length % 2 != 0) {
+            // Handle odd length? pad with 0? or error?
+            // For now, let's just ignore the last char if odd, or error.
+            // A common behavior is to error or pad.
+            // Let's assume the user knows what they are doing, but if not, we try our best.
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Invalid Hex String")));
+            return;
+          }
+          List<int> newBytes = [];
+          for (int i = 0; i < cleanHex.length; i += 2) {
+            newBytes.add(int.parse(cleanHex.substring(i, i + 2), radix: 16));
+          }
+          bytes = Uint8List.fromList(newBytes);
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error saving changes: $e")));
+        return;
+      }
+      setState(() {
+        _isEditing = false;
+      });
+    }
+    Navigator.of(context).pop(base64Encode(bytes));
   }
 
   @override
@@ -46,11 +107,13 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
                     _selectedView == 1,
                     _selectedView == 2
                   ],
-                  onPressed: (int index) {
-                    setState(() {
-                      _selectedView = index;
-                    });
-                  },
+                  onPressed: _isEditing
+                      ? null
+                      : (int index) {
+                          setState(() {
+                            _selectedView = index;
+                          });
+                        },
                   children: const [
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16.0),
@@ -76,22 +139,35 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
         ),
       ),
       actions: [
+        if (!_isEditing)
+          TextButton(
+            onPressed: (_selectedView == 0 || _selectedView == 2) ? _enterEditMode : null,
+            child: const Text("Edit"),
+          ),
+        if (!_isEditing)
+          TextButton(
+            onPressed: _downloadFile,
+            child: const Text("Download"),
+          ),
         TextButton(
-          onPressed: _downloadFile,
-          child: const Text("Download"),
+          onPressed: _saveChanges,
+          child: Text(_isEditing ? "Save" : "Close"),
         ),
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: const Text("Close"),
-        ),
+        if (_isEditing)
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _isEditing = false;
+              });
+            },
+            child: const Text("Cancel"),
+          ),
       ],
     );
   }
 
   Widget _buildContent() {
-    if (bytes.isEmpty) {
+    if (bytes.isEmpty && !_isEditing) {
       return const Center(child: Text("Empty or Invalid Blob Data"));
     }
 
@@ -108,6 +184,15 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
   }
 
   Widget _buildTextView() {
+    if (_isEditing) {
+      return TextField(
+        controller: _textController,
+        maxLines: null,
+        expands: true,
+        textAlignVertical: TextAlignVertical.top,
+        decoration: const InputDecoration(border: OutlineInputBorder()),
+      );
+    }
     try {
       String text = utf8.decode(bytes);
       return SingleChildScrollView(
@@ -139,6 +224,17 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
   }
 
   Widget _buildHexView() {
+    if (_isEditing) {
+      return TextField(
+        controller: _hexController,
+        maxLines: null,
+        expands: true,
+        textAlignVertical: TextAlignVertical.top,
+        style: const TextStyle(fontFamily: 'Courier'),
+        decoration: const InputDecoration(
+            border: OutlineInputBorder(), hintText: "Enter hex bytes (e.g. 00 A1 FF)"),
+      );
+    }
     return SingleChildScrollView(
       child: SelectableText(
         _formatHex(bytes),
