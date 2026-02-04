@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/kind.dart';
 import 'package:googleapis/datastore/v1.dart' as dsv1;
@@ -859,22 +858,68 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
   List<dsv1.PathElement>? _keyPath;
   List<dsv1.Value> _arrayValues = [];
   Map<String, dsv1.Value> newProperties = {};
-  List<int>? _blobValue;
+  String? _blobValue;
 
   Future<void> _uploadBlob() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
+
     if (result != null) {
-      PlatformFile file = result.files.single;
-      List<int> bytes;
-      if (file.bytes != null) {
-        bytes = file.bytes!;
-      } else if (file.path != null) {
-        bytes = await File(file.path!).readAsBytes();
-      } else {
-        return;
+      if (!mounted) return;
+      if (result.files.first.bytes != null) {
+        setState(() {
+          _blobValue = base64Encode(result.files.first.bytes!);
+        });
+      } else if (result.files.single.path != null) {
+        File file = File(result.files.single.path!);
+        List<int> bytes = await file.readAsBytes();
+        if (!mounted) return;
+        setState(() {
+          _blobValue = base64Encode(bytes);
+        });
       }
+    }
+  }
+
+  Future<void> _downloadBlob() async {
+    if (_blobValue == null) {
+      return;
+    }
+    String? filePath = await FilePicker.platform.saveFile(
+      dialogTitle: "Save Blob to file",
+      fileName: "blob.bin",
+    );
+    if (filePath == null) {
+      return;
+    }
+    List<int> bytes = base64Decode(_blobValue!);
+    File file = File(filePath);
+    await file.writeAsBytes(bytes);
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Blob saved to file: $filePath'),
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'OK',
+          onPressed: () {},
+        ),
+      ),
+    );
+  }
+
+  Future<void> _viewEditBlob() async {
+    var newValue = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return BlobViewerDialog(_blobValue ?? "");
+      },
+    );
+    if (!mounted) return;
+    if (newValue != null && newValue is String) {
       setState(() {
-        _blobValue = bytes;
+        _blobValue = newValue;
       });
     }
   }
@@ -1026,45 +1071,24 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         ];
       case "blob":
         return [
-          ListTile(
-            title: Text("Blob Content (${_blobValue?.length ?? 0} bytes)"),
-            subtitle: _blobValue == null ? const Text("No data") : const Text("Data present"),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.upload_file),
-                  onPressed: _uploadBlob,
-                  tooltip: "Upload File",
-                ),
-                IconButton(
-                  icon: const Icon(Icons.edit_note),
-                  onPressed: () async {
-                    List<int>? result = await showDialog<List<int>>(
-                      context: context,
-                      builder: (context) => HexEditorDialog(initialBytes: _blobValue),
-                    );
-                    if (result != null) {
-                      setState(() {
-                        _blobValue = result;
-                      });
-                    }
+          Text("Blob Length: ${_blobValue != null ? base64Decode(_blobValue!).length : 0}"),
+          Row(
+            children: [
+              ElevatedButton(onPressed: _uploadBlob, child: const Text("Upload")),
+              const SizedBox(width: 8),
+              ElevatedButton(onPressed: _blobValue == null ? null : _downloadBlob, child: const Text("Download")),
+              const SizedBox(width: 8),
+              ElevatedButton(onPressed: _viewEditBlob, child: const Text("View/Edit Content")),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _blobValue = null;
+                    });
                   },
-                  tooltip: "Edit Hex",
-                ),
-                if (_blobValue != null)
-                  IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      setState(() {
-                        _blobValue = null;
-                      });
-                    },
-                    tooltip: "Clear",
-                  ),
-              ],
-            ),
-          ),
+                  child: const Text("Clear")),
+            ],
+          )
         ];
       case "array":
         return [
@@ -1126,7 +1150,6 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
               },
               child: const Text("Remove Value")),
         ];
-        break;
       case "boolean":
         return [
           ListTile(
@@ -1342,7 +1365,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         break;
       case "blob":
         value = dsv1.Value(
-          blobValue: _blobValue != null ? base64Encode(_blobValue!) : null,
+          blobValue: _blobValue,
         );
         break;
       case "array":
@@ -1427,7 +1450,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         _textEditingController = TextEditingController(text: value?.stringValue ?? "");
         break;
       case "blob":
-        _blobValue = value?.blobValue != null ? base64Decode(value!.blobValue!) : null;
+        _blobValue = value?.blobValue;
         break;
       case "array":
         _arrayValues = [...(value?.arrayValue?.values ?? [])];
@@ -1483,91 +1506,6 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
   }
 }
 
-class HexEditorDialog extends StatefulWidget {
-  final List<int>? initialBytes;
-
-  const HexEditorDialog({Key? key, this.initialBytes}) : super(key: key);
-
-  @override
-  State<HexEditorDialog> createState() => _HexEditorDialogState();
-}
-
-class _HexEditorDialogState extends State<HexEditorDialog> {
-  late TextEditingController _controller;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    String hexString = "";
-    if (widget.initialBytes != null) {
-      hexString = widget.initialBytes!.map((b) => b.toRadixString(16).padLeft(2, '0')).join(" ");
-    }
-    _controller = TextEditingController(text: hexString);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text("Hex Viewer/Editor"),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text("Edit hex values (space separated)"),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _controller,
-            maxLines: 10,
-            decoration: InputDecoration(
-              border: const OutlineInputBorder(),
-              errorText: _error,
-            ),
-            style: const TextStyle(fontFamily: 'Courier New'),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: const Text("Cancel"),
-        ),
-        TextButton(
-          onPressed: () {
-            try {
-              String text = _controller.text.replaceAll(RegExp(r'\s+'), '');
-              if (text.length % 2 != 0) {
-                setState(() {
-                  _error = "Hex string must have an even length";
-                });
-                return;
-              }
-              List<int> bytes = [];
-              for (int i = 0; i < text.length; i += 2) {
-                String byteString = text.substring(i, i + 2);
-                int? byte = int.tryParse(byteString, radix: 16);
-                if (byte == null) {
-                  setState(() {
-                    _error = "Invalid hex character: $byteString";
-                  });
-                  return;
-                }
-                bytes.add(byte);
-              }
-              Navigator.of(context).pop(bytes);
-            } catch (e) {
-              setState(() {
-                _error = "Error parsing hex: $e";
-              });
-            }
-          },
-          child: const Text("Save"),
-        ),
-      ],
-    );
-  }
-}
 
 // I am aware the UI / UX is horrible.. If it is an issue I will fix it later or accept PRs to fix it.
 class KeyPatElementTextInputWidget extends StatefulWidget {
