@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/kind.dart';
@@ -10,7 +9,6 @@ import 'database.dart';
 import 'datastoremain.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:file_picker/file_picker.dart';
-import 'hex_editor.dart';
 
 
 class ViewEntityPage extends StatefulWidget {
@@ -911,27 +909,19 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
     );
   }
 
-  Future<void> _editHex() async {
-    Uint8List? data;
-    if (_blobValue != null) {
-      data = base64Decode(_blobValue!);
-    }
-    await showDialog(
+  Future<void> _viewEditBlob() async {
+    var newValue = await showDialog(
       context: context,
-      builder: (context) => HexEditor(
-        data: data,
-        onSave: (Uint8List? newData) {
-          if (!mounted) return;
-          setState(() {
-            if (newData != null) {
-              _blobValue = base64Encode(newData);
-            } else {
-              _blobValue = null;
-            }
-          });
-        },
-      ),
+      builder: (BuildContext context) {
+        return BlobViewerDialog(_blobValue ?? "");
+      },
     );
+    if (!mounted) return;
+    if (newValue != null && newValue is String) {
+      setState(() {
+        _blobValue = newValue;
+      });
+    }
   }
 
   @override
@@ -1088,7 +1078,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
               const SizedBox(width: 8),
               ElevatedButton(onPressed: _blobValue == null ? null : _downloadBlob, child: const Text("Download")),
               const SizedBox(width: 8),
-              ElevatedButton(onPressed: _editHex, child: const Text("Hex Edit")),
+              ElevatedButton(onPressed: _viewEditBlob, child: const Text("View/Edit Content")),
               const SizedBox(width: 8),
               ElevatedButton(
                   onPressed: () {
