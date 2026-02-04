@@ -866,6 +866,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
     FilePickerResult? result = await FilePicker.platform.pickFiles();
 
     if (result != null) {
+      if (!mounted) return;
       if (result.files.first.bytes != null) {
         setState(() {
           _blobValue = base64Encode(result.files.first.bytes!);
@@ -873,6 +874,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       } else if (result.files.single.path != null) {
         File file = File(result.files.single.path!);
         List<int> bytes = await file.readAsBytes();
+        if (!mounted) return;
         setState(() {
           _blobValue = base64Encode(bytes);
         });
@@ -919,6 +921,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
       builder: (context) => HexEditor(
         data: data,
         onSave: (Uint8List? newData) {
+          if (!mounted) return;
           setState(() {
             if (newData != null) {
               _blobValue = base64Encode(newData);
@@ -1078,7 +1081,7 @@ class _PropertyAddEditDeleteDialogState extends State<PropertyAddEditDeleteDialo
         ];
       case "blob":
         return [
-          Text("Blob Length: ${_blobValue?.length ?? 0}"),
+          Text("Blob Length: ${_blobValue != null ? base64Decode(_blobValue!).length : 0}"),
           Row(
             children: [
               ElevatedButton(onPressed: _uploadBlob, child: const Text("Upload")),
