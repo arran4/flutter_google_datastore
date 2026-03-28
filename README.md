@@ -51,6 +51,7 @@ edges remain but the application is fully functional.
 Pre-built packages for Linux, macOS, Windows, Android and iOS are available on
 the [GitHub releases](https://github.com/arran4/flutter_google_datastore/releases)
 page.
+Flatpak bundles are automatically published to the configured Flatpak repository when a release tag is pushed.
 
 ## Building
 This project uses [FastForge](https://pub.dev/packages/fastforge) (formerly
