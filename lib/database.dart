@@ -35,7 +35,13 @@ class DB {
     return fullFn;
   }
 
-  Future<Project> createNewProject(String? endpointUrl, String projectId, String authMode, String? googleCliProfile, String? databaseId) async {
+  Future<Project> createNewProject(
+    String? endpointUrl,
+    String projectId,
+    String authMode,
+    String? googleCliProfile,
+    String? databaseId,
+  ) async {
     Database db = await _db;
     Map<String, Object?> values = <String, Object?>{};
     if (endpointUrl != null) {
@@ -55,19 +61,37 @@ class DB {
 
   Future<List<Project>> get getProjects async {
     Database db = await _db;
-    List<Map<String, Object?>> projectResults = await db.query(Project.name, where: "DELETED IS NULL", whereArgs: <Object?>[], columns: Project.columns, distinct: true, limit: 100, orderBy: "created ASC");
-    List<Project> projects = projectResults.fold<List<Project>>(List<Project>.empty(growable: true), (List<Project> result, Map<String, Object?> each) {
-      if (Project.validRow(each)) {
-        result.add(Project.fromRow(each));
-      }
-      return result;
-    });
+    List<Map<String, Object?>> projectResults = await db.query(
+      Project.name,
+      where: "DELETED IS NULL",
+      whereArgs: <Object?>[],
+      columns: Project.columns,
+      distinct: true,
+      limit: 100,
+      orderBy: "created ASC",
+    );
+    List<Project> projects = projectResults.fold<List<Project>>(
+      List<Project>.empty(growable: true),
+      (List<Project> result, Map<String, Object?> each) {
+        if (Project.validRow(each)) {
+          result.add(Project.fromRow(each));
+        }
+        return result;
+      },
+    );
     return projects;
   }
 
   Future<Project> getProject(int id, [bool ignoreDeleted = false]) async {
     Database db = await _db;
-    List<Map<String, Object?>> projectResult = await db.query(Project.name, where: ignoreDeleted ? "id=?" : "DELETED IS NULL AND id=?", whereArgs: <Object?>[id], columns: Project.columns, limit: 1, distinct: true);
+    List<Map<String, Object?>> projectResult = await db.query(
+      Project.name,
+      where: ignoreDeleted ? "id=?" : "DELETED IS NULL AND id=?",
+      whereArgs: <Object?>[id],
+      columns: Project.columns,
+      limit: 1,
+      distinct: true,
+    );
     if (projectResult.isEmpty) {
       throw ErrorDescription("empty");
     }
@@ -105,7 +129,10 @@ class DB {
 
   Future<Project> deleteProject(int id) async {
     Database db = await _db;
-    await db.execute("UPDATE ${Project.name} SET deleted=CURRENT_TIMESTAMP WHERE id=?", <Object?>[id]);
+    await db.execute(
+      "UPDATE ${Project.name} SET deleted=CURRENT_TIMESTAMP WHERE id=?",
+      <Object?>[id],
+    );
     return getProject(id, true);
   }
 
@@ -115,7 +142,14 @@ class DB {
     return;
   }
 
-  Future<Project> updateProject(int id, String? endpointUrl, String? projectId, String? authMode, String? googleCliProfile, String? databaseId) async {
+  Future<Project> updateProject(
+    int id,
+    String? endpointUrl,
+    String? projectId,
+    String? authMode,
+    String? googleCliProfile,
+    String? databaseId,
+  ) async {
     Database db = await _db;
     Map<String, Object?> values = <String, Object?>{};
     if (endpointUrl != null) {
@@ -133,7 +167,12 @@ class DB {
     if (databaseId != null) {
       values["databaseId"] = databaseId;
     }
-    await db.update(Project.name, values, where: "id=?", whereArgs: <Object?>[id]);
+    await db.update(
+      Project.name,
+      values,
+      where: "id=?",
+      whereArgs: <Object?>[id],
+    );
     return await getProject(id);
   }
 }
@@ -172,23 +211,44 @@ class Project {
   static const dbAddDatabaseId = '''
     ALTER TABLE ${Project.name} ADD COLUMN databaseId STRING DEFAULT "";
   ''';
-  static const List<String> columns = <String>["id", "created", "updated", "deleted", "endpointUrl", "projectId", "authMode", "googleCliProfile", "databaseId"];
+  static const List<String> columns = <String>[
+    "id",
+    "created",
+    "updated",
+    "deleted",
+    "endpointUrl",
+    "projectId",
+    "authMode",
+    "googleCliProfile",
+    "databaseId",
+  ];
   static const List<String> required = <String>["id", "projectId"];
 
-  Project({required this.id, required this.created, required this.updated, this.deleted, required this.endpointUrl, required this.projectId, required this.authMode, required this.googleCliProfile, required this.databaseId});
+  Project({
+    required this.id,
+    required this.created,
+    required this.updated,
+    this.deleted,
+    required this.endpointUrl,
+    required this.projectId,
+    required this.authMode,
+    required this.googleCliProfile,
+    required this.databaseId,
+  });
 
-  Project.fromRow(Map<String, Object?> each) : this.fromMap(each.cast<String, dynamic>());
+  Project.fromRow(Map<String, Object?> each)
+    : this.fromMap(each.cast<String, dynamic>());
 
   Project.fromMap(Map<String, dynamic> each)
-      : id = getNumberPropOrThrow(each, "id")!.toInt(),
-        created = getDatePropOrDefault(each, "created", DateTime.timestamp()),
-        updated = getDatePropOrDefault(each, "updated", DateTime.timestamp()),
-        deleted = getDatePropOrDefault(each, "deleted", null),
-        endpointUrl = getStringPropOrDefault(each, "endpointUrl", null),
-        googleCliProfile = getStringPropOrDefault(each, "googleCliProfile", null),
-        authMode = getStringPropOrDefault(each, "authMode", "none"),
-        projectId = getStringPropOrThrow(each, "projectId"),
-        databaseId = getStringPropOrDefault(each, "databaseId", "");
+    : id = getNumberPropOrThrow(each, "id")!.toInt(),
+      created = getDatePropOrDefault(each, "created", DateTime.timestamp()),
+      updated = getDatePropOrDefault(each, "updated", DateTime.timestamp()),
+      deleted = getDatePropOrDefault(each, "deleted", null),
+      endpointUrl = getStringPropOrDefault(each, "endpointUrl", null),
+      googleCliProfile = getStringPropOrDefault(each, "googleCliProfile", null),
+      authMode = getStringPropOrDefault(each, "authMode", "none"),
+      projectId = getStringPropOrThrow(each, "projectId"),
+      databaseId = getStringPropOrDefault(each, "databaseId", "");
 
   String get key => "$projectId @ ${endpointUrl ?? "default"}";
 
