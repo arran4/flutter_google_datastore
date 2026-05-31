@@ -796,6 +796,7 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
                     if (result == null) {
                       return;
                     }
+                    if (!mounted) return;
                     if (result is MapEntry<String, dsv1.Value?>) {
                       setState(() {
                         newProperties ??= {
