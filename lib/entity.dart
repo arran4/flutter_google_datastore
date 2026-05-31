@@ -1303,7 +1303,9 @@ class _PropertyAddEditDeleteDialogState
                     );
                   },
                 );
-                if (result != null && result is MapEntry<String, dsv1.Value?> && result.value != null) {
+                if (result != null &&
+                    result is MapEntry<String, dsv1.Value?> &&
+                    result.value != null) {
                   setState(() {
                     _arrayValues.add(result.value!);
                   });
