@@ -781,6 +781,39 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
                     },
                   ),
                 IconButton(
+                  icon: const Icon(Icons.copy),
+                  onPressed: () async {
+                    dynamic result = await showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return PropertyAddEditDeleteDialog(
+                          MapEntry(prop.key, prop.value),
+                          widget.entityRow,
+                          readonlyName: false,
+                        );
+                      },
+                    );
+                    if (result == null) {
+                      return;
+                    }
+                    if (result is MapEntry<String, dsv1.Value?>) {
+                      setState(() {
+                        newProperties ??= {
+                          ...(widget.entityRow.entity.properties ?? {}),
+                        };
+                        if (result.value != null) {
+                          newProperties![result.key] = result.value!;
+                        }
+                        if (widget.onUpdate != null) {
+                          widget.onUpdate!(newProperties ?? {});
+                        }
+                      });
+                    }
+                  },
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                IconButton(
                   icon: const Icon(Icons.edit),
                   onPressed: () async {
                     dynamic result = await showDialog(
@@ -1252,6 +1285,27 @@ class _PropertyAddEditDeleteDialogState
                     } else {
                       _arrayValues.remove(each);
                     }
+                  });
+                }
+              },
+              onCopy: () async {
+                dynamic result = await showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return PropertyAddEditDeleteDialog(
+                      MapEntry<String, dsv1.Value>(
+                        "Duplicate Element of ${widget.propertyEntry?.key}",
+                        each,
+                      ),
+                      widget.entityRow,
+                      readonlyName: true,
+                      type: "Element",
+                    );
+                  },
+                );
+                if (result != null && result is MapEntry<String, dsv1.Value?> && result.value != null) {
+                  setState(() {
+                    _arrayValues.add(result.value!);
                   });
                 }
               },
@@ -1828,12 +1882,14 @@ class CompositeKey extends Key {
 class ValueAddEditRow extends StatelessWidget {
   final dsv1.Value value;
   final Function()? onEdit;
+  final Function()? onCopy;
   final Function(dsv1.Value)? onUpdate;
 
   const ValueAddEditRow({
     Key? key,
     required this.value,
     this.onEdit,
+    this.onCopy,
     this.onUpdate,
   }) : super(key: key);
 
@@ -1895,6 +1951,8 @@ class ValueAddEditRow extends StatelessWidget {
                         }
                       },
                     ),
+                  if (onCopy != null)
+                    IconButton(icon: const Icon(Icons.copy), onPressed: onCopy),
                   IconButton(icon: const Icon(Icons.edit), onPressed: onEdit),
                 ],
               ),
