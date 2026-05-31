@@ -24,7 +24,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Datastore explorer',
-      theme: ThemeData(useMaterial3: true),
+      theme: ThemeData(
+        useMaterial3: true,
+      ),
       home: const ProjectPage(),
     );
   }
@@ -56,19 +58,15 @@ class _ProjectPageState extends State<ProjectPage> {
         await addProjectPressed();
         break;
       case 'refresh':
-        setState(() {
-          projects = _loadEntries();
-        });
+          setState(() {
+            projects = _loadEntries();
+          });
         break;
       case 'settings':
-        await Navigator.push(
-          context,
-          MaterialPageRoute<bool>(
-            builder: (BuildContext context) {
-              return const SettingsWidget();
-            },
-          ),
-        );
+        await Navigator.push(context,
+            MaterialPageRoute<bool>(builder: (BuildContext context) {
+          return const SettingsWidget();
+        }));
         if (!mounted) return;
         setState(() {
           projects = _loadEntries();
@@ -79,9 +77,18 @@ class _ProjectPageState extends State<ProjectPage> {
 
   List<PopupMenuEntry<String>> createPopupItems(BuildContext context) {
     return <PopupMenuEntry<String>>[
-      const PopupMenuItem<String>(value: 'add', child: Text('Add')),
-      const PopupMenuItem<String>(value: 'refresh', child: Text('Refresh')),
-      const PopupMenuItem<String>(value: 'settings', child: Text('Settings')),
+      const PopupMenuItem<String>(
+        value: 'add',
+        child: Text('Add'),
+      ),
+      const PopupMenuItem<String>(
+        value: 'refresh',
+        child: Text('Refresh'),
+      ),
+      const PopupMenuItem<String>(
+        value: 'settings',
+        child: Text('Settings'),
+      ),
     ];
   }
 
@@ -101,15 +108,26 @@ class _ProjectPageState extends State<ProjectPage> {
 
   List<PopupMenuEntry<String>> createItemPopupItems(BuildContext context) {
     return <PopupMenuEntry<String>>[
-      const PopupMenuItem<String>(value: 'connect', child: Text('Connect')),
-      const PopupMenuItem<String>(value: 'edit', child: Text('Edit')),
-      const PopupMenuItem<String>(value: 'delete', child: Text('Delete')),
+      const PopupMenuItem<String>(
+        value: 'connect',
+        child: Text('Connect'),
+      ),
+      const PopupMenuItem<String>(
+        value: 'edit',
+        child: Text('Edit'),
+      ),
+      const PopupMenuItem<String>(
+        value: 'delete',
+        child: Text('Delete'),
+      ),
     ];
   }
 
   Future<void> addProjectPressed() async {
     await Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const AddEditProjectScreen()),
+      MaterialPageRoute(
+        builder: (context) => const AddEditProjectScreen(),
+      ),
     );
     if (!mounted) return;
     setState(() {
@@ -159,17 +177,15 @@ class _ProjectPageState extends State<ProjectPage> {
                 return ListTile(
                   title: Text(projects[index].projectId),
                   subtitle: Text(
-                    'Endpoint: ${projects[index].endpointUrl ?? "default"}',
-                  ),
+                      'Endpoint: ${projects[index].endpointUrl ?? "default"}'),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       TextButton(
-                        onPressed: () async {
-                          await connectPressed(projects[index]);
-                        },
-                        child: const Text("Connect"),
-                      ),
+                          onPressed: () async {
+                            await connectPressed(projects[index]);
+                          },
+                          child: const Text("Connect")),
                       PopupMenuButton<String>(
                         onSelected: (String value) async {
                           await itemPopupItemSelected(projects[index], value);
@@ -197,7 +213,9 @@ class _ProjectPageState extends State<ProjectPage> {
   Future<void> connectPressed(Project project) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => DatastoreMainPage(project: project),
+        builder: (context) => DatastoreMainPage(
+          project: project,
+        ),
       ),
     );
   }
@@ -205,7 +223,9 @@ class _ProjectPageState extends State<ProjectPage> {
   Future<void> deletePressed(Project project) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => DeleteProjectScreen(project: project),
+        builder: (context) => DeleteProjectScreen(
+          project: project,
+        ),
       ),
     );
     if (!mounted) return;
@@ -241,8 +261,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
   final TextEditingController projectIdController = TextEditingController();
   final TextEditingController databaseIdController = TextEditingController();
   String authMode = "none";
-  GCloudCLICredentialDiscover gCloudCLICredentialDiscover =
-      GCloudCLICredentialDiscover();
+  GCloudCLICredentialDiscover gCloudCLICredentialDiscover = GCloudCLICredentialDiscover();
   String? googleCliProfile;
 
   void saveProject() async {
@@ -298,8 +317,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
             TextField(
               controller: endpointUrlController,
               decoration: const InputDecoration(
-                labelText: 'Endpoint URL (blank for default)',
-              ),
+                  labelText: 'Endpoint URL (blank for default)'),
             ),
             TextField(
               controller: projectIdController,
@@ -307,15 +325,11 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
             ),
             TextField(
               controller: databaseIdController,
-              decoration: const InputDecoration(
-                labelText: 'Database ID (blank for default)',
-              ),
+              decoration: const InputDecoration(labelText: 'Database ID (blank for default)'),
             ),
             DropdownButtonFormField<String>(
               value: authMode,
-              decoration: const InputDecoration(
-                labelText: 'Authentication mode',
-              ),
+              decoration: const InputDecoration(labelText: 'Authentication mode'),
               icon: const Icon(Icons.arrow_downward),
               elevation: 16,
               style: const TextStyle(color: Colors.deepPurple),
@@ -325,21 +339,19 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
                   authMode = value!;
                 });
               },
-              items:
-                  authModes.map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
+              items: authModes.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
             ),
             ...(authenticationMethodConfiguration(authMode)),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: saveProject,
-              child: Text(
-                widget.project == null ? 'Add Project' : 'Edit Project',
-              ),
+              child:
+                  Text(widget.project == null ? 'Add Project' : 'Edit Project'),
             ),
           ],
         ),
@@ -363,19 +375,16 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
                 googleCliProfile = value!;
               });
             },
-            items:
-                gCloudCLICredentialDiscover.profiles
-                    .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    })
-                    .toList(),
+            items: gCloudCLICredentialDiscover.profiles.map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
           ),
         ];
-      default:
-        return [];
+        default:
+          return [];
     }
   }
 }
@@ -388,7 +397,9 @@ class DeleteProjectScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Delete Project?')),
+      appBar: AppBar(
+        title: const Text('Delete Project?'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -405,7 +416,7 @@ class DeleteProjectScreen extends StatelessWidget {
                   onPressed: () => deleteProject(context),
                   style: ButtonStyle(
                     backgroundColor: MaterialStateProperty.resolveWith(
-                      (states) => Colors.red,
+                        (states) => Colors.red
                     ),
                   ),
                   child: const Text("Delete"),

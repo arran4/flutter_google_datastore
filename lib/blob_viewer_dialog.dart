@@ -52,9 +52,7 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
         }
       } else if (_selectedView == 2) {
         // Hex
-        _hexController.text = bytes
-            .map((b) => b.toRadixString(16).padLeft(2, '0'))
-            .join(' ');
+        _hexController.text = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
       }
     });
   }
@@ -71,9 +69,7 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
             // For now, let's just ignore the last char if odd, or error.
             // A common behavior is to error or pad.
             // Let's assume the user knows what they are doing, but if not, we try our best.
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text("Invalid Hex String")));
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Invalid Hex String")));
             return;
           }
           List<int> newBytes = [];
@@ -83,9 +79,7 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
           bytes = Uint8List.fromList(newBytes);
         }
       } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Error saving changes: $e")));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error saving changes: $e")));
         return;
       }
       setState(() {
@@ -111,16 +105,15 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
                   isSelected: [
                     _selectedView == 0,
                     _selectedView == 1,
-                    _selectedView == 2,
+                    _selectedView == 2
                   ],
-                  onPressed:
-                      _isEditing
-                          ? null
-                          : (int index) {
-                            setState(() {
-                              _selectedView = index;
-                            });
-                          },
+                  onPressed: _isEditing
+                      ? null
+                      : (int index) {
+                          setState(() {
+                            _selectedView = index;
+                          });
+                        },
                   children: const [
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16.0),
@@ -139,21 +132,23 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
               ],
             ),
             const SizedBox(height: 16),
-            Expanded(child: _buildContent()),
+            Expanded(
+              child: _buildContent(),
+            ),
           ],
         ),
       ),
       actions: [
         if (!_isEditing)
           TextButton(
-            onPressed:
-                (_selectedView == 0 || _selectedView == 2)
-                    ? _enterEditMode
-                    : null,
+            onPressed: (_selectedView == 0 || _selectedView == 2) ? _enterEditMode : null,
             child: const Text("Edit"),
           ),
         if (!_isEditing)
-          TextButton(onPressed: _downloadFile, child: const Text("Download")),
+          TextButton(
+            onPressed: _downloadFile,
+            child: const Text("Download"),
+          ),
         TextButton(
           onPressed: _saveChanges,
           child: Text(_isEditing ? "Save" : "Close"),
@@ -200,9 +195,13 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
     }
     try {
       String text = utf8.decode(bytes);
-      return SingleChildScrollView(child: SelectableText(text));
+      return SingleChildScrollView(
+        child: SelectableText(text),
+      );
     } catch (e) {
-      return const Center(child: Text("Content is not valid UTF-8 text."));
+      return const Center(
+        child: Text("Content is not valid UTF-8 text."),
+      );
     }
   }
 
@@ -233,9 +232,7 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
         textAlignVertical: TextAlignVertical.top,
         style: const TextStyle(fontFamily: 'Courier'),
         decoration: const InputDecoration(
-          border: OutlineInputBorder(),
-          hintText: "Enter hex bytes (e.g. 00 A1 FF)",
-        ),
+            border: OutlineInputBorder(), hintText: "Enter hex bytes (e.g. 00 A1 FF)"),
       );
     }
     return SingleChildScrollView(
@@ -296,15 +293,15 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
       File file = File(filePath);
       await file.writeAsBytes(bytes);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Saved to $filePath')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Saved to $filePath')),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error saving file: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving file: $e')),
+        );
       }
     }
   }

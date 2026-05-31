@@ -18,19 +18,19 @@ class SettingsWidgetState extends State<SettingsWidget> {
 
   @override
   void initState() {
-    db.filepath().then(
-      (value) => {
-        setState(() {
-          fp = value;
-        }),
-      },
-    );
+    db.filepath().then((value) => {
+          setState(() {
+            fp = value;
+          })
+        });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Flutter Google Datastore: Settings")),
+      appBar: AppBar(
+        title: const Text("Flutter Google Datastore: Settings"),
+      ),
       body: SettingsList(
         sections: <AbstractSettingsSection>[
           SettingsSection(
@@ -64,7 +64,9 @@ class DeleteDatabaseScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Delete Entire database?')),
+      appBar: AppBar(
+        title: const Text('Delete Entire database?'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -82,9 +84,7 @@ class DeleteDatabaseScreen extends StatelessWidget {
                     await deleteProject(context);
                   },
                   style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.resolveWith(
-                      (states) => Colors.red,
-                    ),
+                    backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.red),
                   ),
                   child: const Text("Delete"),
                 ),
@@ -95,6 +95,7 @@ class DeleteDatabaseScreen extends StatelessWidget {
       ),
     );
   }
+
 
   void back(BuildContext context) {
     Navigator.of(context).pop();

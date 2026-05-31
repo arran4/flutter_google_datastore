@@ -4,12 +4,17 @@ import 'package:flutter_google_datastore/database.dart';
 void main() {
   group('Project model', () {
     test('validRow returns true when required fields present', () {
-      final row = {'id': 1, 'projectId': 'proj'};
+      final row = {
+        'id': 1,
+        'projectId': 'proj',
+      };
       expect(Project.validRow(row), isTrue);
     });
 
     test('validRow returns false when required fields missing', () {
-      final row = {'id': 1};
+      final row = {
+        'id': 1,
+      };
       expect(Project.validRow(row), isFalse);
     });
 

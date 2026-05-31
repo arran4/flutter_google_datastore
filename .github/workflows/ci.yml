@@ -78,9 +78,6 @@ jobs:
               else
                 run_pr_meta_checks=true
                 run_code_checks=true
-              if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-                run_release=true
-              fi
               fi
               ;;
             release)
@@ -88,9 +85,6 @@ jobs:
               ;;
             workflow_dispatch)
               run_code_checks=true
-              if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-                run_release=true
-              fi
               if [[ "${{ inputs.mode }}" == release-* ]]; then
                 run_release=true
               fi
@@ -103,9 +97,6 @@ jobs:
               ;;
             schedule)
               run_code_checks=true
-              if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-                run_release=true
-              fi
               if [[ "${{ github.event.schedule }}" == "17 3 1 * *" ]]; then
                 is_monthly=true
               fi
@@ -139,10 +130,10 @@ jobs:
         with:
           mode: install
       - id: tag
-        shell: bash
         env:
           MODE: ${{ inputs.mode }}
           OVERRIDE: ${{ inputs.release_version_override }}
+        shell: bash
         run: |
           set -euo pipefail
           git config --global user.name "github-actions[bot]"
@@ -310,12 +301,7 @@ jobs:
           git add -A
           git commit -m "ci: automated formatting fixes"
           git push origin "$BRANCH"
-          gh pr create \
-            --title "ci: automated formatting fixes" \
-            --body "Automated formatting pass. Parent-PR: ${PARENT_PR}" \
-            --base main \
-            --head "$BRANCH" \
-            --label "ci-autofix"
+          gh pr create             --title "ci: automated formatting fixes"             --body "Automated formatting pass. Parent-PR: ${PARENT_PR}"             --base main             --head "$BRANCH"             --label "ci-autofix"
 
   cleanup-autofix-prs:
     name: Cleanup autofix PRs on parent close
@@ -329,9 +315,7 @@ jobs:
           PARENT_PR: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
-          gh pr list --state open --search "label:ci-autofix in:title" --json number,headRefName,body | \
-            jq -r '.[] | select(.body | contains("Parent-PR: '"$PARENT_PR"'")) | [.number, .headRefName] | @tsv' | \
-            while IFS=$'\t' read -r pr branch; do
+          gh pr list --state open --search "label:ci-autofix in:title" --json number,headRefName,body |             jq -r '.[] | select(.body | contains("Parent-PR: '"$PARENT_PR"'")) | [.number, .headRefName] | @tsv' |             while IFS=$'	' read -r pr branch; do
               gh pr close "$pr" --comment "Closing auto-fix PR because parent PR #$PARENT_PR was closed."
               git push origin --delete "$branch" || true
             done

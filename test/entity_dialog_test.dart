@@ -5,39 +5,30 @@ import 'package:flutter_google_datastore/kind.dart';
 import 'package:googleapis/datastore/v1.dart' as dsv1;
 
 void main() {
-  testWidgets('PropertyAddEditDeleteDialog allows editing GeoPoint', (
-    WidgetTester tester,
-  ) async {
-    final entityRow = EntityRow(
-      entity: dsv1.Entity(
-        key: dsv1.Key(path: [dsv1.PathElement(kind: 'TestKind', id: '123')]),
-      ),
-    );
+  testWidgets('PropertyAddEditDeleteDialog allows editing GeoPoint', (WidgetTester tester) async {
+    final entityRow = EntityRow(entity: dsv1.Entity(key: dsv1.Key(path: [dsv1.PathElement(kind: 'TestKind', id: '123')])));
 
     // Helper to launch the dialog and get the result
     dsv1.Value? resultValue;
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Builder(
-          builder: (context) {
-            return ElevatedButton(
-              onPressed: () async {
-                final result = await showDialog(
-                  context: context,
-                  builder:
-                      (context) => PropertyAddEditDeleteDialog(null, entityRow),
-                );
-                if (result is MapEntry<String, dsv1.Value?>) {
-                  resultValue = result.value;
-                }
-              },
-              child: const Text('Open Dialog'),
-            );
-          },
-        ),
+    await tester.pumpWidget(MaterialApp(
+      home: Builder(
+        builder: (context) {
+          return ElevatedButton(
+            onPressed: () async {
+              final result = await showDialog(
+                context: context,
+                builder: (context) => PropertyAddEditDeleteDialog(null, entityRow),
+              );
+               if (result is MapEntry<String, dsv1.Value?>) {
+                 resultValue = result.value;
+               }
+            },
+            child: const Text('Open Dialog'),
+          );
+        },
       ),
-    );
+    ));
 
     // Open the dialog
     await tester.tap(find.text('Open Dialog'));
@@ -58,20 +49,11 @@ void main() {
     expect(find.widgetWithText(TextField, 'Longitude'), findsOneWidget);
 
     // Enter values (using negative values to test signed input support)
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Latitude'),
-      '-37.422',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Longitude'),
-      '-122.084',
-    );
+    await tester.enterText(find.widgetWithText(TextField, 'Latitude'), '-37.422');
+    await tester.enterText(find.widgetWithText(TextField, 'Longitude'), '-122.084');
 
     // Also set a name for the property
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Property Name'),
-      'myLocation',
-    );
+    await tester.enterText(find.widgetWithText(TextField, 'Property Name'), 'myLocation');
 
     // Save
     await tester.tap(find.text('Save'));
