@@ -1321,11 +1321,6 @@ class _PropertyAddEditDeleteDialogState
                           .toList();
                 });
               },
-              onRemove: () {
-                setState(() {
-                  _arrayValues.remove(each);
-                });
-              },
               key: ValueKey(each),
             ),
           ),
@@ -1354,6 +1349,14 @@ class _PropertyAddEditDeleteDialogState
               }
             },
             child: const Text("Add Value"),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _arrayValues.removeLast();
+              });
+            },
+            child: const Text("Remove Value"),
           ),
         ];
       case "boolean":
@@ -1885,7 +1888,6 @@ class ValueAddEditRow extends StatelessWidget {
   final Function()? onEdit;
   final Function()? onCopy;
   final Function(dsv1.Value)? onUpdate;
-  final Function()? onRemove;
 
   const ValueAddEditRow({
     Key? key,
@@ -1893,7 +1895,6 @@ class ValueAddEditRow extends StatelessWidget {
     this.onEdit,
     this.onCopy,
     this.onUpdate,
-    this.onRemove,
   }) : super(key: key);
 
   @override
@@ -1957,11 +1958,6 @@ class ValueAddEditRow extends StatelessWidget {
                   if (onCopy != null)
                     IconButton(icon: const Icon(Icons.copy), onPressed: onCopy),
                   IconButton(icon: const Icon(Icons.edit), onPressed: onEdit),
-                  if (onRemove != null)
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: onRemove,
-                    ),
                 ],
               ),
             ),
