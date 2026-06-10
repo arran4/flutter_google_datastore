@@ -1811,9 +1811,9 @@ class _KeyPatElementTextInputWidgetState
               onSelectionChanged: (Set<String> newSelection) {
                 setState(() {
                   var value = newSelection.first;
-                  widget.each.id = value == "id" ? widget.each.id ?? "" : null;
+                  widget.each.id = value == "id" ? _idController.text : null;
                   widget.each.name =
-                      value == "name" ? widget.each.name ?? "" : null;
+                      value == "name" ? _nameController.text : null;
                 });
               },
             ),
