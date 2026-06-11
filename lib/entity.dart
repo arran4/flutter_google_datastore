@@ -1283,7 +1283,12 @@ class _PropertyAddEditDeleteDialogState
                           _arrayValues
                               .asMap()
                               .entries
-                              .map((e) => e.key == arrayEntry.key ? result.value! : e.value)
+                              .map(
+                                (e) =>
+                                    e.key == arrayEntry.key
+                                        ? result.value!
+                                        : e.value,
+                              )
                               .toList();
                     } else {
                       _arrayValues.removeAt(arrayEntry.key);
@@ -1321,7 +1326,9 @@ class _PropertyAddEditDeleteDialogState
                       _arrayValues
                           .asMap()
                           .entries
-                          .map((e) => e.key == arrayEntry.key ? newValue : e.value)
+                          .map(
+                            (e) => e.key == arrayEntry.key ? newValue : e.value,
+                          )
                           .toList();
                 });
               },
@@ -1961,7 +1968,10 @@ class ValueAddEditRow extends StatelessWidget {
                     IconButton(icon: const Icon(Icons.copy), onPressed: onCopy),
                   IconButton(icon: const Icon(Icons.edit), onPressed: onEdit),
                   if (onRemove != null)
-                    IconButton(icon: const Icon(Icons.delete), onPressed: onRemove),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: onRemove,
+                    ),
                 ],
               ),
             ),
