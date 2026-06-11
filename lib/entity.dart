@@ -1258,9 +1258,9 @@ class _PropertyAddEditDeleteDialogState
         ];
       case "array":
         return [
-          ..._arrayValues.map(
-            (dsv1.Value each) => ValueAddEditRow(
-              value: each,
+          ..._arrayValues.asMap().entries.map(
+            (MapEntry<int, dsv1.Value> arrayEntry) => ValueAddEditRow(
+              value: arrayEntry.value,
               onEdit: () async {
                 dynamic result = await showDialog(
                   context: context,
@@ -1268,7 +1268,7 @@ class _PropertyAddEditDeleteDialogState
                     return PropertyAddEditDeleteDialog(
                       MapEntry<String, dsv1.Value>(
                         "Replace Element of ${widget.propertyEntry?.key}",
-                        each,
+                        arrayEntry.value,
                       ),
                       widget.entityRow,
                       readonlyName: true,
@@ -1281,10 +1281,17 @@ class _PropertyAddEditDeleteDialogState
                     if (result.value != null) {
                       _arrayValues =
                           _arrayValues
-                              .map((e) => e == each ? result.value! : e)
+                              .asMap()
+                              .entries
+                              .map(
+                                (e) =>
+                                    e.key == arrayEntry.key
+                                        ? result.value!
+                                        : e.value,
+                              )
                               .toList();
                     } else {
-                      _arrayValues.remove(each);
+                      _arrayValues.removeAt(arrayEntry.key);
                     }
                   });
                 }
@@ -1296,7 +1303,7 @@ class _PropertyAddEditDeleteDialogState
                     return PropertyAddEditDeleteDialog(
                       MapEntry<String, dsv1.Value>(
                         "Duplicate Element of ${widget.propertyEntry?.key}",
-                        each,
+                        arrayEntry.value,
                       ),
                       widget.entityRow,
                       readonlyName: true,
@@ -1317,11 +1324,20 @@ class _PropertyAddEditDeleteDialogState
                 setState(() {
                   _arrayValues =
                       _arrayValues
-                          .map((e) => e == each ? newValue : e)
+                          .asMap()
+                          .entries
+                          .map(
+                            (e) => e.key == arrayEntry.key ? newValue : e.value,
+                          )
                           .toList();
                 });
               },
-              key: ValueKey(each),
+              onRemove: () {
+                setState(() {
+                  _arrayValues.removeAt(arrayEntry.key);
+                });
+              },
+              key: ValueKey(arrayEntry.key),
             ),
           ),
           TextButton(
@@ -1349,14 +1365,6 @@ class _PropertyAddEditDeleteDialogState
               }
             },
             child: const Text("Add Value"),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _arrayValues.removeLast();
-              });
-            },
-            child: const Text("Remove Value"),
           ),
         ];
       case "boolean":
@@ -1892,6 +1900,7 @@ class ValueAddEditRow extends StatelessWidget {
   final Function()? onEdit;
   final Function()? onCopy;
   final Function(dsv1.Value)? onUpdate;
+  final Function()? onRemove;
 
   const ValueAddEditRow({
     Key? key,
@@ -1899,6 +1908,7 @@ class ValueAddEditRow extends StatelessWidget {
     this.onEdit,
     this.onCopy,
     this.onUpdate,
+    this.onRemove,
   }) : super(key: key);
 
   @override
@@ -1908,7 +1918,7 @@ class ValueAddEditRow extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            flex: 2,
+            flex: 1,
             child: SelectableText.rich(
               TextSpan(
                 children: [
@@ -1924,18 +1934,17 @@ class ValueAddEditRow extends StatelessWidget {
             ),
           ),
           Expanded(
-            flex: 4,
+            flex: 3,
             child: SelectableText(
               getValueDisplayValue(value),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
           Expanded(
-            flex: 1,
+            flex: 2,
             child: Align(
               alignment: Alignment.centerRight,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+              child: Wrap(
                 children: [
                   if (value.blobValue != null)
                     IconButton(
@@ -1962,6 +1971,11 @@ class ValueAddEditRow extends StatelessWidget {
                   if (onCopy != null)
                     IconButton(icon: const Icon(Icons.copy), onPressed: onCopy),
                   IconButton(icon: const Icon(Icons.edit), onPressed: onEdit),
+                  if (onRemove != null)
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: onRemove,
+                    ),
                 ],
               ),
             ),
