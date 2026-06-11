@@ -864,7 +864,7 @@ String valuesToString(dsv1.Value e) {
   if (e.blobValue != null) {
     return "Blob Length: ${e.blobValue?.length ?? "#ERROR"}";
   } else if (e.arrayValue != null) {
-    return "array:[${e.arrayValue?.values?.join(" , ") ?? "#ERROR"}]";
+    return "array:[${e.arrayValue?.values?.map(valuesToString)?.join(" , ") ?? ""}]";
   } else if (e.booleanValue != null) {
     return "boolean:${e.booleanValue?.toString() ?? "#ERROR"}";
   } else if (e.doubleValue != null) {
@@ -895,7 +895,7 @@ String getValueDisplayValue(dsv1.Value value) {
     // TODO a way of looking at the content.
     return "Blob Length: ${value.blobValue?.length ?? "#ERROR"}";
   } else if (value.arrayValue != null) {
-    return "[${value.arrayValue?.values?.map(valuesToString).join(" , ") ?? "#ERROR"}]";
+    return "[${value.arrayValue?.values?.map(valuesToString)?.join(" , ") ?? ""}]";
   } else if (value.booleanValue != null) {
     return value.booleanValue?.toString() ?? "#ERROR";
   } else if (value.doubleValue != null) {
