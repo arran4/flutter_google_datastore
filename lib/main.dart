@@ -43,6 +43,7 @@ class _ProjectPageState extends State<ProjectPage> {
   @override
   void initState() {
     super.initState();
+    super.initState();
     projects = _loadEntries();
   }
 
@@ -271,12 +272,16 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
       );
     }
 
-    if (!context.mounted) return;
-    Navigator.of(context).pop();
+    // ignore: use_build_context_synchronously
+    if (context.mounted && Navigator.canPop(context)) {
+      // ignore: use_build_context_synchronously
+      Navigator.of(context).pop();
+    }
   }
 
   @override
   void initState() {
+    super.initState();
     projectIdController.text = widget.project?.projectId ?? "";
     endpointUrlController.text = widget.project?.endpointUrl ?? "";
     databaseIdController.text = widget.project?.databaseId ?? "";
@@ -312,7 +317,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
               ),
             ),
             DropdownButtonFormField<String>(
-              value: authMode,
+              initialValue: authMode,
               decoration: const InputDecoration(
                 labelText: 'Authentication mode',
               ),
@@ -352,7 +357,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
       case gcloudCliAuthMode:
         return [
           DropdownButtonFormField<String>(
-            value: googleCliProfile,
+            initialValue: googleCliProfile,
             decoration: const InputDecoration(labelText: 'Google CLI Profile'),
             icon: const Icon(Icons.arrow_downward),
             elevation: 16,
@@ -395,7 +400,7 @@ class DeleteProjectScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text("Delete ${project.projectId} @ ${project.endpointUrl} ?"),
-            ButtonBar(
+            OverflowBar(
               children: [
                 ElevatedButton(
                   onPressed: () => back(context),
@@ -404,7 +409,7 @@ class DeleteProjectScreen extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () => deleteProject(context),
                   style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.resolveWith(
+                    backgroundColor: WidgetStateProperty.resolveWith(
                       (states) => Colors.red,
                     ),
                   ),

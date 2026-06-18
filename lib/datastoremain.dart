@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/database.dart';
 import 'package:googleapis/datastore/v1.dart' as dsv1;
 import 'package:googleapis_auth/auth_io.dart';
-import 'package:googleapis_auth/src/auth_http_utils.dart';
+// import 'package:googleapis_auth/src/auth_http_utils.dart';
 import 'package:http/http.dart' as http;
 //import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart' as googleSignin;
 import 'package:ini/ini.dart' as ini;
@@ -37,7 +37,7 @@ class Namespace {
   final String name;
 
   Namespace(this.name);
-  Namespace.fromKey(dsv1.Key key) : name = key.path?[0]?.name ?? "";
+  Namespace.fromKey(dsv1.Key key) : name = key.path?[0].name ?? "";
   Namespace.fromEntity(dsv1.Entity entity) : this.fromKey(entity.key!);
 }
 
@@ -47,11 +47,11 @@ class Kind {
 
   Kind(this.name, this.namespace);
   Kind.fromKey(dsv1.Key key)
-    : name = key.path?[0]?.name ?? "",
+    : name = key.path?[0].name ?? "",
       namespace = null;
   Kind.fromEntity(dsv1.Entity entity) : this.fromKey(entity.key!);
   Kind.fromKeyWithNamespace(dsv1.Key key, this.namespace)
-    : name = key.path?[0]?.name ?? "";
+    : name = key.path?[0].name ?? "";
   Kind.fromEntityWithNamespace(dsv1.Entity entity, Namespace? namespace)
     : this.fromKeyWithNamespace(entity.key!, namespace);
 
@@ -67,6 +67,7 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
       GCloudCLICredentialDiscover();
   @override
   void initState() {
+    super.initState();
     listOfKinds = retrieveKinds();
   }
 
@@ -181,10 +182,10 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
         widget.project.projectId,
       );
       results.addAll(
-        response?.batch?.entityResults
+        response.batch?.entityResults
                 ?.map((e) => e.entity)
-                ?.whereType<dsv1.Entity>()
-                ?.map((e) => Kind.fromEntityWithNamespace(e, namespace)) ??
+                .whereType<dsv1.Entity>()
+                .map((e) => Kind.fromEntityWithNamespace(e, namespace)) ??
             [],
       );
     }
@@ -219,11 +220,10 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
           accessCredentials,
           client,
         );
-        client = AutoRefreshingClient(
-          client,
-          GoogleAuthEndpoints(),
+        client = autoRefreshingClient(
           clientId,
           accessCredentials,
+          client,
         );
         break;
     }
@@ -246,11 +246,11 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
       ),
       widget.project.projectId,
     );
-    return response?.batch?.entityResults
+    return response.batch?.entityResults
             ?.map((e) => e.entity)
-            ?.whereType<dsv1.Entity>()
-            ?.map((e) => Namespace.fromEntity(e))
-            ?.toList() ??
+            .whereType<dsv1.Entity>()
+            .map((e) => Namespace.fromEntity(e))
+            .toList() ??
         [];
   }
 
@@ -325,7 +325,7 @@ class GCloudCLICredentialDiscover {
     await loadProfiles();
   }
 
-  loadProfiles() async {
+  Future<void> loadProfiles() async {
     final dir = Directory(profileConfigDir);
     profiles =
         await dir

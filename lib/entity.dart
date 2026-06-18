@@ -38,6 +38,7 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
 
   @override
   void initState() {
+    super.initState();
     entityRow = widget.entityRow;
   }
 
@@ -120,7 +121,7 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
                         _loading++;
                         await widget.actions!.deleteEntity(
                           widget.index,
-                          widget.entityRow!.entity,
+                          widget.entityRow.entity,
                         );
                       } catch (e) {
                         if (context.mounted) {
@@ -149,10 +150,7 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
                             _loading--;
                           });
                         });
-                        if (!context.mounted || !Navigator.canPop(context)) {
-                          return;
-                        }
-                        if (context.mounted) {
+                        if (context.mounted && Navigator.canPop(context)) {
                           Navigator.of(context).pop(); // Close the dialog
                         }
                       }
@@ -206,7 +204,7 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
     );
   }
 
-  saveEntityPropertyUpdates(Map<String, dsv1.Value> props) async {
+  Future<void> saveEntityPropertyUpdates(Map<String, dsv1.Value> props) async {
     try {
       setState(() {
         _loading++;
@@ -218,9 +216,6 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
       dsv1.Entity? newEntity = await widget.actions!.refreshEntity(
         widget.entityRow.entity.key!,
       );
-      if (newEntity == null) {
-        return;
-      }
       if (newEntity == null) {
         return;
       }
@@ -314,7 +309,7 @@ class _ViewEntityState extends State<ViewEntity> {
                           child: Padding(
                             padding: const EdgeInsets.all(4.0),
                             child: SelectableText(
-                              widget.project.projectId ?? "",
+                              widget.project.projectId,
                             ),
                           ),
                         ),
@@ -536,6 +531,7 @@ class _ViewEntityState extends State<ViewEntity> {
     if (!context.mounted) {
       return;
     }
+    // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('JSON data saved to file: $filePath'),
@@ -563,7 +559,8 @@ class _ViewEntityState extends State<ViewEntity> {
         resultProps[key] = newValue;
       });
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        // ignore: use_build_context_synchronously
+    ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('JSON data read from file: $filePath'),
             duration: const Duration(seconds: 3),
@@ -574,7 +571,8 @@ class _ViewEntityState extends State<ViewEntity> {
       return resultProps;
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        // ignore: use_build_context_synchronously
+    ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error loading JSON file: $e'),
             duration: const Duration(seconds: 3),
@@ -596,12 +594,12 @@ class PropertyViewWidget extends StatefulWidget {
 
   const PropertyViewWidget(
     this.entityRow, {
-    Key? key,
+    super.key,
     required this.properties,
     this.onSaveChanges,
     this.onUpdate,
     this.newProperties,
-  }) : super(key: key);
+  });
 
   @override
   State<PropertyViewWidget> createState() => _PropertyViewWidgetState();
@@ -612,6 +610,7 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
 
   @override
   void initState() {
+    super.initState();
     super.initState();
     newProperties = widget.newProperties;
   }
@@ -635,10 +634,8 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
         2: IntrinsicColumnWidth(),
       },
       children: [
-        ...((newProperties ?? widget.properties).entries
-                .expand(expandProperties)
-                .toList() ??
-            []),
+        ...(newProperties ?? widget.properties).entries
+                .expand(expandProperties),
         TableRow(
           children: [
             const SizedBox(),
@@ -706,7 +703,7 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
                   }
                   if (result is MapEntry<String, dsv1.Value?>) {
                     setState(() {
-                      newProperties ??= {...(widget.properties ?? {})};
+                      newProperties ??= {...widget.properties};
                       if (result.value != null) {
                         newProperties![result.key] = result.value!;
                       }
@@ -864,7 +861,7 @@ String valuesToString(dsv1.Value e) {
   if (e.blobValue != null) {
     return "Blob Length: ${e.blobValue?.length ?? "#ERROR"}";
   } else if (e.arrayValue != null) {
-    return "array:[${e.arrayValue?.values?.map(valuesToString)?.join(" , ") ?? ""}]";
+    return "array:[${e.arrayValue?.values?.map(valuesToString).join(" , ") ?? ""}]";
   } else if (e.booleanValue != null) {
     return "boolean:${e.booleanValue?.toString() ?? "#ERROR"}";
   } else if (e.doubleValue != null) {
@@ -895,7 +892,7 @@ String getValueDisplayValue(dsv1.Value value) {
     // TODO a way of looking at the content.
     return "Blob Length: ${value.blobValue?.length ?? "#ERROR"}";
   } else if (value.arrayValue != null) {
-    return "[${value.arrayValue?.values?.map(valuesToString)?.join(" , ") ?? ""}]";
+    return "[${value.arrayValue?.values?.map(valuesToString).join(" , ") ?? ""}]";
   } else if (value.booleanValue != null) {
     return value.booleanValue?.toString() ?? "#ERROR";
   } else if (value.doubleValue != null) {
@@ -961,10 +958,10 @@ class PropertyAddEditDeleteDialog extends StatefulWidget {
   const PropertyAddEditDeleteDialog(
     this.propertyEntry,
     this.entityRow, {
-    Key? key,
+    super.key,
     this.type = "Property",
     this.readonlyName = false,
-  }) : super(key: key);
+  });
 
   @override
   State<PropertyAddEditDeleteDialog> createState() =>
@@ -1033,6 +1030,7 @@ class _PropertyAddEditDeleteDialogState
     if (!context.mounted) {
       return;
     }
+    // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Blob saved to file: $filePath'),
@@ -1060,11 +1058,12 @@ class _PropertyAddEditDeleteDialogState
   @override
   void initState() {
     super.initState();
+    super.initState();
     _nameController = TextEditingController(
       text: widget.propertyEntry?.key ?? "",
     );
     _selectedType = getValueType(widget.propertyEntry?.value) ?? "string";
-    _indexData = !(widget.propertyEntry?.value?.excludeFromIndexes ?? false);
+    _indexData = !(widget.propertyEntry?.value.excludeFromIndexes ?? false);
     extractValue(widget.propertyEntry?.value);
   }
 
@@ -1396,10 +1395,10 @@ class _PropertyAddEditDeleteDialogState
         return [
           PropertyViewWidget(
             widget.entityRow,
-            properties: newProperties ?? {},
+            properties: newProperties,
             onUpdate: (Map<String, dsv1.Value> np) {
               setState(() {
-                newProperties = {...(np ?? {})};
+                newProperties = {...np};
               });
             },
           ),
@@ -1673,6 +1672,7 @@ class _PropertyAddEditDeleteDialogState
       backgroundColor: Colors.red,
     );
 
+    // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
@@ -1737,15 +1737,15 @@ class _PropertyAddEditDeleteDialogState
   void refreshTimestampControllers() {
     DateTime? d = DateTime.tryParse(_selectedDateTime);
     if (d != null) {
-      _yearController.text = d!.year.toString();
-      _monthController.text = d!.month.toString();
-      _dayController.text = d!.day.toString();
-      _hourController.text = d!.hour.toString();
-      _minuteController.text = d!.minute.toString();
-      _secondController.text = d!.second.toString();
-      _millisecondController.text = d!.millisecond.toString();
-      _microsecondController.text = d!.microsecond.toString();
-      _timezoneController.text = d!.timeZoneName;
+      _yearController.text = d.year.toString();
+      _monthController.text = d.month.toString();
+      _dayController.text = d.day.toString();
+      _hourController.text = d.hour.toString();
+      _minuteController.text = d.minute.toString();
+      _secondController.text = d.second.toString();
+      _millisecondController.text = d.millisecond.toString();
+      _microsecondController.text = d.microsecond.toString();
+      _timezoneController.text = d.timeZoneName;
     }
   }
 }
@@ -1758,11 +1758,11 @@ class KeyPatElementTextInputWidget extends StatefulWidget {
   const KeyPatElementTextInputWidget({
     required this.each,
     this.onRemove,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
-  _KeyPatElementTextInputWidgetState createState() =>
+  State<KeyPatElementTextInputWidget> createState() =>
       _KeyPatElementTextInputWidgetState();
 }
 
@@ -1774,6 +1774,7 @@ class _KeyPatElementTextInputWidgetState
 
   @override
   void initState() {
+    super.initState();
     super.initState();
     _kindController = TextEditingController(text: widget.each.kind);
     _idController = TextEditingController(text: widget.each.id ?? '');
@@ -1903,13 +1904,13 @@ class ValueAddEditRow extends StatelessWidget {
   final Function()? onRemove;
 
   const ValueAddEditRow({
-    Key? key,
+    super.key,
     required this.value,
     this.onEdit,
     this.onCopy,
     this.onUpdate,
     this.onRemove,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
