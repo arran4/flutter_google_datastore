@@ -37,7 +37,8 @@ class Namespace {
   final String name;
 
   Namespace(this.name);
-  Namespace.fromKey(dsv1.Key key) : name = key.path?[0].name ?? "";
+  // ignore: invalid_null_aware_operator
+  Namespace.fromKey(dsv1.Key key) : name = key.path?[0]?.name ?? "";
   Namespace.fromEntity(dsv1.Entity entity) : this.fromKey(entity.key!);
 }
 
@@ -47,11 +48,13 @@ class Kind {
 
   Kind(this.name, this.namespace);
   Kind.fromKey(dsv1.Key key)
-    : name = key.path?[0].name ?? "",
+    // ignore: invalid_null_aware_operator
+    : name = key.path?[0]?.name ?? "",
       namespace = null;
   Kind.fromEntity(dsv1.Entity entity) : this.fromKey(entity.key!);
   Kind.fromKeyWithNamespace(dsv1.Key key, this.namespace)
-    : name = key.path?[0].name ?? "";
+    // ignore: invalid_null_aware_operator
+    : name = key.path?[0]?.name ?? "";
   Kind.fromEntityWithNamespace(dsv1.Entity entity, Namespace? namespace)
     : this.fromKeyWithNamespace(entity.key!, namespace);
 
@@ -220,11 +223,7 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
           accessCredentials,
           client,
         );
-        client = autoRefreshingClient(
-          clientId,
-          accessCredentials,
-          client,
-        );
+        client = autoRefreshingClient(clientId, accessCredentials, client);
         break;
     }
     if (widget.project.endpointUrl != null) {

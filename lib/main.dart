@@ -43,7 +43,6 @@ class _ProjectPageState extends State<ProjectPage> {
   @override
   void initState() {
     super.initState();
-    super.initState();
     projects = _loadEntries();
   }
 
@@ -317,7 +316,8 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
               ),
             ),
             DropdownButtonFormField<String>(
-              initialValue: authMode,
+              // ignore: deprecated_member_use
+              value: authMode,
               decoration: const InputDecoration(
                 labelText: 'Authentication mode',
               ),
@@ -357,7 +357,8 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
       case gcloudCliAuthMode:
         return [
           DropdownButtonFormField<String>(
-            initialValue: googleCliProfile,
+            // ignore: deprecated_member_use
+            value: googleCliProfile,
             decoration: const InputDecoration(labelText: 'Google CLI Profile'),
             icon: const Icon(Icons.arrow_downward),
             elevation: 16,

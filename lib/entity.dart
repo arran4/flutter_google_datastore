@@ -308,9 +308,7 @@ class _ViewEntityState extends State<ViewEntity> {
                         TableCell(
                           child: Padding(
                             padding: const EdgeInsets.all(4.0),
-                            child: SelectableText(
-                              widget.project.projectId,
-                            ),
+                            child: SelectableText(widget.project.projectId),
                           ),
                         ),
                       ],
@@ -560,7 +558,7 @@ class _ViewEntityState extends State<ViewEntity> {
       });
       if (context.mounted) {
         // ignore: use_build_context_synchronously
-    ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('JSON data read from file: $filePath'),
             duration: const Duration(seconds: 3),
@@ -572,7 +570,7 @@ class _ViewEntityState extends State<ViewEntity> {
     } catch (e) {
       if (context.mounted) {
         // ignore: use_build_context_synchronously
-    ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error loading JSON file: $e'),
             duration: const Duration(seconds: 3),
@@ -611,7 +609,6 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
   @override
   void initState() {
     super.initState();
-    super.initState();
     newProperties = widget.newProperties;
   }
 
@@ -634,8 +631,9 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
         2: IntrinsicColumnWidth(),
       },
       children: [
-        ...(newProperties ?? widget.properties).entries
-                .expand(expandProperties),
+        ...(newProperties ?? widget.properties).entries.expand(
+          expandProperties,
+        ),
         TableRow(
           children: [
             const SizedBox(),
@@ -1058,12 +1056,12 @@ class _PropertyAddEditDeleteDialogState
   @override
   void initState() {
     super.initState();
-    super.initState();
     _nameController = TextEditingController(
       text: widget.propertyEntry?.key ?? "",
     );
     _selectedType = getValueType(widget.propertyEntry?.value) ?? "string";
-    _indexData = !(widget.propertyEntry?.value.excludeFromIndexes ?? false);
+    // ignore: invalid_null_aware_operator
+    _indexData = !(widget.propertyEntry?.value?.excludeFromIndexes ?? false);
     extractValue(widget.propertyEntry?.value);
   }
 
@@ -1774,7 +1772,6 @@ class _KeyPatElementTextInputWidgetState
 
   @override
   void initState() {
-    super.initState();
     super.initState();
     _kindController = TextEditingController(text: widget.each.kind);
     _idController = TextEditingController(text: widget.each.id ?? '');
