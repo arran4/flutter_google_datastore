@@ -194,7 +194,7 @@ class _KindContentsPageState extends State<KindContentsPage>
   Future<List<EntityRow>> retrieveRows() async {
     List<EntityRow> results = [];
 
-    dsv1.RunQueryResponse response = await widget.dsApi!.projects.runQuery(
+    dsv1.RunQueryResponse response = await widget.dsApi.projects.runQuery(
       dsv1.RunQueryRequest(
         query: dsv1.Query(
           kind: [dsv1.KindExpression(name: widget.kind.name)],
@@ -208,12 +208,12 @@ class _KindContentsPageState extends State<KindContentsPage>
       ),
       widget.project.projectId,
     );
-    startCursor = response?.batch?.endCursor;
+    startCursor = response.batch?.endCursor;
     results.addAll(
-      response?.batch?.entityResults
+      response.batch?.entityResults
               ?.map((e) => e.entity)
-              ?.whereType<dsv1.Entity>()
-              ?.map((e) => EntityRow(entity: e)) ??
+              .whereType<dsv1.Entity>()
+              .map((e) => EntityRow(entity: e)) ??
           [],
     );
 
@@ -235,8 +235,9 @@ class _KindContentsPageState extends State<KindContentsPage>
     }
   }
 
+  @override
   Future<dsv1.Entity?> refreshEntity(dsv1.Key key) async {
-    dsv1.LookupResponse lookupResponse = await widget.dsApi!.projects.lookup(
+    dsv1.LookupResponse lookupResponse = await widget.dsApi.projects.lookup(
       dsv1.LookupRequest(databaseId: widget.project.databaseId, keys: [key]),
       widget.project.projectId,
     );
@@ -246,8 +247,9 @@ class _KindContentsPageState extends State<KindContentsPage>
     return lookupResponse.found![0].entity;
   }
 
+  @override
   Future<bool> updateEntity(dsv1.Key key, Map<String, dsv1.Value> props) async {
-    var r = await widget.dsApi!.projects.commit(
+    var r = await widget.dsApi.projects.commit(
       dsv1.CommitRequest(
         databaseId: widget.project.databaseId,
         mode: "NON_TRANSACTIONAL",
@@ -257,11 +259,12 @@ class _KindContentsPageState extends State<KindContentsPage>
       ),
       widget.project.projectId,
     );
-    return r.mutationResults?[0]?.key != null;
+    return r.mutationResults?[0].key != null;
   }
 
+  @override
   Future<bool> deleteEntity(int index, dsv1.Entity newEntity) async {
-    await widget.dsApi!.projects.commit(
+    await widget.dsApi.projects.commit(
       dsv1.CommitRequest(
         databaseId: widget.project.databaseId,
         mode: "NON_TRANSACTIONAL",
@@ -272,6 +275,7 @@ class _KindContentsPageState extends State<KindContentsPage>
     return await removeEntity(index, newEntity);
   }
 
+  @override
   Future<EntityRow?> replaceEntity(int index, dsv1.Entity newEntity) async {
     if (index >= (_pagingController.value.items?.length ?? 0)) {
       return null;
@@ -282,7 +286,7 @@ class _KindContentsPageState extends State<KindContentsPage>
       if (index < (_pagingController.value.items?.length ?? 0) &&
           _pagingController.value.items![index].key ==
               keyToString(newEntity.key)) {
-        er.entity = newEntity!;
+        er.entity = newEntity;
         _pagingController.mapItems((item) => item.key == er.key ? er : item);
       }
       completer.complete(er);
@@ -302,7 +306,7 @@ class _KindContentsPageState extends State<KindContentsPage>
           _pagingController.value.items![index].key ==
               keyToString(newEntity.key)) {
         found = true;
-        er.entity = newEntity!;
+        er.entity = newEntity;
         _pagingController.value = _pagingController.value.filterItems(
           (item) => item.key != er.key,
         );

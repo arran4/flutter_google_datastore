@@ -18,6 +18,7 @@ class SettingsWidgetState extends State<SettingsWidget> {
 
   @override
   void initState() {
+    super.initState();
     db.filepath().then(
       (value) => {
         setState(() {
@@ -71,7 +72,7 @@ class DeleteDatabaseScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const Text("Delete Entire database ?"),
-            ButtonBar(
+            OverflowBar(
               children: [
                 ElevatedButton(
                   onPressed: () => back(context),
@@ -82,7 +83,7 @@ class DeleteDatabaseScreen extends StatelessWidget {
                     await deleteProject(context);
                   },
                   style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.resolveWith(
+                    backgroundColor: WidgetStateProperty.resolveWith(
                       (states) => Colors.red,
                     ),
                   ),
