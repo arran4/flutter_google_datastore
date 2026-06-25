@@ -316,8 +316,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
               ),
             ),
             DropdownButtonFormField<String>(
-              // ignore: deprecated_member_use
-              value: authMode,
+              initialValue: authMode,
               decoration: const InputDecoration(
                 labelText: 'Authentication mode',
               ),
@@ -357,8 +356,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
       case gcloudCliAuthMode:
         return [
           DropdownButtonFormField<String>(
-            // ignore: deprecated_member_use
-            value: googleCliProfile,
+            initialValue: googleCliProfile,
             decoration: const InputDecoration(labelText: 'Google CLI Profile'),
             icon: const Icon(Icons.arrow_downward),
             elevation: 16,
@@ -425,6 +423,7 @@ class DeleteProjectScreen extends StatelessWidget {
   }
 
   void back(BuildContext context) {
+    // ignore: use_build_context_synchronously
     Navigator.of(context).pop();
   }
 
@@ -432,6 +431,7 @@ class DeleteProjectScreen extends StatelessWidget {
     await db.deleteProject(project.id);
     await db.removeProject(project.id);
     if (context.mounted) {
+      // ignore: use_build_context_synchronously
       Navigator.of(context).pop();
     }
   }

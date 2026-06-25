@@ -1060,8 +1060,7 @@ class _PropertyAddEditDeleteDialogState
       text: widget.propertyEntry?.key ?? "",
     );
     _selectedType = getValueType(widget.propertyEntry?.value) ?? "string";
-    // ignore: invalid_null_aware_operator
-    _indexData = !(widget.propertyEntry?.value?.excludeFromIndexes ?? false);
+    _indexData = !(widget.propertyEntry?.value.excludeFromIndexes ?? false);
     extractValue(widget.propertyEntry?.value);
   }
 

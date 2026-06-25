@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/database.dart';
 import 'package:googleapis/datastore/v1.dart' as dsv1;
 import 'package:googleapis_auth/auth_io.dart';
-// import 'package:googleapis_auth/src/auth_http_utils.dart';
+
 import 'package:http/http.dart' as http;
 //import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart' as googleSignin;
 import 'package:ini/ini.dart' as ini;
@@ -37,8 +37,7 @@ class Namespace {
   final String name;
 
   Namespace(this.name);
-  // ignore: invalid_null_aware_operator
-  Namespace.fromKey(dsv1.Key key) : name = key.path?[0]?.name ?? "";
+  Namespace.fromKey(dsv1.Key key) : name = key.path?[0].name ?? "";
   Namespace.fromEntity(dsv1.Entity entity) : this.fromKey(entity.key!);
 }
 
@@ -47,14 +46,10 @@ class Kind {
   final Namespace? namespace;
 
   Kind(this.name, this.namespace);
-  Kind.fromKey(dsv1.Key key)
-    // ignore: invalid_null_aware_operator
-    : name = key.path?[0]?.name ?? "",
-      namespace = null;
+  Kind.fromKey(dsv1.Key key) : name = key.path?[0].name ?? "", namespace = null;
   Kind.fromEntity(dsv1.Entity entity) : this.fromKey(entity.key!);
   Kind.fromKeyWithNamespace(dsv1.Key key, this.namespace)
-    // ignore: invalid_null_aware_operator
-    : name = key.path?[0]?.name ?? "";
+    : name = key.path?[0].name ?? "";
   Kind.fromEntityWithNamespace(dsv1.Entity entity, Namespace? namespace)
     : this.fromKeyWithNamespace(entity.key!, namespace);
 
