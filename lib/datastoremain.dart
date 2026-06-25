@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dartobjectutils/dartobjectutils.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/database.dart';
 import 'package:googleapis/datastore/v1.dart' as dsv1;
 import 'package:googleapis_auth/auth_io.dart';
-import 'package:googleapis_auth/src/auth_http_utils.dart';
+
 import 'package:http/http.dart' as http;
 //import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart' as googleSignin;
 import 'package:ini/ini.dart' as ini;
@@ -17,15 +20,12 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'kind.dart';
 import 'main.dart';
 
-final datastoreRequiredScopes = [
-  "https://www.googleapis.com/auth/datastore",
-];
+final datastoreRequiredScopes = ["https://www.googleapis.com/auth/datastore"];
 
 class DatastoreMainPage extends StatefulWidget {
   final Project project;
 
-  const DatastoreMainPage(
-      {super.key, required this.project});
+  const DatastoreMainPage({super.key, required this.project});
 
   @override
   State createState() {
@@ -37,7 +37,7 @@ class Namespace {
   final String name;
 
   Namespace(this.name);
-  Namespace.fromKey(dsv1.Key key) :name = key.path?[0]?.name??"";
+  Namespace.fromKey(dsv1.Key key) : name = key.path?[0].name ?? "";
   Namespace.fromEntity(dsv1.Entity entity) : this.fromKey(entity.key!);
 }
 
@@ -46,21 +46,26 @@ class Kind {
   final Namespace? namespace;
 
   Kind(this.name, this.namespace);
-  Kind.fromKey(dsv1.Key key) : name = key.path?[0]?.name??"", namespace = null;
+  Kind.fromKey(dsv1.Key key) : name = key.path?[0].name ?? "", namespace = null;
   Kind.fromEntity(dsv1.Entity entity) : this.fromKey(entity.key!);
-  Kind.fromKeyWithNamespace(dsv1.Key key, this.namespace) : name = key.path?[0]?.name??"";
-  Kind.fromEntityWithNamespace(dsv1.Entity entity, Namespace? namespace) : this.fromKeyWithNamespace(entity.key!, namespace);
+  Kind.fromKeyWithNamespace(dsv1.Key key, this.namespace)
+    : name = key.path?[0].name ?? "";
+  Kind.fromEntityWithNamespace(dsv1.Entity entity, Namespace? namespace)
+    : this.fromKeyWithNamespace(entity.key!, namespace);
 
-  String get key => "$name${ (namespace == null || namespace!.name.isEmpty) ? "" : " IN ${namespace!.name}"}";
+  String get key =>
+      "$name${(namespace == null || namespace!.name.isEmpty) ? "" : " IN ${namespace!.name}"}";
 }
 
 class _DatastoreMainPageState extends State<DatastoreMainPage> {
   dsv1.DatastoreApi? dsApi;
   Future<List<Kind>>? listOfKinds;
   Future<List<Namespace>>? listOfNamespaces;
-  GCloudCLICredentialDiscover gCloudCLICredentials = GCloudCLICredentialDiscover();
+  GCloudCLICredentialDiscover gCloudCLICredentials =
+      GCloudCLICredentialDiscover();
   @override
   void initState() {
+    super.initState();
     listOfKinds = retrieveKinds();
   }
 
@@ -84,10 +89,7 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
 
   List<PopupMenuEntry<String>> createPopupItems(BuildContext context) {
     return <PopupMenuEntry<String>>[
-      const PopupMenuItem<String>(
-        value: 'refresh',
-        child: Text('Refresh'),
-      ),
+      const PopupMenuItem<String>(value: 'refresh', child: Text('Refresh')),
     ];
   }
 
@@ -95,10 +97,7 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme
-            .of(context)
-            .colorScheme
-            .inversePrimary,
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text("Project: ${widget.project.key}"),
         actions: <Widget>[
           PopupMenuButton<String>(
@@ -111,8 +110,12 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
         future: listOfKinds,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            if (snapshot.error.runtimeType == dsv1.DetailedApiRequestError) {
-              return SelectableText('Authentication Error: ${snapshot.error}'); // TODO self provide details.
+            if (snapshot.error is dsv1.DetailedApiRequestError) {
+              return SelectableText(
+                _getErrorMessage(
+                  snapshot.error as dsv1.DetailedApiRequestError,
+                ),
+              );
             }
             return SelectableText('Error: ${snapshot.error}');
           } else if (snapshot.hasData) {
@@ -122,17 +125,30 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
               itemBuilder: (BuildContext context, int index) {
                 return ListTile(
                   title: Text(listOfKinds[index].name),
-                  subtitle: Text((listOfKinds[index].namespace?.name != null && listOfKinds[index].namespace!.name.isNotEmpty) ? "Namespace: ${listOfKinds[index].namespace?.name??""}" : "Default namespace"),
+                  subtitle: Text(
+                    (listOfKinds[index].namespace?.name != null &&
+                            listOfKinds[index].namespace!.name.isNotEmpty)
+                        ? "Namespace: ${listOfKinds[index].namespace?.name ?? ""}"
+                        : "Default namespace",
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      TextButton(onPressed: () async {
-                        await Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => KindContentsPage(project: widget.project, kind: listOfKinds[index], dsApi: dsApi!, key: Key(listOfKinds[index].key)),
-                          ),
-                        );
-                        }, child: const Text("View")
+                      TextButton(
+                        onPressed: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => KindContentsPage(
+                                    project: widget.project,
+                                    kind: listOfKinds[index],
+                                    dsApi: dsApi!,
+                                    key: Key(listOfKinds[index].key),
+                                  ),
+                            ),
+                          );
+                        },
+                        child: const Text("View"),
                       ),
                     ],
                   ),
@@ -155,12 +171,21 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
     }
     List<Kind> results = [];
 
-    for (Namespace namespace in (await listOfNamespaces)??[]) {
-      dsv1.RunQueryResponse response = await dsApi!.projects.runQuery(dsv1.RunQueryRequest(
-        query: dsv1.Query(kind: [dsv1.KindExpression(name: "__kind__")]),
-        partitionId: dsv1.PartitionId(namespaceId: namespace.name)
-      ), widget.project.projectId);
-      results.addAll(response?.batch?.entityResults?.map((e) => e.entity)?.whereType<dsv1.Entity>()?.map((e) => Kind.fromEntityWithNamespace(e, namespace)) ?? []);
+    for (Namespace namespace in (await listOfNamespaces) ?? []) {
+      dsv1.RunQueryResponse response = await dsApi!.projects.runQuery(
+        dsv1.RunQueryRequest(
+          query: dsv1.Query(kind: [dsv1.KindExpression(name: "__kind__")]),
+          partitionId: dsv1.PartitionId(namespaceId: namespace.name),
+        ),
+        widget.project.projectId,
+      );
+      results.addAll(
+        response.batch?.entityResults
+                ?.map((e) => e.entity)
+                .whereType<dsv1.Entity>()
+                .map((e) => Kind.fromEntityWithNamespace(e, namespace)) ??
+            [],
+      );
     }
 
     return results;
@@ -170,16 +195,30 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
     var client = http.Client();
     switch (widget.project.authMode) {
       case gcloudCliAuthMode:
-        final credsJson = await gCloudCLICredentials.getJsonCredentials(widget.project.googleCliProfile??"default");
-        var creds = jsonDecode(credsJson);
-        ClientId clientId = ClientId(
-          creds["client_id"],
-          creds["client_secret"],
+        final credsJson = await gCloudCLICredentials.getJsonCredentials(
+          widget.project.googleCliProfile ?? "default",
         );
-        AccessToken accessToken = AccessToken("", "", DateTime.now().subtract(const Duration(days: 1)).toUtc());
-        AccessCredentials accessCredentials = AccessCredentials(accessToken, creds["refresh_token"], datastoreRequiredScopes);
-        accessCredentials = await refreshCredentials(clientId, accessCredentials, client);
-        client = AutoRefreshingClient(client, GoogleAuthEndpoints(), clientId, accessCredentials);
+        var creds = jsonDecode(credsJson) as Map<String, dynamic>;
+        ClientId clientId = ClientId(
+          getStringPropOrThrow(creds, "client_id"),
+          getStringPropOrThrow(creds, "client_secret"),
+        );
+        AccessToken accessToken = AccessToken(
+          "",
+          "",
+          DateTime.now().subtract(const Duration(days: 1)).toUtc(),
+        );
+        AccessCredentials accessCredentials = AccessCredentials(
+          accessToken,
+          getStringPropOrDefault(creds, "refresh_token", null),
+          datastoreRequiredScopes,
+        );
+        accessCredentials = await refreshCredentials(
+          clientId,
+          accessCredentials,
+          client,
+        );
+        client = autoRefreshingClient(clientId, accessCredentials, client);
         break;
     }
     if (widget.project.endpointUrl != null) {
@@ -195,10 +234,36 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
 
   Future<List<Namespace>> retrieveNamespaces() async {
     await loadApiClient();
-    dsv1.RunQueryResponse response = await dsApi!.projects.runQuery(dsv1.RunQueryRequest(
-    query: dsv1.Query(kind: [dsv1.KindExpression(name: "__namespace__")]),
-    ), widget.project.projectId);
-    return response?.batch?.entityResults?.map((e) => e.entity)?.whereType<dsv1.Entity>()?.map((e) => Namespace.fromEntity(e))?.toList() ?? [];
+    dsv1.RunQueryResponse response = await dsApi!.projects.runQuery(
+      dsv1.RunQueryRequest(
+        query: dsv1.Query(kind: [dsv1.KindExpression(name: "__namespace__")]),
+      ),
+      widget.project.projectId,
+    );
+    return response.batch?.entityResults
+            ?.map((e) => e.entity)
+            .whereType<dsv1.Entity>()
+            .map((e) => Namespace.fromEntity(e))
+            .toList() ??
+        [];
+  }
+
+  String _getErrorMessage(dsv1.DetailedApiRequestError error) {
+    final buffer = StringBuffer();
+    buffer.writeln('Authentication Error:');
+    buffer.writeln('Status: ${error.status}');
+    buffer.writeln('Message: ${error.message}');
+    if (error.errors.isNotEmpty) {
+      buffer.writeln('Details:');
+      for (var e in error.errors) {
+        buffer.writeln('- Reason: ${e.reason}');
+        buffer.writeln('  Message: ${e.message}');
+        if (e.domain != null) {
+          buffer.writeln('  Domain: ${e.domain}');
+        }
+      }
+    }
+    return buffer.toString();
   }
 }
 
@@ -212,14 +277,38 @@ class GCloudCLICredentialDiscover {
 
   bool get hasDefault {
     return profiles.contains(defaultProfileName);
-}
+  }
 
-  GCloudCLICredentialDiscover() {
-    loadConfigDir();
+  final String? overrideConfigDir;
+  late final Future<void> initFuture;
+
+  GCloudCLICredentialDiscover({this.overrideConfigDir}) {
+    initFuture = loadConfigDir();
   }
 
   Future<void> loadConfigDir() async {
-    if (Platform.isLinux) {
+    if (overrideConfigDir != null) {
+      configDir = overrideConfigDir!;
+    } else if (kIsWeb) {
+      return;
+    } else if (Platform.isWindows) {
+      final appData = Platform.environment['APPDATA'];
+      if (appData != null) {
+        configDir = path.join(appData, "gcloud");
+      } else {
+        configDir = path.join(Directory.systemTemp.path, "gcloud");
+      }
+    } else if (Platform.isMacOS) {
+      final home = Platform.environment['HOME'];
+      if (home != null) {
+        configDir = path.join(home, ".config", "gcloud");
+      } else {
+        configDir = path.join(
+          (await ppath.getLibraryDirectory()).path,
+          "gcloud",
+        );
+      }
+    } else if (Platform.isLinux) {
       configDir = path.join(xdg.configHome.path, "gcloud");
     } else {
       configDir = path.join((await ppath.getLibraryDirectory()).path, "gcloud");
@@ -230,27 +319,56 @@ class GCloudCLICredentialDiscover {
     await loadProfiles();
   }
 
-  loadProfiles() async {
+  Future<void> loadProfiles() async {
     final dir = Directory(profileConfigDir);
-    profiles = await dir.list().where((FileSystemEntity fse) {
-      return path.basename(fse.path).startsWith("config_");
-    }).map((FileSystemEntity fse) => path.basename(fse.path).substring("config_".length)).toList();
+    profiles =
+        await dir
+            .list()
+            .where((FileSystemEntity fse) {
+              return path.basename(fse.path).startsWith("config_");
+            })
+            .map(
+              (FileSystemEntity fse) =>
+                  path.basename(fse.path).substring("config_".length),
+            )
+            .toList();
     if (profiles.isEmpty) {
       profiles = ["default"];
     }
   }
 
   Future<String> getJsonCredentials(String forProfile) async {
-    String fileContents = await File(path.join(profileConfigDir, "config_$forProfile")).readAsString();
+    String fileContents =
+        await File(
+          path.join(profileConfigDir, "config_$forProfile"),
+        ).readAsString();
     ini.Config inic = ini.Config.fromString(fileContents);
 
     dynamic account = inic.get("core", "account");
-    // TODO expand to other platforms.
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-    Database db = await openDatabase(credentialsDBFile, readOnly: true);
+
+    if (kIsWeb) {
+      throw UnsupportedError("GCloud CLI credentials not supported on Web");
+    }
+
+    DatabaseFactory dbFactory;
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      sqfliteFfiInit();
+      dbFactory = databaseFactoryFfi;
+    } else {
+      dbFactory = databaseFactory;
+    }
+    Database db = await dbFactory.openDatabase(
+      credentialsDBFile,
+      options: OpenDatabaseOptions(readOnly: true),
+    );
     try {
-      List<Map<String,Object?>> results = await db.query("credentials", where: "account_id=?", whereArgs: [account], limit: 1, columns: ["value"]);
+      List<Map<String, Object?>> results = await db.query(
+        "credentials",
+        where: "account_id=?",
+        whereArgs: [account],
+        limit: 1,
+        columns: ["value"],
+      );
       if (results.length != 1) {
         throw Error.safeToString("Credentials for profile not found");
       }
@@ -260,8 +378,7 @@ class GCloudCLICredentialDiscover {
       }
       return result;
     } finally {
-      db.close();
+      await db.close();
     }
   }
 }
-

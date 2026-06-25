@@ -66,3 +66,7 @@ invoke `fastforge release` for the desired target.
 * Export and import of multiple types both datastore / could and it's own
 
 This project was born out of a personal need, and I welcome sponsorship to help enhance and maintain it for a wider audience.
+
+## License
+
+This project is licensed under the AGPL-3.0 License - see the [LICENSE](LICENSE) file for details.

@@ -4,17 +4,12 @@ import 'package:flutter_google_datastore/database.dart';
 void main() {
   group('Project model', () {
     test('validRow returns true when required fields present', () {
-      final row = {
-        'id': 1,
-        'projectId': 'proj',
-      };
+      final row = {'id': 1, 'projectId': 'proj'};
       expect(Project.validRow(row), isTrue);
     });
 
     test('validRow returns false when required fields missing', () {
-      final row = {
-        'id': 1,
-      };
+      final row = {'id': 1};
       expect(Project.validRow(row), isFalse);
     });
 
@@ -28,6 +23,7 @@ void main() {
         'projectId': 'myproj',
         'authMode': 'none',
         'googleCliProfile': 'default',
+        'databaseId': 'my-db',
       };
 
       final project = Project.fromRow(row);
@@ -36,7 +32,22 @@ void main() {
       expect(project.projectId, 'myproj');
       expect(project.authMode, 'none');
       expect(project.googleCliProfile, 'default');
+      expect(project.databaseId, 'my-db');
       expect(project.key, 'myproj @ http://localhost');
+    });
+
+    test('fromRow handles missing optional fields', () {
+      final now = DateTime.now().toUtc();
+      final row = {
+        'id': 10,
+        'created': now.toIso8601String(),
+        'updated': now.toIso8601String(),
+        'projectId': 'myproj',
+        'authMode': 'none',
+      };
+
+      final project = Project.fromRow(row);
+      expect(project.databaseId, '');
     });
   });
 }
