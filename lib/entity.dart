@@ -529,7 +529,6 @@ class _ViewEntityState extends State<ViewEntity> {
     if (!context.mounted) {
       return;
     }
-    // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('JSON data saved to file: $filePath'),
@@ -557,7 +556,6 @@ class _ViewEntityState extends State<ViewEntity> {
         resultProps[key] = newValue;
       });
       if (context.mounted) {
-        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('JSON data read from file: $filePath'),
@@ -569,7 +567,6 @@ class _ViewEntityState extends State<ViewEntity> {
       return resultProps;
     } catch (e) {
       if (context.mounted) {
-        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error loading JSON file: $e'),
@@ -1028,7 +1025,6 @@ class _PropertyAddEditDeleteDialogState
     if (!context.mounted) {
       return;
     }
-    // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Blob saved to file: $filePath'),
