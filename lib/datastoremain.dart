@@ -46,7 +46,9 @@ class Kind {
   final Namespace? namespace;
 
   Kind(this.name, this.namespace);
-  Kind.fromKey(dsv1.Key key) : name = key.path?.firstOrNull?.name ?? "", namespace = null;
+  Kind.fromKey(dsv1.Key key)
+    : name = key.path?.firstOrNull?.name ?? "",
+      namespace = null;
   Kind.fromEntity(dsv1.Entity entity) : this.fromKey(entity.key!);
   Kind.fromKeyWithNamespace(dsv1.Key key, this.namespace)
     : name = key.path?.firstOrNull?.name ?? "";
