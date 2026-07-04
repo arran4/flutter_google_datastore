@@ -526,9 +526,7 @@ class _ViewEntityState extends State<ViewEntity> {
     String jsonString = jsonEncode(map);
     File file = File(filePath);
     await file.writeAsString(jsonString);
-    if (!context.mounted) {
-      return;
-    }
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('JSON data saved to file: $filePath'),
@@ -555,7 +553,7 @@ class _ViewEntityState extends State<ViewEntity> {
         dsv1.Value newValue = dsv1.Value.fromJson(value);
         resultProps[key] = newValue;
       });
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('JSON data read from file: $filePath'),
@@ -566,7 +564,7 @@ class _ViewEntityState extends State<ViewEntity> {
       }
       return resultProps;
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error loading JSON file: $e'),
@@ -1022,7 +1020,7 @@ class _PropertyAddEditDeleteDialogState
     List<int> bytes = base64Decode(_blobValue!);
     File file = File(filePath);
     await file.writeAsBytes(bytes);
-    if (!context.mounted) {
+    if (!mounted) {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
