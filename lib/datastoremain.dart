@@ -37,7 +37,7 @@ class Namespace {
   final String name;
 
   Namespace(this.name);
-  Namespace.fromKey(dsv1.Key key) : name = key.path?[0].name ?? "";
+  Namespace.fromKey(dsv1.Key key) : name = key.path![0].name ?? "";
   Namespace.fromEntity(dsv1.Entity entity) : this.fromKey(entity.key!);
 }
 
@@ -46,10 +46,10 @@ class Kind {
   final Namespace? namespace;
 
   Kind(this.name, this.namespace);
-  Kind.fromKey(dsv1.Key key) : name = key.path?[0].name ?? "", namespace = null;
+  Kind.fromKey(dsv1.Key key) : name = key.path![0].name ?? "", namespace = null;
   Kind.fromEntity(dsv1.Entity entity) : this.fromKey(entity.key!);
   Kind.fromKeyWithNamespace(dsv1.Key key, this.namespace)
-    : name = key.path?[0].name ?? "";
+    : name = key.path![0].name ?? "";
   Kind.fromEntityWithNamespace(dsv1.Entity entity, Namespace? namespace)
     : this.fromKeyWithNamespace(entity.key!, namespace);
 
@@ -58,6 +58,11 @@ class Kind {
 }
 
 class _DatastoreMainPageState extends State<DatastoreMainPage> {
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   dsv1.DatastoreApi? dsApi;
   Future<List<Kind>>? listOfKinds;
   Future<List<Namespace>>? listOfNamespaces;
