@@ -513,7 +513,7 @@ class _ViewEntityState extends State<ViewEntity> {
   }
 
   Future<void> downloadPropertiesAsJson(Map<String, dsv1.Value> map) async {
-    String? filePath = await FilePicker.platform.saveFile(
+    String? filePath = await FilePicker.saveFile(
       dialogTitle: "Save JSON data to file",
       fileName:
           "${widget.entityRow.entity.key?.path?[0].kind}-${widget.entityRow.entity.key?.path?[0].id ?? widget.entityRow.entity.key?.path?[0].name}.json",
@@ -537,7 +537,7 @@ class _ViewEntityState extends State<ViewEntity> {
   }
 
   Future<Map<String, dsv1.Value>?> replacePropertiesWithJson() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
+    FilePickerResult? result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['json'],
     );
@@ -987,7 +987,7 @@ class _PropertyAddEditDeleteDialogState
   String? _blobValue;
 
   Future<void> _uploadBlob() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    FilePickerResult? result = await FilePicker.pickFiles();
 
     if (result != null) {
       if (!mounted) return;
@@ -1010,7 +1010,7 @@ class _PropertyAddEditDeleteDialogState
     if (_blobValue == null) {
       return;
     }
-    String? filePath = await FilePicker.platform.saveFile(
+    String? filePath = await FilePicker.saveFile(
       dialogTitle: "Save Blob to file",
       fileName: "blob.bin",
     );

@@ -5,7 +5,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.7.0 <4.0.0'
+  sdk: '>=3.11.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -15,8 +15,8 @@ dependencies:
   sqflite_common_ffi: ^2.3.5
   sqflite_common_ffi_web: ^1.0.0
   ulid4d: ^2.0.0
-  settings_ui: ^2.0.2
-  googleapis: ^15.0.0
+  settings_ui: ^3.0.1
+  googleapis: ^16.0.0
   path_provider: ^2.1.5
   extension_google_sign_in_as_googleapis_auth: ^3.0.0
   google_sign_in: ^7.2.0
@@ -29,7 +29,7 @@ dependencies:
   ini: ^2.1.0
   infinite_scroll_pagination: ^5.0.0
   timezone: ^0.11.0
-  file_picker: ^10.1.9
+  file_picker: ^11.0.2
   dartobjectutils: ^0.1.1
   path: ^1.9.1
   http: ^1.6.0

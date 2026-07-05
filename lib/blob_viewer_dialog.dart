@@ -283,7 +283,7 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
   }
 
   Future<void> _downloadFile() async {
-    String? filePath = await FilePicker.platform.saveFile(
+    String? filePath = await FilePicker.saveFile(
       dialogTitle: "Save Blob",
       fileName: "blob.bin",
     );

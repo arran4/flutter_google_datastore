@@ -236,6 +236,7 @@ class _KindContentsPageState extends State<KindContentsPage>
   }
 
   @override
+  @override
   Future<dsv1.Entity?> refreshEntity(dsv1.Key key) async {
     dsv1.LookupResponse lookupResponse = await widget.dsApi.projects.lookup(
       dsv1.LookupRequest(databaseId: widget.project.databaseId, keys: [key]),
@@ -263,6 +264,7 @@ class _KindContentsPageState extends State<KindContentsPage>
   }
 
   @override
+  @override
   Future<bool> deleteEntity(int index, dsv1.Entity newEntity) async {
     await widget.dsApi.projects.commit(
       dsv1.CommitRequest(
@@ -275,6 +277,7 @@ class _KindContentsPageState extends State<KindContentsPage>
     return await removeEntity(index, newEntity);
   }
 
+  @override
   @override
   Future<EntityRow?> replaceEntity(int index, dsv1.Entity newEntity) async {
     if (index >= (_pagingController.value.items?.length ?? 0)) {
