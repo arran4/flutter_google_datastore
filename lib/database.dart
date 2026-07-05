@@ -189,7 +189,8 @@ class Project {
   DateTime? deleted;
 
   static const name = "Project";
-  static const createSql = '''
+  static const createSql =
+      '''
           CREATE TABLE ${Project.name} (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -202,13 +203,16 @@ class Project {
             databaseId STRING DEFAULT ""
           );
       ''';
-  static const dbV1toV2 = '''
+  static const dbV1toV2 =
+      '''
     ALTER TABLE ${Project.name} ADD COLUMN authMode STRING DEFAULT "none" NOT NULL;
   ''';
-  static const dbV2toV3 = '''
+  static const dbV2toV3 =
+      '''
     ALTER TABLE ${Project.name} ADD COLUMN googleCliProfile STRING DEFAULT NULL;
   ''';
-  static const dbAddDatabaseId = '''
+  static const dbAddDatabaseId =
+      '''
     ALTER TABLE ${Project.name} ADD COLUMN databaseId STRING DEFAULT "";
   ''';
   static const List<String> columns = <String>[

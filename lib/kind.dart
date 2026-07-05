@@ -114,8 +114,8 @@ class _KindContentsPageState extends State<KindContentsPage>
       ),
       body: PagingListener<int, EntityRow>(
         controller: _pagingController,
-        builder:
-            (context, state, fetchNextPage) => PagedListView<int, EntityRow>(
+        builder: (context, state, fetchNextPage) =>
+            PagedListView<int, EntityRow>(
               state: state,
               fetchNextPage: fetchNextPage,
               builderDelegate: PagedChildBuilderDelegate<EntityRow>(
@@ -137,25 +137,23 @@ class _KindContentsPageState extends State<KindContentsPage>
                                     }
                                   });
                                 },
-                                child:
-                                    expanded.contains(item.key)
-                                        ? const Text("Collapse")
-                                        : const Text("Expand"),
+                                child: expanded.contains(item.key)
+                                    ? const Text("Collapse")
+                                    : const Text("Expand"),
                               ),
                               TextButton(
                                 onPressed: () async {
                                   await Navigator.of(context).push(
                                     MaterialPageRoute(
-                                      builder:
-                                          (BuildContext context) =>
-                                              ViewEntityPage(
-                                                widget.project,
-                                                widget.dsApi,
-                                                widget.kind,
-                                                item,
-                                                index,
-                                                this,
-                                              ),
+                                      builder: (BuildContext context) =>
+                                          ViewEntityPage(
+                                            widget.project,
+                                            widget.dsApi,
+                                            widget.kind,
+                                            item,
+                                            index,
+                                            this,
+                                          ),
                                     ),
                                   );
                                 },
@@ -174,14 +172,14 @@ class _KindContentsPageState extends State<KindContentsPage>
                         ),
                         ...(expanded.contains(item.key)
                             ? [
-                              ViewEntity(
-                                widget.project,
-                                widget.dsApi,
-                                widget.kind,
-                                item,
-                                key: widget.key,
-                              ),
-                            ]
+                                ViewEntity(
+                                  widget.project,
+                                  widget.dsApi,
+                                  widget.kind,
+                                  item,
+                                  key: widget.key,
+                                ),
+                              ]
                             : []),
                       ],
                     ),
@@ -201,10 +199,9 @@ class _KindContentsPageState extends State<KindContentsPage>
           startCursor: startCursor,
           limit: limit,
         ),
-        partitionId:
-            widget.kind.namespace != null
-                ? dsv1.PartitionId(namespaceId: widget.kind.namespace!.name)
-                : null,
+        partitionId: widget.kind.namespace != null
+            ? dsv1.PartitionId(namespaceId: widget.kind.namespace!.name)
+            : null,
       ),
       widget.project.projectId,
     );
@@ -255,7 +252,9 @@ class _KindContentsPageState extends State<KindContentsPage>
         databaseId: widget.project.databaseId,
         mode: "NON_TRANSACTIONAL",
         mutations: [
-          dsv1.Mutation(update: dsv1.Entity(key: key, properties: props)),
+          dsv1.Mutation(
+            update: dsv1.Entity(key: key, properties: props),
+          ),
         ],
       ),
       widget.project.projectId,

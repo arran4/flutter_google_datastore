@@ -329,13 +329,12 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
                   authMode = value!;
                 });
               },
-              items:
-                  authModes.map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
+              items: authModes.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
             ),
             ...(authenticationMethodConfiguration(authMode)),
             const SizedBox(height: 16),
@@ -367,15 +366,14 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
                 googleCliProfile = value!;
               });
             },
-            items:
-                gCloudCLICredentialDiscover.profiles
-                    .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    })
-                    .toList(),
+            items: gCloudCLICredentialDiscover.profiles
+                .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                })
+                .toList(),
           ),
         ];
       default:

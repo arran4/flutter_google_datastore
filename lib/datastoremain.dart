@@ -140,13 +140,12 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
                         onPressed: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder:
-                                  (context) => KindContentsPage(
-                                    project: widget.project,
-                                    kind: listOfKinds[index],
-                                    dsApi: dsApi!,
-                                    key: Key(listOfKinds[index].key),
-                                  ),
+                              builder: (context) => KindContentsPage(
+                                project: widget.project,
+                                kind: listOfKinds[index],
+                                dsApi: dsApi!,
+                                key: Key(listOfKinds[index].key),
+                              ),
                             ),
                           );
                         },
@@ -323,27 +322,25 @@ class GCloudCLICredentialDiscover {
 
   Future<void> loadProfiles() async {
     final dir = Directory(profileConfigDir);
-    profiles =
-        await dir
-            .list()
-            .where((FileSystemEntity fse) {
-              return path.basename(fse.path).startsWith("config_");
-            })
-            .map(
-              (FileSystemEntity fse) =>
-                  path.basename(fse.path).substring("config_".length),
-            )
-            .toList();
+    profiles = await dir
+        .list()
+        .where((FileSystemEntity fse) {
+          return path.basename(fse.path).startsWith("config_");
+        })
+        .map(
+          (FileSystemEntity fse) =>
+              path.basename(fse.path).substring("config_".length),
+        )
+        .toList();
     if (profiles.isEmpty) {
       profiles = ["default"];
     }
   }
 
   Future<String> getJsonCredentials(String forProfile) async {
-    String fileContents =
-        await File(
-          path.join(profileConfigDir, "config_$forProfile"),
-        ).readAsString();
+    String fileContents = await File(
+      path.join(profileConfigDir, "config_$forProfile"),
+    ).readAsString();
     ini.Config inic = ini.Config.fromString(fileContents);
 
     dynamic account = inic.get("core", "account");

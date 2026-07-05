@@ -186,20 +186,19 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
         ],
       ),
       body: SingleChildScrollView(
-        child:
-            _loading > 0
-                ? const Opacity(
-                  opacity: 0.4,
-                  child: Center(child: CircularProgressIndicator()),
-                )
-                : ViewEntity(
-                  widget.project,
-                  widget.dsApi,
-                  widget.kind,
-                  widget.entityRow,
-                  key: widget.key,
-                  saveEntityPropertyUpdates: saveEntityPropertyUpdates,
-                ),
+        child: _loading > 0
+            ? const Opacity(
+                opacity: 0.4,
+                child: Center(child: CircularProgressIndicator()),
+              )
+            : ViewEntity(
+                widget.project,
+                widget.dsApi,
+                widget.kind,
+                widget.entityRow,
+                key: widget.key,
+                saveEntityPropertyUpdates: saveEntityPropertyUpdates,
+              ),
       ),
     );
   }
@@ -470,8 +469,8 @@ class _ViewEntityState extends State<ViewEntity> {
                 Align(
                   alignment: Alignment.topRight,
                   child: PopupMenuButton<String>(
-                    itemBuilder:
-                        (BuildContext context) => <PopupMenuEntry<String>>[
+                    itemBuilder: (BuildContext context) =>
+                        <PopupMenuEntry<String>>[
                           const PopupMenuItem<String>(
                             value: 'propsDownJson',
                             child: Text('Download properties as Json'),
@@ -634,49 +633,49 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
             const SizedBox(),
             newProperties != null && widget.onSaveChanges != null
                 ? Align(
-                  alignment: Alignment.center,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () async {
-                          if (widget.onSaveChanges != null) {
-                            await widget.onSaveChanges!(newProperties ?? {});
-                            if (mounted) {
-                              setState(() {
-                                newProperties = null;
-                              });
+                    alignment: Alignment.center,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () async {
+                            if (widget.onSaveChanges != null) {
+                              await widget.onSaveChanges!(newProperties ?? {});
+                              if (mounted) {
+                                setState(() {
+                                  newProperties = null;
+                                });
+                              }
                             }
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Colors.red, // Change to the color you prefer
-                          textStyle: const TextStyle(
-                            fontSize: 18,
-                          ), // Change to the size you prefer
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Colors.red, // Change to the color you prefer
+                            textStyle: const TextStyle(
+                              fontSize: 18,
+                            ), // Change to the size you prefer
+                          ),
+                          child: const Text(
+                            'Save Changes',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
-                        child: const Text(
-                          'Save Changes',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              newProperties = null;
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            textStyle: const TextStyle(
+                              fontSize: 18,
+                            ), // Change to the size you prefer
+                          ),
+                          child: const Text('Clear Changes'),
                         ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            newProperties = null;
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(
-                          textStyle: const TextStyle(
-                            fontSize: 18,
-                          ), // Change to the size you prefer
-                        ),
-                        child: const Text('Clear Changes'),
-                      ),
-                    ],
-                  ),
-                )
+                      ],
+                    ),
+                  )
                 : const SizedBox(),
             Align(
               alignment: Alignment.centerRight,
@@ -1269,17 +1268,15 @@ class _PropertyAddEditDeleteDialogState
                 if (result != null && result is MapEntry<String, dsv1.Value?>) {
                   setState(() {
                     if (result.value != null) {
-                      _arrayValues =
-                          _arrayValues
-                              .asMap()
-                              .entries
-                              .map(
-                                (e) =>
-                                    e.key == arrayEntry.key
-                                        ? result.value!
-                                        : e.value,
-                              )
-                              .toList();
+                      _arrayValues = _arrayValues
+                          .asMap()
+                          .entries
+                          .map(
+                            (e) => e.key == arrayEntry.key
+                                ? result.value!
+                                : e.value,
+                          )
+                          .toList();
                     } else {
                       _arrayValues.removeAt(arrayEntry.key);
                     }
@@ -1312,14 +1309,11 @@ class _PropertyAddEditDeleteDialogState
               },
               onUpdate: (dsv1.Value newValue) {
                 setState(() {
-                  _arrayValues =
-                      _arrayValues
-                          .asMap()
-                          .entries
-                          .map(
-                            (e) => e.key == arrayEntry.key ? newValue : e.value,
-                          )
-                          .toList();
+                  _arrayValues = _arrayValues
+                      .asMap()
+                      .entries
+                      .map((e) => e.key == arrayEntry.key ? newValue : e.value)
+                      .toList();
                 });
               },
               onRemove: () {
@@ -1492,53 +1486,55 @@ class _PropertyAddEditDeleteDialogState
                 _timezoneController.text = selection;
                 _updateDateTime();
               },
-              fieldViewBuilder: (
-                BuildContext context,
-                TextEditingController textEditingController,
-                FocusNode focusNode,
-                VoidCallback onFieldSubmitted,
-              ) {
-                return TextField(
-                  controller: textEditingController,
-                  focusNode: focusNode,
-                  onSubmitted: (String value) {
-                    onFieldSubmitted();
+              fieldViewBuilder:
+                  (
+                    BuildContext context,
+                    TextEditingController textEditingController,
+                    FocusNode focusNode,
+                    VoidCallback onFieldSubmitted,
+                  ) {
+                    return TextField(
+                      controller: textEditingController,
+                      focusNode: focusNode,
+                      onSubmitted: (String value) {
+                        onFieldSubmitted();
+                      },
+                      decoration: const InputDecoration(labelText: 'Timezone'),
+                      onChanged: (String value) {
+                        _updateDateTime();
+                      },
+                    );
                   },
-                  decoration: const InputDecoration(labelText: 'Timezone'),
-                  onChanged: (String value) {
-                    _updateDateTime();
-                  },
-                );
-              },
-              optionsViewBuilder: (
-                BuildContext context,
-                AutocompleteOnSelected<String> onSelected,
-                Iterable<String> options,
-              ) {
-                return Align(
-                  alignment: Alignment.topLeft,
-                  child: Material(
-                    elevation: 4.0,
-                    child: SizedBox(
-                      height: 200.0,
-                      width: 300.0, // Limit width
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(8.0),
-                        itemCount: options.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          final String option = options.elementAt(index);
-                          return GestureDetector(
-                            onTap: () {
-                              onSelected(option);
+              optionsViewBuilder:
+                  (
+                    BuildContext context,
+                    AutocompleteOnSelected<String> onSelected,
+                    Iterable<String> options,
+                  ) {
+                    return Align(
+                      alignment: Alignment.topLeft,
+                      child: Material(
+                        elevation: 4.0,
+                        child: SizedBox(
+                          height: 200.0,
+                          width: 300.0, // Limit width
+                          child: ListView.builder(
+                            padding: const EdgeInsets.all(8.0),
+                            itemCount: options.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              final String option = options.elementAt(index);
+                              return GestureDetector(
+                                onTap: () {
+                                  onSelected(option);
+                                },
+                                child: ListTile(title: Text(option)),
+                              );
                             },
-                            child: ListTile(title: Text(option)),
-                          );
-                        },
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              },
+                    );
+                  },
             ),
           ),
         ];
@@ -1625,8 +1621,9 @@ class _PropertyAddEditDeleteDialogState
         break;
       case "integer":
         value = dsv1.Value(
-          integerValue:
-              int.parse(_numberEditingController?.text ?? "").toString(),
+          integerValue: int.parse(
+            _numberEditingController?.text ?? "",
+          ).toString(),
         );
         break;
       case "key":
@@ -1811,48 +1808,48 @@ class _KeyPatElementTextInputWidgetState
                 setState(() {
                   var value = newSelection.first;
                   widget.each.id = value == "id" ? _idController.text : null;
-                  widget.each.name =
-                      value == "name" ? _nameController.text : null;
+                  widget.each.name = value == "name"
+                      ? _nameController.text
+                      : null;
                 });
               },
             ),
             const SizedBox(width: 12),
             Expanded(
-              child:
-                  type == "id"
-                      ? TextField(
-                        key: CompositeKey(
-                          key1: ObjectKey(widget.each),
-                          key2: const Key("Id"),
-                        ),
-                        controller: _idController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Id',
-                          border: OutlineInputBorder(),
-                        ),
-                        onChanged: (String value) {
-                          setState(() {
-                            widget.each.id = value;
-                          });
-                        },
-                      )
-                      : TextField(
-                        key: CompositeKey(
-                          key1: ObjectKey(widget.each),
-                          key2: const Key("Name"),
-                        ),
-                        controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Name',
-                          border: OutlineInputBorder(),
-                        ),
-                        onChanged: (String value) {
-                          setState(() {
-                            widget.each.name = value;
-                          });
-                        },
+              child: type == "id"
+                  ? TextField(
+                      key: CompositeKey(
+                        key1: ObjectKey(widget.each),
+                        key2: const Key("Id"),
                       ),
+                      controller: _idController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Id',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (String value) {
+                        setState(() {
+                          widget.each.id = value;
+                        });
+                      },
+                    )
+                  : TextField(
+                      key: CompositeKey(
+                        key1: ObjectKey(widget.each),
+                        key2: const Key("Name"),
+                      ),
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Name',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (String value) {
+                        setState(() {
+                          widget.each.name = value;
+                        });
+                      },
+                    ),
             ),
             if (widget.onRemove != null) ...[
               const SizedBox(width: 12),
