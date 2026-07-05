@@ -113,14 +113,13 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
                     _selectedView == 1,
                     _selectedView == 2,
                   ],
-                  onPressed:
-                      _isEditing
-                          ? null
-                          : (int index) {
-                            setState(() {
-                              _selectedView = index;
-                            });
-                          },
+                  onPressed: _isEditing
+                      ? null
+                      : (int index) {
+                          setState(() {
+                            _selectedView = index;
+                          });
+                        },
                   children: const [
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16.0),
@@ -146,10 +145,9 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
       actions: [
         if (!_isEditing)
           TextButton(
-            onPressed:
-                (_selectedView == 0 || _selectedView == 2)
-                    ? _enterEditMode
-                    : null,
+            onPressed: (_selectedView == 0 || _selectedView == 2)
+                ? _enterEditMode
+                : null,
             child: const Text("Edit"),
           ),
         if (!_isEditing)
@@ -283,7 +281,7 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
   }
 
   Future<void> _downloadFile() async {
-    String? filePath = await FilePicker.platform.saveFile(
+    String? filePath = await FilePicker.saveFile(
       dialogTitle: "Save Blob",
       fileName: "blob.bin",
     );

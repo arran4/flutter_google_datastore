@@ -49,9 +49,8 @@ void main() {
                 onPressed: () async {
                   result = await showDialog(
                     context: context,
-                    builder:
-                        (context) =>
-                            PropertyAddEditDeleteDialog(null, entityRow),
+                    builder: (context) =>
+                        PropertyAddEditDeleteDialog(null, entityRow),
                   );
                 },
                 child: const Text('Open'),

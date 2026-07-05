@@ -114,8 +114,8 @@ class _KindContentsPageState extends State<KindContentsPage>
       ),
       body: PagingListener<int, EntityRow>(
         controller: _pagingController,
-        builder:
-            (context, state, fetchNextPage) => PagedListView<int, EntityRow>(
+        builder: (context, state, fetchNextPage) =>
+            PagedListView<int, EntityRow>(
               state: state,
               fetchNextPage: fetchNextPage,
               builderDelegate: PagedChildBuilderDelegate<EntityRow>(
@@ -137,25 +137,23 @@ class _KindContentsPageState extends State<KindContentsPage>
                                     }
                                   });
                                 },
-                                child:
-                                    expanded.contains(item.key)
-                                        ? const Text("Collapse")
-                                        : const Text("Expand"),
+                                child: expanded.contains(item.key)
+                                    ? const Text("Collapse")
+                                    : const Text("Expand"),
                               ),
                               TextButton(
                                 onPressed: () async {
                                   await Navigator.of(context).push(
                                     MaterialPageRoute(
-                                      builder:
-                                          (BuildContext context) =>
-                                              ViewEntityPage(
-                                                widget.project,
-                                                widget.dsApi,
-                                                widget.kind,
-                                                item,
-                                                index,
-                                                this,
-                                              ),
+                                      builder: (BuildContext context) =>
+                                          ViewEntityPage(
+                                            widget.project,
+                                            widget.dsApi,
+                                            widget.kind,
+                                            item,
+                                            index,
+                                            this,
+                                          ),
                                     ),
                                   );
                                 },
@@ -174,14 +172,14 @@ class _KindContentsPageState extends State<KindContentsPage>
                         ),
                         ...(expanded.contains(item.key)
                             ? [
-                              ViewEntity(
-                                widget.project,
-                                widget.dsApi,
-                                widget.kind,
-                                item,
-                                key: widget.key,
-                              ),
-                            ]
+                                ViewEntity(
+                                  widget.project,
+                                  widget.dsApi,
+                                  widget.kind,
+                                  item,
+                                  key: widget.key,
+                                ),
+                              ]
                             : []),
                       ],
                     ),
@@ -201,10 +199,9 @@ class _KindContentsPageState extends State<KindContentsPage>
           startCursor: startCursor,
           limit: limit,
         ),
-        partitionId:
-            widget.kind.namespace != null
-                ? dsv1.PartitionId(namespaceId: widget.kind.namespace!.name)
-                : null,
+        partitionId: widget.kind.namespace != null
+            ? dsv1.PartitionId(namespaceId: widget.kind.namespace!.name)
+            : null,
       ),
       widget.project.projectId,
     );
@@ -236,6 +233,7 @@ class _KindContentsPageState extends State<KindContentsPage>
   }
 
   @override
+  @override
   Future<dsv1.Entity?> refreshEntity(dsv1.Key key) async {
     dsv1.LookupResponse lookupResponse = await widget.dsApi.projects.lookup(
       dsv1.LookupRequest(databaseId: widget.project.databaseId, keys: [key]),
@@ -254,7 +252,9 @@ class _KindContentsPageState extends State<KindContentsPage>
         databaseId: widget.project.databaseId,
         mode: "NON_TRANSACTIONAL",
         mutations: [
-          dsv1.Mutation(update: dsv1.Entity(key: key, properties: props)),
+          dsv1.Mutation(
+            update: dsv1.Entity(key: key, properties: props),
+          ),
         ],
       ),
       widget.project.projectId,
@@ -262,6 +262,7 @@ class _KindContentsPageState extends State<KindContentsPage>
     return r.mutationResults?[0].key != null;
   }
 
+  @override
   @override
   Future<bool> deleteEntity(int index, dsv1.Entity newEntity) async {
     await widget.dsApi.projects.commit(
@@ -275,6 +276,7 @@ class _KindContentsPageState extends State<KindContentsPage>
     return await removeEntity(index, newEntity);
   }
 
+  @override
   @override
   Future<EntityRow?> replaceEntity(int index, dsv1.Entity newEntity) async {
     if (index >= (_pagingController.value.items?.length ?? 0)) {

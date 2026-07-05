@@ -10,7 +10,9 @@ void main() {
   ) async {
     final entityRow = EntityRow(
       entity: dsv1.Entity(
-        key: dsv1.Key(path: [dsv1.PathElement(kind: 'TestKind', id: '123')]),
+        key: dsv1.Key(
+          path: [dsv1.PathElement(kind: 'TestKind', id: '123')],
+        ),
       ),
     );
 
@@ -25,8 +27,8 @@ void main() {
               onPressed: () async {
                 final result = await showDialog(
                   context: context,
-                  builder:
-                      (context) => PropertyAddEditDeleteDialog(null, entityRow),
+                  builder: (context) =>
+                      PropertyAddEditDeleteDialog(null, entityRow),
                 );
                 if (result is MapEntry<String, dsv1.Value?>) {
                   resultValue = result.value;
