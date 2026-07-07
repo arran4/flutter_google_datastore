@@ -48,7 +48,8 @@ void main() {
     // Since it was null before (we had name), it should be empty string.
   });
 
-  testWidgets('KeyPatElementTextInputWidget renders correctly for child element', (
+  testWidgets(
+      'KeyPatElementTextInputWidget renders correctly for child element', (
     WidgetTester tester,
   ) async {
     final element = dsv1.PathElement(kind: 'ChildKind', id: '123');

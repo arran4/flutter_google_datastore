@@ -52,9 +52,8 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
         }
       } else if (_selectedView == 2) {
         // Hex
-        _hexController.text = bytes
-            .map((b) => b.toRadixString(16).padLeft(2, '0'))
-            .join(' ');
+        _hexController.text =
+            bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
       }
     });
   }
