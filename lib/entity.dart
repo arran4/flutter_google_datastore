@@ -1420,9 +1420,17 @@ class _PropertyAddEditDeleteDialogState
         ];
       case "key":
         return [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+            child: Text(
+              "Key Path Elements",
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
           ...(_keyPath ?? []).asMap().entries.map(
             (entry) => KeyPatElementTextInputWidget(
               each: entry.value,
+              index: entry.key,
               key: ValueKey(entry.value),
               onRemove: () {
                 setState(() {
@@ -1431,16 +1439,20 @@ class _PropertyAddEditDeleteDialogState
               },
             ),
           ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _keyPath ??= [];
-                _keyPath!.add(
-                  dsv1.PathElement(kind: "New Kind", name: "New Id"),
-                );
-              });
-            },
-            child: const Text("Add Path Element"),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+            child: ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _keyPath ??= [];
+                  _keyPath!.add(
+                    dsv1.PathElement(kind: "New Kind", name: "New Id"),
+                  );
+                });
+              },
+              icon: const Icon(Icons.add),
+              label: const Text("Add Path Element"),
+            ),
           ),
         ];
       case "me":
@@ -1741,10 +1753,12 @@ class _PropertyAddEditDeleteDialogState
 // I am aware the UI / UX is horrible.. If it is an issue I will fix it later or accept PRs to fix it.
 class KeyPatElementTextInputWidget extends StatefulWidget {
   final dsv1.PathElement each;
+  final int index;
   final VoidCallback? onRemove;
 
   const KeyPatElementTextInputWidget({
     required this.each,
+    required this.index,
     this.onRemove,
     super.key,
   });
@@ -1776,88 +1790,102 @@ class _KeyPatElementTextInputWidgetState
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: Row(
+        child: Column(
           key: ObjectKey(widget.each),
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: TextField(
-                key: CompositeKey(
-                  key1: ObjectKey(widget.each),
-                  key2: const Key("Kind"),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  widget.index == 0 ? "Root/Ancestor" : "Element ${widget.index}",
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
-                controller: _kindController,
-                decoration: const InputDecoration(
-                  labelText: 'Kind',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (String value) {
-                  setState(() {
-                    widget.each.kind = value;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            SegmentedButton<String>(
-              segments: const <ButtonSegment<String>>[
-                ButtonSegment<String>(value: 'id', label: Text('ID')),
-                ButtonSegment<String>(value: 'name', label: Text('Name')),
+                if (widget.onRemove != null)
+                  IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: widget.onRemove,
+                  ),
               ],
-              selected: <String>{type},
-              onSelectionChanged: (Set<String> newSelection) {
-                setState(() {
-                  var value = newSelection.first;
-                  widget.each.id = value == "id" ? _idController.text : null;
-                  widget.each.name = value == "name"
-                      ? _nameController.text
-                      : null;
-                });
-              },
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: type == "id"
-                  ? TextField(
-                      key: CompositeKey(
-                        key1: ObjectKey(widget.each),
-                        key2: const Key("Id"),
-                      ),
-                      controller: _idController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Id',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (String value) {
-                        setState(() {
-                          widget.each.id = value;
-                        });
-                      },
-                    )
-                  : TextField(
-                      key: CompositeKey(
-                        key1: ObjectKey(widget.each),
-                        key2: const Key("Name"),
-                      ),
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Name',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (String value) {
-                        setState(() {
-                          widget.each.name = value;
-                        });
-                      },
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12.0,
+              runSpacing: 12.0,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                SizedBox(
+                  width: 200,
+                  child: TextField(
+                    key: CompositeKey(
+                      key1: ObjectKey(widget.each),
+                      key2: const Key("Kind"),
                     ),
+                    controller: _kindController,
+                    decoration: const InputDecoration(
+                      labelText: 'Kind',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (String value) {
+                      setState(() {
+                        widget.each.kind = value;
+                      });
+                    },
+                  ),
+                ),
+                SegmentedButton<String>(
+                  segments: const <ButtonSegment<String>>[
+                    ButtonSegment<String>(value: 'id', label: Text('ID (Integer)')),
+                    ButtonSegment<String>(value: 'name', label: Text('Name (String)')),
+                  ],
+                  selected: <String>{type},
+                  onSelectionChanged: (Set<String> newSelection) {
+                    setState(() {
+                      var value = newSelection.first;
+                      widget.each.id = value == "id" ? _idController.text : null;
+                      widget.each.name = value == "name" ? _nameController.text : null;
+                    });
+                  },
+                ),
+                SizedBox(
+                  width: 250,
+                  child: type == "id"
+                      ? TextField(
+                          key: CompositeKey(
+                            key1: ObjectKey(widget.each),
+                            key2: const Key("Id"),
+                          ),
+                          controller: _idController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Id',
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (String value) {
+                            setState(() {
+                              widget.each.id = value;
+                            });
+                          },
+                        )
+                      : TextField(
+                          key: CompositeKey(
+                            key1: ObjectKey(widget.each),
+                            key2: const Key("Name"),
+                          ),
+                          controller: _nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Name',
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (String value) {
+                            setState(() {
+                              widget.each.name = value;
+                            });
+                          },
+                        ),
+                ),
+              ],
             ),
-            if (widget.onRemove != null) ...[
-              const SizedBox(width: 12),
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: widget.onRemove,
-              ),
-            ],
           ],
         ),
       ),
