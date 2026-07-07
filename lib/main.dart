@@ -368,12 +368,11 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
             },
             items: gCloudCLICredentialDiscover.profiles
                 .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                })
-                .toList(),
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
           ),
         ];
       default:

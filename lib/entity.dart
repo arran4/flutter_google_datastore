@@ -393,11 +393,7 @@ class _ViewEntityState extends State<ViewEntity> {
                           child: Padding(
                             padding: const EdgeInsets.all(4.0),
                             child: SelectableText(
-                              widget
-                                      .entityRow
-                                      .entity
-                                      .key
-                                      ?.partitionId
+                              widget.entityRow.entity.key?.partitionId
                                       ?.databaseId ??
                                   "",
                             ),
@@ -471,15 +467,15 @@ class _ViewEntityState extends State<ViewEntity> {
                   child: PopupMenuButton<String>(
                     itemBuilder: (BuildContext context) =>
                         <PopupMenuEntry<String>>[
-                          const PopupMenuItem<String>(
-                            value: 'propsDownJson',
-                            child: Text('Download properties as Json'),
-                          ),
-                          const PopupMenuItem<String>(
-                            value: 'propsReplaceJson',
-                            child: Text('Replace properties with Json'),
-                          ),
-                        ],
+                      const PopupMenuItem<String>(
+                        value: 'propsDownJson',
+                        child: Text('Download properties as Json'),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'propsReplaceJson',
+                        child: Text('Replace properties with Json'),
+                      ),
+                    ],
                     onSelected: (String value) async {
                       // Handle the selected action
                       switch (value) {
@@ -626,8 +622,8 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
       },
       children: [
         ...(newProperties ?? widget.properties).entries.expand(
-          expandProperties,
-        ),
+              expandProperties,
+            ),
         TableRow(
           children: [
             const SizedBox(),
@@ -1117,26 +1113,25 @@ class _PropertyAddEditDeleteDialogState
             ),
             DropdownButton<String>(
               value: _selectedType,
-              items:
-                  [
-                    "blob",
-                    "array",
-                    "boolean",
-                    "double",
-                    "entity",
-                    "geoPoint",
-                    "integer",
-                    "key",
-                    "me",
-                    "null",
-                    "string",
-                    "timestamp",
-                  ].map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
+              items: [
+                "blob",
+                "array",
+                "boolean",
+                "double",
+                "entity",
+                "geoPoint",
+                "integer",
+                "key",
+                "me",
+                "null",
+                "string",
+                "timestamp",
+              ].map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
               onChanged: (String? value) {
                 setState(() {
                   _selectedType = value ?? "string";
@@ -1248,82 +1243,84 @@ class _PropertyAddEditDeleteDialogState
       case "array":
         return [
           ..._arrayValues.asMap().entries.map(
-            (MapEntry<int, dsv1.Value> arrayEntry) => ValueAddEditRow(
-              value: arrayEntry.value,
-              onEdit: () async {
-                dynamic result = await showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return PropertyAddEditDeleteDialog(
-                      MapEntry<String, dsv1.Value>(
-                        "Replace Element of ${widget.propertyEntry?.key}",
-                        arrayEntry.value,
-                      ),
-                      widget.entityRow,
-                      readonlyName: true,
-                      type: "Element",
+                (MapEntry<int, dsv1.Value> arrayEntry) => ValueAddEditRow(
+                  value: arrayEntry.value,
+                  onEdit: () async {
+                    dynamic result = await showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return PropertyAddEditDeleteDialog(
+                          MapEntry<String, dsv1.Value>(
+                            "Replace Element of ${widget.propertyEntry?.key}",
+                            arrayEntry.value,
+                          ),
+                          widget.entityRow,
+                          readonlyName: true,
+                          type: "Element",
+                        );
+                      },
                     );
+                    if (result != null &&
+                        result is MapEntry<String, dsv1.Value?>) {
+                      setState(() {
+                        if (result.value != null) {
+                          _arrayValues = _arrayValues
+                              .asMap()
+                              .entries
+                              .map(
+                                (e) => e.key == arrayEntry.key
+                                    ? result.value!
+                                    : e.value,
+                              )
+                              .toList();
+                        } else {
+                          _arrayValues.removeAt(arrayEntry.key);
+                        }
+                      });
+                    }
                   },
-                );
-                if (result != null && result is MapEntry<String, dsv1.Value?>) {
-                  setState(() {
-                    if (result.value != null) {
+                  onCopy: () async {
+                    dynamic result = await showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return PropertyAddEditDeleteDialog(
+                          MapEntry<String, dsv1.Value>(
+                            "Duplicate Element of ${widget.propertyEntry?.key}",
+                            arrayEntry.value,
+                          ),
+                          widget.entityRow,
+                          readonlyName: true,
+                          type: "Element",
+                        );
+                      },
+                    );
+                    if (result != null &&
+                        result is MapEntry<String, dsv1.Value?> &&
+                        result.value != null) {
+                      if (!mounted) return;
+                      setState(() {
+                        _arrayValues.add(result.value!);
+                      });
+                    }
+                  },
+                  onUpdate: (dsv1.Value newValue) {
+                    setState(() {
                       _arrayValues = _arrayValues
                           .asMap()
                           .entries
-                          .map(
-                            (e) => e.key == arrayEntry.key
-                                ? result.value!
-                                : e.value,
-                          )
+                          .map((e) =>
+                              e.key == arrayEntry.key ? newValue : e.value)
                           .toList();
-                    } else {
-                      _arrayValues.removeAt(arrayEntry.key);
-                    }
-                  });
-                }
-              },
-              onCopy: () async {
-                dynamic result = await showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return PropertyAddEditDeleteDialog(
-                      MapEntry<String, dsv1.Value>(
-                        "Duplicate Element of ${widget.propertyEntry?.key}",
-                        arrayEntry.value,
-                      ),
-                      widget.entityRow,
-                      readonlyName: true,
-                      type: "Element",
-                    );
+                    });
                   },
-                );
-                if (result != null &&
-                    result is MapEntry<String, dsv1.Value?> &&
-                    result.value != null) {
-                  if (!mounted) return;
-                  setState(() {
-                    _arrayValues.add(result.value!);
-                  });
-                }
-              },
-              onUpdate: (dsv1.Value newValue) {
-                setState(() {
-                  _arrayValues = _arrayValues
-                      .asMap()
-                      .entries
-                      .map((e) => e.key == arrayEntry.key ? newValue : e.value)
-                      .toList();
-                });
-              },
-              onRemove: () {
-                setState(() {
-                  _arrayValues.removeAt(arrayEntry.key);
-                });
-              },
-              key: ValueKey(arrayEntry.key),
-            ),
-          ),
+                  onRemove: () {
+                    setState(() {
+                      _arrayValues.removeAt(arrayEntry.key);
+                    });
+                  },
+                  key: ValueKey(arrayEntry.key),
+                ),
+              ),
           TextButton(
             onPressed: () async {
               dynamic result = await showDialog(
@@ -1420,27 +1417,39 @@ class _PropertyAddEditDeleteDialogState
         ];
       case "key":
         return [
-          ...(_keyPath ?? []).asMap().entries.map(
-            (entry) => KeyPatElementTextInputWidget(
-              each: entry.value,
-              key: ValueKey(entry.value),
-              onRemove: () {
-                setState(() {
-                  _keyPath!.removeAt(entry.key);
-                });
-              },
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+            child: Text(
+              "Key Path Elements",
+              style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _keyPath ??= [];
-                _keyPath!.add(
-                  dsv1.PathElement(kind: "New Kind", name: "New Id"),
-                );
-              });
-            },
-            child: const Text("Add Path Element"),
+          ...(_keyPath ?? []).asMap().entries.map(
+                (entry) => KeyPatElementTextInputWidget(
+                  each: entry.value,
+                  index: entry.key,
+                  key: ValueKey(entry.value),
+                  onRemove: () {
+                    setState(() {
+                      _keyPath!.removeAt(entry.key);
+                    });
+                  },
+                ),
+              ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+            child: ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _keyPath ??= [];
+                  _keyPath!.add(
+                    dsv1.PathElement(kind: "New Kind", name: "New Id"),
+                  );
+                });
+              },
+              icon: const Icon(Icons.add),
+              label: const Text("Add Path Element"),
+            ),
           ),
         ];
       case "me":
@@ -1478,63 +1487,61 @@ class _PropertyAddEditDeleteDialogState
                   String option,
                 ) {
                   return option.toLowerCase().contains(
-                    textEditingValue.text.toLowerCase(),
-                  );
+                        textEditingValue.text.toLowerCase(),
+                      );
                 });
               },
               onSelected: (String selection) {
                 _timezoneController.text = selection;
                 _updateDateTime();
               },
-              fieldViewBuilder:
-                  (
-                    BuildContext context,
-                    TextEditingController textEditingController,
-                    FocusNode focusNode,
-                    VoidCallback onFieldSubmitted,
-                  ) {
-                    return TextField(
-                      controller: textEditingController,
-                      focusNode: focusNode,
-                      onSubmitted: (String value) {
-                        onFieldSubmitted();
-                      },
-                      decoration: const InputDecoration(labelText: 'Timezone'),
-                      onChanged: (String value) {
-                        _updateDateTime();
-                      },
-                    );
+              fieldViewBuilder: (
+                BuildContext context,
+                TextEditingController textEditingController,
+                FocusNode focusNode,
+                VoidCallback onFieldSubmitted,
+              ) {
+                return TextField(
+                  controller: textEditingController,
+                  focusNode: focusNode,
+                  onSubmitted: (String value) {
+                    onFieldSubmitted();
                   },
-              optionsViewBuilder:
-                  (
-                    BuildContext context,
-                    AutocompleteOnSelected<String> onSelected,
-                    Iterable<String> options,
-                  ) {
-                    return Align(
-                      alignment: Alignment.topLeft,
-                      child: Material(
-                        elevation: 4.0,
-                        child: SizedBox(
-                          height: 200.0,
-                          width: 300.0, // Limit width
-                          child: ListView.builder(
-                            padding: const EdgeInsets.all(8.0),
-                            itemCount: options.length,
-                            itemBuilder: (BuildContext context, int index) {
-                              final String option = options.elementAt(index);
-                              return GestureDetector(
-                                onTap: () {
-                                  onSelected(option);
-                                },
-                                child: ListTile(title: Text(option)),
-                              );
+                  decoration: const InputDecoration(labelText: 'Timezone'),
+                  onChanged: (String value) {
+                    _updateDateTime();
+                  },
+                );
+              },
+              optionsViewBuilder: (
+                BuildContext context,
+                AutocompleteOnSelected<String> onSelected,
+                Iterable<String> options,
+              ) {
+                return Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 4.0,
+                    child: SizedBox(
+                      height: 200.0,
+                      width: 300.0, // Limit width
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(8.0),
+                        itemCount: options.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          final String option = options.elementAt(index);
+                          return GestureDetector(
+                            onTap: () {
+                              onSelected(option);
                             },
-                          ),
-                        ),
+                            child: ListTile(title: Text(option)),
+                          );
+                        },
                       ),
-                    );
-                  },
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ];
@@ -1741,10 +1748,12 @@ class _PropertyAddEditDeleteDialogState
 // I am aware the UI / UX is horrible.. If it is an issue I will fix it later or accept PRs to fix it.
 class KeyPatElementTextInputWidget extends StatefulWidget {
   final dsv1.PathElement each;
+  final int index;
   final VoidCallback? onRemove;
 
   const KeyPatElementTextInputWidget({
     required this.each,
+    required this.index,
     this.onRemove,
     super.key,
   });
@@ -1769,6 +1778,14 @@ class _KeyPatElementTextInputWidgetState
   }
 
   @override
+  void dispose() {
+    _kindController.dispose();
+    _idController.dispose();
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     var type = widget.each.id != null ? "id" : "name";
 
@@ -1776,88 +1793,108 @@ class _KeyPatElementTextInputWidgetState
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: Row(
+        child: Column(
           key: ObjectKey(widget.each),
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: TextField(
-                key: CompositeKey(
-                  key1: ObjectKey(widget.each),
-                  key2: const Key("Kind"),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  widget.index == 0
+                      ? "Root/Ancestor"
+                      : "Element ${widget.index}",
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
-                controller: _kindController,
-                decoration: const InputDecoration(
-                  labelText: 'Kind',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (String value) {
-                  setState(() {
-                    widget.each.kind = value;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            SegmentedButton<String>(
-              segments: const <ButtonSegment<String>>[
-                ButtonSegment<String>(value: 'id', label: Text('ID')),
-                ButtonSegment<String>(value: 'name', label: Text('Name')),
+                if (widget.onRemove != null)
+                  IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: widget.onRemove,
+                  ),
               ],
-              selected: <String>{type},
-              onSelectionChanged: (Set<String> newSelection) {
-                setState(() {
-                  var value = newSelection.first;
-                  widget.each.id = value == "id" ? _idController.text : null;
-                  widget.each.name = value == "name"
-                      ? _nameController.text
-                      : null;
-                });
-              },
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: type == "id"
-                  ? TextField(
-                      key: CompositeKey(
-                        key1: ObjectKey(widget.each),
-                        key2: const Key("Id"),
-                      ),
-                      controller: _idController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Id',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (String value) {
-                        setState(() {
-                          widget.each.id = value;
-                        });
-                      },
-                    )
-                  : TextField(
-                      key: CompositeKey(
-                        key1: ObjectKey(widget.each),
-                        key2: const Key("Name"),
-                      ),
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Name',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (String value) {
-                        setState(() {
-                          widget.each.name = value;
-                        });
-                      },
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12.0,
+              runSpacing: 12.0,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                SizedBox(
+                  width: 200,
+                  child: TextField(
+                    key: CompositeKey(
+                      key1: ObjectKey(widget.each),
+                      key2: const Key("Kind"),
                     ),
+                    controller: _kindController,
+                    decoration: const InputDecoration(
+                      labelText: 'Kind',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (String value) {
+                      setState(() {
+                        widget.each.kind = value;
+                      });
+                    },
+                  ),
+                ),
+                SegmentedButton<String>(
+                  segments: const <ButtonSegment<String>>[
+                    ButtonSegment<String>(
+                        value: 'id', label: Text('ID (Integer)')),
+                    ButtonSegment<String>(
+                        value: 'name', label: Text('Name (String)')),
+                  ],
+                  selected: <String>{type},
+                  onSelectionChanged: (Set<String> newSelection) {
+                    setState(() {
+                      var value = newSelection.first;
+                      widget.each.id =
+                          value == "id" ? _idController.text : null;
+                      widget.each.name =
+                          value == "name" ? _nameController.text : null;
+                    });
+                  },
+                ),
+                SizedBox(
+                  width: 250,
+                  child: type == "id"
+                      ? TextField(
+                          key: CompositeKey(
+                            key1: ObjectKey(widget.each),
+                            key2: const Key("Id"),
+                          ),
+                          controller: _idController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Id',
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (String value) {
+                            setState(() {
+                              widget.each.id = value;
+                            });
+                          },
+                        )
+                      : TextField(
+                          key: CompositeKey(
+                            key1: ObjectKey(widget.each),
+                            key2: const Key("Name"),
+                          ),
+                          controller: _nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Name',
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (String value) {
+                            setState(() {
+                              widget.each.name = value;
+                            });
+                          },
+                        ),
+                ),
+              ],
             ),
-            if (widget.onRemove != null) ...[
-              const SizedBox(width: 12),
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: widget.onRemove,
-              ),
-            ],
           ],
         ),
       ),
