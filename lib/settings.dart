@@ -20,12 +20,12 @@ class SettingsWidgetState extends State<SettingsWidget> {
   void initState() {
     super.initState();
     db.filepath().then(
-          (value) => {
-            setState(() {
-              fp = value;
-            }),
-          },
-        );
+      (value) => {
+        setState(() {
+          fp = value;
+        }),
+      },
+    );
   }
 
   @override
