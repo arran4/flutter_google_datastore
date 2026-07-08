@@ -49,22 +49,22 @@ void main() {
   });
 
   testWidgets(
-      'KeyPatElementTextInputWidget renders correctly for child element', (
-    WidgetTester tester,
-  ) async {
-    final element = dsv1.PathElement(kind: 'ChildKind', id: '123');
+    'KeyPatElementTextInputWidget renders correctly for child element',
+    (WidgetTester tester) async {
+      final element = dsv1.PathElement(kind: 'ChildKind', id: '123');
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SingleChildScrollView(
-            child: KeyPatElementTextInputWidget(each: element, index: 1),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: KeyPatElementTextInputWidget(each: element, index: 1),
+            ),
           ),
         ),
-      ),
-    );
+      );
 
-    // Check header
-    expect(find.text('Element 1'), findsOneWidget);
-  });
+      // Check header
+      expect(find.text('Element 1'), findsOneWidget);
+    },
+  );
 }

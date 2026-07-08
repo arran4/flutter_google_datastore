@@ -189,7 +189,8 @@ class Project {
   DateTime? deleted;
 
   static const name = "Project";
-  static const createSql = '''
+  static const createSql =
+      '''
           CREATE TABLE ${Project.name} (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -202,13 +203,16 @@ class Project {
             databaseId STRING DEFAULT ""
           );
       ''';
-  static const dbV1toV2 = '''
+  static const dbV1toV2 =
+      '''
     ALTER TABLE ${Project.name} ADD COLUMN authMode STRING DEFAULT "none" NOT NULL;
   ''';
-  static const dbV2toV3 = '''
+  static const dbV2toV3 =
+      '''
     ALTER TABLE ${Project.name} ADD COLUMN googleCliProfile STRING DEFAULT NULL;
   ''';
-  static const dbAddDatabaseId = '''
+  static const dbAddDatabaseId =
+      '''
     ALTER TABLE ${Project.name} ADD COLUMN databaseId STRING DEFAULT "";
   ''';
   static const List<String> columns = <String>[
@@ -237,19 +241,18 @@ class Project {
   });
 
   Project.fromRow(Map<String, Object?> each)
-      : this.fromMap(each.cast<String, dynamic>());
+    : this.fromMap(each.cast<String, dynamic>());
 
   Project.fromMap(Map<String, dynamic> each)
-      : id = getNumberPropOrThrow(each, "id")!.toInt(),
-        created = getDatePropOrDefault(each, "created", DateTime.timestamp()),
-        updated = getDatePropOrDefault(each, "updated", DateTime.timestamp()),
-        deleted = getDatePropOrDefault(each, "deleted", null),
-        endpointUrl = getStringPropOrDefault(each, "endpointUrl", null),
-        googleCliProfile =
-            getStringPropOrDefault(each, "googleCliProfile", null),
-        authMode = getStringPropOrDefault(each, "authMode", "none"),
-        projectId = getStringPropOrThrow(each, "projectId"),
-        databaseId = getStringPropOrDefault(each, "databaseId", "");
+    : id = getNumberPropOrThrow(each, "id")!.toInt(),
+      created = getDatePropOrDefault(each, "created", DateTime.timestamp()),
+      updated = getDatePropOrDefault(each, "updated", DateTime.timestamp()),
+      deleted = getDatePropOrDefault(each, "deleted", null),
+      endpointUrl = getStringPropOrDefault(each, "endpointUrl", null),
+      googleCliProfile = getStringPropOrDefault(each, "googleCliProfile", null),
+      authMode = getStringPropOrDefault(each, "authMode", "none"),
+      projectId = getStringPropOrThrow(each, "projectId"),
+      databaseId = getStringPropOrDefault(each, "databaseId", "");
 
   String get key => "$projectId @ ${endpointUrl ?? "default"}";
 
