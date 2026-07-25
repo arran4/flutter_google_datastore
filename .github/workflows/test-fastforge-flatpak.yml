@@ -15,6 +15,11 @@ on:
         description: 'Signing key for Flatpak'
         required: false
         default: ''
+      upload_artifacts:
+        description: 'Upload generated flatpak and manifest to artifacts for 1 day'
+        type: boolean
+        required: false
+        default: true
 
 jobs:
   flatpak:
@@ -84,11 +89,14 @@ jobs:
             \( -name '*.flatpak' -o -name 'manifest.yml' \) \
             -print
 
-      - name: Upload Flatpak
-        if: success()
+      - name: Upload Flatpak and Manifest
+        if: success() && inputs.upload_artifacts == true
         uses: actions/upload-artifact@v4
         with:
           name: flutter-google-datastore-flatpak
+          retention-days: 1
           path: |
             **/*.flatpak
+            **/manifest.yml
+            **/manifest.json
           if-no-files-found: error
