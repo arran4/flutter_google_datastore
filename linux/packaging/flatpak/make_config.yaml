@@ -1,6 +1,6 @@
-app_id: com.arran4.flutter_google_datastore
+app_id: io.github.arran4.flutter_google_datastore
 runtime: org.freedesktop.Platform
-runtime_version: '23.08'
+runtime_version: '25.08'
 sdk: org.freedesktop.Sdk
 finish_args:
   - --share=network
