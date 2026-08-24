@@ -1,0 +1,130 @@
+name: Test FastForge Flatpak PR
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      fastforge_ref:
+        description: 'FastForge PR branch or ref'
+        required: true
+        default: 'flatpak-packaging-16578285889526019589'
+      flatpak_endpoint:
+        description: 'Flatpak remote endpoint URL'
+        required: true
+        default: 'https://flathub.org/repo/flathub.flatpakrepo'
+      upload_artifacts:
+        description: 'Upload generated flatpak and manifest to artifacts for 1 day'
+        type: boolean
+        required: false
+        default: true
+
+jobs:
+  flatpak:
+    runs-on: ubuntu-latest
+    env:
+      FASTFORGE_REF: ${{ inputs.fastforge_ref || 'flatpak-packaging-16578285889526019589' }}
+      FLATPAK_ENDPOINT: ${{ inputs.flatpak_endpoint || 'https://flathub.org/repo/flathub.flatpakrepo' }}
+
+    steps:
+      - name: Checkout application
+        uses: actions/checkout@v4
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.4'
+          cache: true
+
+      - name: Install Flatpak tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+
+      - name: Add Flathub
+        run: |
+          flatpak remote-add --user --if-not-exists \
+            flathub \
+            ${FLATPAK_ENDPOINT}
+
+      - name: Install Flatpak runtime and SDK
+        run: |
+          flatpak install --user -y flathub \
+            org.freedesktop.Platform//25.08 \
+            org.freedesktop.Sdk//25.08
+
+      - name: Install application dependencies
+        run: flutter pub get
+
+      - name: Checkout FastForge PR
+        uses: actions/checkout@v4
+        with:
+          repository: arran4/fastforge
+          ref: ${{ env.FASTFORGE_REF }}
+          path: _fastforge
+
+      - name: Print diagnostics (Checkout)
+        working-directory: _fastforge
+        run: |
+          echo "FastForge Ref requested: ${FASTFORGE_REF}"
+          echo "FastForge Ref checked out: $(git rev-parse HEAD)"
+
+      - name: Bootstrap FastForge monorepo
+        working-directory: _fastforge
+        run: |
+          dart pub global activate melos
+          melos bootstrap
+
+      - name: Activate FastForge from PR
+        run: |
+          dart pub global activate \
+            --source path \
+            "$GITHUB_WORKSPACE/_fastforge/packages/fastforge"
+
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+
+      - name: Print diagnostics (Environment)
+        run: |
+          flutter --version
+          dart --version
+          fastforge --version
+
+      - name: Validate FastForge local resolution
+        run: |
+          echo "Ensuring FastForge packages resolve to the local checkout..."
+          if [ ! -f "$HOME/.pub-cache/global_packages.json" ] || ! grep -q '"path":"'"$GITHUB_WORKSPACE"'/_fastforge/packages/fastforge"' "$HOME/.pub-cache/global_packages.json"; then
+            echo "Failed: FastForge not activated from local path"
+            if [ -f "$HOME/.pub-cache/global_packages.json" ]; then
+              cat "$HOME/.pub-cache/global_packages.json"
+            else
+              echo "global_packages.json not found"
+            fi
+            exit 1
+          fi
+
+      - name: Build Flatpak
+        run: |
+          fastforge package \
+            --platform linux \
+            --targets flatpak
+
+      - name: Validate Generated Files
+        run: |
+          echo "Verifying build output..."
+          find . -type f \( -name '*.flatpak' -o -name 'manifest.yml' -o -name 'manifest.json' \) -print > found_files.txt
+          cat found_files.txt
+
+          if ! grep -q "\.flatpak$" found_files.txt; then
+            echo "Error: No .flatpak bundle was produced!"
+            exit 1
+          fi
+
+      - name: Upload Flatpak and Manifest
+        if: success() && (inputs.upload_artifacts == true || github.event_name == 'pull_request')
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-google-datastore-flatpak
+          retention-days: 1
+          path: |
+            **/*.flatpak
+            **/manifest.yml
+            **/manifest.json
