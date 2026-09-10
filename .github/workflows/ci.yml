@@ -192,6 +192,18 @@ jobs:
           OUT=$(bash $GITHUB_WORKSPACE/scripts/route_policy.sh "schedule" "" "" "" "17 3 1 * *")
           [[ "$OUT" =~ "run_maintenance=true" ]] || exit 1
 
+                    # scheduled nightly autofix
+          OUT=$(bash $GITHUB_WORKSPACE/scripts/route_policy.sh "schedule" "" "" "" "41 2 * * *")
+          [[ "$OUT" =~ "run_autofix=true" ]] && [[ ! "$OUT" =~ "run_maintenance=true" ]] || exit 1
+
+                    # scheduled nightly autofix
+          OUT=$(bash $GITHUB_WORKSPACE/scripts/route_policy.sh "schedule" "" "" "" "41 2 * * *")
+          [[ "$OUT" =~ "run_autofix=true" ]] && [[ ! "$OUT" =~ "run_maintenance=true" ]] || exit 1
+
+                    # scheduled nightly autofix
+          OUT=$(bash $GITHUB_WORKSPACE/scripts/route_policy.sh "schedule" "" "" "" "41 2 * * *")
+          [[ "$OUT" =~ "run_autofix=true" ]] && [[ ! "$OUT" =~ "run_maintenance=true" ]] || exit 1
+
           # v* tag push
           OUT=$(bash $GITHUB_WORKSPACE/scripts/route_policy.sh "push" "tag" "refs/tags/v1.0.0" "" "")
           [[ "$OUT" =~ "run_publisher=true" ]] || exit 1
@@ -201,7 +213,7 @@ jobs:
               exit 1
           fi
           # Check exact single explicit dispatch
-          DISPATCH_COUNT=$(grep -c 'run: gh workflow run ci.yml --ref "$TAG" -f mode=publish-tag' $GITHUB_WORKSPACE/.github/workflows/ci.yml || true)
+          DISPATCH_COUNT=$(grep -E -c '^[[:space:]]+run: gh workflow run ci\.yml --ref \"\$TAG\" -f mode=publish-tag$' $GITHUB_WORKSPACE/.github/workflows/ci.yml || true)
           if [[ "$DISPATCH_COUNT" != "1" ]]; then
               echo "Error: Expected exactly 1 dispatch, got $DISPATCH_COUNT"
               exit 1
@@ -329,10 +341,6 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
         run: ./scripts/release_policy.sh idempotent_push "$TAG" "$GITHUB_SHA"
 
-      - name: Dispatch Publisher
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh workflow run ci.yml --ref "$TAG" -f mode=publish-tag
 
       - name: Dispatch Publisher
         env:
