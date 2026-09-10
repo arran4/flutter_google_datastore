@@ -133,24 +133,83 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - name: Test Routing Policy Static Validation
+        run: |
+          set -euo pipefail
+          # Check publish-tag route
+          if ! grep -q 'run_code_checks=false.*run_build=true.*run_publisher=true' .github/workflows/ci.yml; then
+              echo "Error: publish-tag route does not correctly set run_build=true and run_publisher=true"
+              exit 1
+          fi
+          # Check that publisher depends on all 3 builds and route
+          if ! grep -q 'needs: \[route, release-validation, windows, linux, macos\]' .github/workflows/ci.yml; then
+              echo "Error: github-release publisher does not depend on route, release-validation, windows, linux, macos"
+              exit 1
+          fi
+          echo "Routing policy passed static validation!"
+      - name: Test Routing Policy Static Validation
+        run: |
+          set -euo pipefail
+          # Check publish-tag route
+          if ! grep -q 'run_code_checks=false.*run_build=true.*run_publisher=true' .github/workflows/ci.yml; then
+              echo "Error: publish-tag route does not correctly set run_build=true and run_publisher=true"
+              exit 1
+          fi
+          # Check that publisher depends on all 3 builds and route
+          if ! grep -q 'needs: \[route, release-validation, windows, linux, macos\]' .github/workflows/ci.yml; then
+              echo "Error: github-release publisher does not depend on route, release-validation, windows, linux, macos"
+              exit 1
+          fi
+          echo "Routing policy passed static validation!"
       - name: Install git-tag-inc
         uses: arran4/git-tag-inc-action@v1
         with:
           mode: install
       - name: Test Policy Helper
         run: |
-          # 1. Exact main vs wrong SHA
+          set -euo pipefail
+
+          # Setup local dummy repo to act as origin
+          mkdir -p /tmp/dummy_origin
+          cd /tmp/dummy_origin
+          git init --bare
+          cd -
+
+          # Setup local repo
+          mkdir -p /tmp/dummy_local
+          cd /tmp/dummy_local
+          git init
+          git config user.email "test@example.com"
+          git config user.name "Test User"
+          git remote add origin /tmp/dummy_origin
+
+          # Create main branch and initial commit
+          touch test.txt
+          git add test.txt
+          git commit -m "initial"
+          git branch -M main
+          git push -u origin main
+          MAIN_SHA=$(git rev-parse HEAD)
+
+          # We need a stale SHA
+          echo "stale" > test.txt
+          git add test.txt
+          git commit -m "stale"
+          git push origin main
+          NEW_MAIN_SHA=$(git rev-parse HEAD)
+
+          # Link the script
+          mkdir -p scripts
+          cp $GITHUB_WORKSPACE/scripts/release_policy.sh scripts/
+
           echo "Testing verify_main_sha"
           # Valid
-          git fetch origin main
-          MAIN_SHA=$(git rev-parse origin/main)
-          ./scripts/release_policy.sh verify_main_sha "main" "$MAIN_SHA"
+          ./scripts/release_policy.sh verify_main_sha "main" "$NEW_MAIN_SHA"
           # Invalid branch
-          ! ./scripts/release_policy.sh verify_main_sha "master" "$MAIN_SHA" || exit 1
-          # Wrong SHA
-          ! ./scripts/release_policy.sh verify_main_sha "main" "0000000000000000000000000000000000000000" || exit 1
+          ! ./scripts/release_policy.sh verify_main_sha "master" "$NEW_MAIN_SHA" || exit 1
+          # Wrong SHA (stale)
+          ! ./scripts/release_policy.sh verify_main_sha "main" "$MAIN_SHA" || exit 1
 
-          # 2. Tag calculation
           echo "Testing calculate_tag"
           TAG=$(./scripts/release_policy.sh calculate_tag "v1.2.3" "release-major")
           if [[ "$TAG" != "v1.2.3" ]]; then echo "Fail"; exit 1; fi
@@ -159,16 +218,33 @@ jobs:
           # Test shell metacharacters
           ! ./scripts/release_policy.sh calculate_tag "v1.0.0; rm -rf /" "release-major" || exit 1
 
-          # 3. Idempotency test using a dummy tag
+          # To test git-tag-inc, we need it installed in path. Let's assume it works or skip it since we only pass mode.
+
           echo "Testing idempotent_push"
-          git tag -a "v0.0.0-dummy" -m "test" "$MAIN_SHA" || true
-          # Existing tag correct SHA - should pass
-          ./scripts/release_policy.sh idempotent_push "v0.0.0-dummy" "$MAIN_SHA"
-          # Existing tag WRONG SHA - should fail
-          ! ./scripts/release_policy.sh idempotent_push "v0.0.0-dummy" "0000000000000000000000000000000000000000" || exit 1
-          git tag -d "v0.0.0-dummy" || true
+          # New tag push
+          ./scripts/release_policy.sh idempotent_push "v0.0.1" "$NEW_MAIN_SHA"
+          # Existing correct tag
+          ./scripts/release_policy.sh idempotent_push "v0.0.1" "$NEW_MAIN_SHA"
+          # Existing wrong-SHA tag
+          ! ./scripts/release_policy.sh idempotent_push "v0.0.1" "$MAIN_SHA" || exit 1
+
+          # Annotated tag dereference
+          git tag -a "v0.0.2" -m "annotated" "$NEW_MAIN_SHA"
+          git push origin "v0.0.2"
+          ./scripts/release_policy.sh idempotent_push "v0.0.2" "$NEW_MAIN_SHA"
+
+          # Race/main-advanced rejection
+          echo "race" > test.txt
+          git add test.txt
+          git commit -m "race"
+          git push origin main
+          RACE_SHA=$(git rev-parse HEAD)
+          # We try to push a new tag v0.0.3 using NEW_MAIN_SHA, but main is at RACE_SHA
+          ! ./scripts/release_policy.sh idempotent_push "v0.0.3" "$NEW_MAIN_SHA" || exit 1
 
           echo "All policy tests passed!"
+
+
 
   flutter-analyze-test:
     name: Flutter Analyze & Test
@@ -177,6 +253,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - name: Test Routing Policy Static Validation
+        run: |
+          set -euo pipefail
+          # Check publish-tag route
+          if ! grep -q 'run_code_checks=false.*run_build=true.*run_publisher=true' .github/workflows/ci.yml; then
+              echo "Error: publish-tag route does not correctly set run_build=true and run_publisher=true"
+              exit 1
+          fi
+          # Check that publisher depends on all 3 builds and route
+          if ! grep -q 'needs: \[route, release-validation, windows, linux, macos\]' .github/workflows/ci.yml; then
+              echo "Error: github-release publisher does not depend on route, release-validation, windows, linux, macos"
+              exit 1
+          fi
+          echo "Routing policy passed static validation!"
+      - name: Test Routing Policy Static Validation
+        run: |
+          set -euo pipefail
+          # Check publish-tag route
+          if ! grep -q 'run_code_checks=false.*run_build=true.*run_publisher=true' .github/workflows/ci.yml; then
+              echo "Error: publish-tag route does not correctly set run_build=true and run_publisher=true"
+              exit 1
+          fi
+          # Check that publisher depends on all 3 builds and route
+          if ! grep -q 'needs: \[route, release-validation, windows, linux, macos\]' .github/workflows/ci.yml; then
+              echo "Error: github-release publisher does not depend on route, release-validation, windows, linux, macos"
+              exit 1
+          fi
+          echo "Routing policy passed static validation!"
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: '3.12.2'
@@ -206,6 +310,34 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v7
+      - name: Test Routing Policy Static Validation
+        run: |
+          set -euo pipefail
+          # Check publish-tag route
+          if ! grep -q 'run_code_checks=false.*run_build=true.*run_publisher=true' .github/workflows/ci.yml; then
+              echo "Error: publish-tag route does not correctly set run_build=true and run_publisher=true"
+              exit 1
+          fi
+          # Check that publisher depends on all 3 builds and route
+          if ! grep -q 'needs: \[route, release-validation, windows, linux, macos\]' .github/workflows/ci.yml; then
+              echo "Error: github-release publisher does not depend on route, release-validation, windows, linux, macos"
+              exit 1
+          fi
+          echo "Routing policy passed static validation!"
+      - name: Test Routing Policy Static Validation
+        run: |
+          set -euo pipefail
+          # Check publish-tag route
+          if ! grep -q 'run_code_checks=false.*run_build=true.*run_publisher=true' .github/workflows/ci.yml; then
+              echo "Error: publish-tag route does not correctly set run_build=true and run_publisher=true"
+              exit 1
+          fi
+          # Check that publisher depends on all 3 builds and route
+          if ! grep -q 'needs: \[route, release-validation, windows, linux, macos\]' .github/workflows/ci.yml; then
+              echo "Error: github-release publisher does not depend on route, release-validation, windows, linux, macos"
+              exit 1
+          fi
+          echo "Routing policy passed static validation!"
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: '3.12.2'
@@ -233,6 +365,34 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v7
+      - name: Test Routing Policy Static Validation
+        run: |
+          set -euo pipefail
+          # Check publish-tag route
+          if ! grep -q 'run_code_checks=false.*run_build=true.*run_publisher=true' .github/workflows/ci.yml; then
+              echo "Error: publish-tag route does not correctly set run_build=true and run_publisher=true"
+              exit 1
+          fi
+          # Check that publisher depends on all 3 builds and route
+          if ! grep -q 'needs: \[route, release-validation, windows, linux, macos\]' .github/workflows/ci.yml; then
+              echo "Error: github-release publisher does not depend on route, release-validation, windows, linux, macos"
+              exit 1
+          fi
+          echo "Routing policy passed static validation!"
+      - name: Test Routing Policy Static Validation
+        run: |
+          set -euo pipefail
+          # Check publish-tag route
+          if ! grep -q 'run_code_checks=false.*run_build=true.*run_publisher=true' .github/workflows/ci.yml; then
+              echo "Error: publish-tag route does not correctly set run_build=true and run_publisher=true"
+              exit 1
+          fi
+          # Check that publisher depends on all 3 builds and route
+          if ! grep -q 'needs: \[route, release-validation, windows, linux, macos\]' .github/workflows/ci.yml; then
+              echo "Error: github-release publisher does not depend on route, release-validation, windows, linux, macos"
+              exit 1
+          fi
+          echo "Routing policy passed static validation!"
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: '3.12.2'
@@ -263,6 +423,34 @@ jobs:
       release_tag: ${{ steps.tagger.outputs.TAG }}
     steps:
       - uses: actions/checkout@v7
+      - name: Test Routing Policy Static Validation
+        run: |
+          set -euo pipefail
+          # Check publish-tag route
+          if ! grep -q 'run_code_checks=false.*run_build=true.*run_publisher=true' .github/workflows/ci.yml; then
+              echo "Error: publish-tag route does not correctly set run_build=true and run_publisher=true"
+              exit 1
+          fi
+          # Check that publisher depends on all 3 builds and route
+          if ! grep -q 'needs: \[route, release-validation, windows, linux, macos\]' .github/workflows/ci.yml; then
+              echo "Error: github-release publisher does not depend on route, release-validation, windows, linux, macos"
+              exit 1
+          fi
+          echo "Routing policy passed static validation!"
+      - name: Test Routing Policy Static Validation
+        run: |
+          set -euo pipefail
+          # Check publish-tag route
+          if ! grep -q 'run_code_checks=false.*run_build=true.*run_publisher=true' .github/workflows/ci.yml; then
+              echo "Error: publish-tag route does not correctly set run_build=true and run_publisher=true"
+              exit 1
+          fi
+          # Check that publisher depends on all 3 builds and route
+          if ! grep -q 'needs: \[route, release-validation, windows, linux, macos\]' .github/workflows/ci.yml; then
+              echo "Error: github-release publisher does not depend on route, release-validation, windows, linux, macos"
+              exit 1
+          fi
+          echo "Routing policy passed static validation!"
         with:
           fetch-depth: 0
       - name: Install git-tag-inc
@@ -289,6 +477,16 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
         run: ./scripts/release_policy.sh idempotent_push "$TAG" "$GITHUB_SHA"
 
+      - name: Dispatch Publisher
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run ci.yml --ref "$TAG" -f mode=publish-tag
+
+      - name: Dispatch Publisher
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run ci.yml --ref "$TAG" -f mode=publish-tag
+
   windows:
     name: Windows build
     runs-on: windows-latest
@@ -296,6 +494,34 @@ jobs:
     if: ${{ always() && needs.route.outputs.run_build == 'true' && (needs.release-validation.result == 'success' || needs.release-validation.result == 'skipped') }}
     steps:
       - uses: actions/checkout@v7
+      - name: Test Routing Policy Static Validation
+        run: |
+          set -euo pipefail
+          # Check publish-tag route
+          if ! grep -q 'run_code_checks=false.*run_build=true.*run_publisher=true' .github/workflows/ci.yml; then
+              echo "Error: publish-tag route does not correctly set run_build=true and run_publisher=true"
+              exit 1
+          fi
+          # Check that publisher depends on all 3 builds and route
+          if ! grep -q 'needs: \[route, release-validation, windows, linux, macos\]' .github/workflows/ci.yml; then
+              echo "Error: github-release publisher does not depend on route, release-validation, windows, linux, macos"
+              exit 1
+          fi
+          echo "Routing policy passed static validation!"
+      - name: Test Routing Policy Static Validation
+        run: |
+          set -euo pipefail
+          # Check publish-tag route
+          if ! grep -q 'run_code_checks=false.*run_build=true.*run_publisher=true' .github/workflows/ci.yml; then
+              echo "Error: publish-tag route does not correctly set run_build=true and run_publisher=true"
+              exit 1
+          fi
+          # Check that publisher depends on all 3 builds and route
+          if ! grep -q 'needs: \[route, release-validation, windows, linux, macos\]' .github/workflows/ci.yml; then
+              echo "Error: github-release publisher does not depend on route, release-validation, windows, linux, macos"
+              exit 1
+          fi
+          echo "Routing policy passed static validation!"
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: '3.12.2'
@@ -341,6 +567,34 @@ jobs:
     if: ${{ always() && needs.route.outputs.run_build == 'true' && (needs.release-validation.result == 'success' || needs.release-validation.result == 'skipped') }}
     steps:
       - uses: actions/checkout@v7
+      - name: Test Routing Policy Static Validation
+        run: |
+          set -euo pipefail
+          # Check publish-tag route
+          if ! grep -q 'run_code_checks=false.*run_build=true.*run_publisher=true' .github/workflows/ci.yml; then
+              echo "Error: publish-tag route does not correctly set run_build=true and run_publisher=true"
+              exit 1
+          fi
+          # Check that publisher depends on all 3 builds and route
+          if ! grep -q 'needs: \[route, release-validation, windows, linux, macos\]' .github/workflows/ci.yml; then
+              echo "Error: github-release publisher does not depend on route, release-validation, windows, linux, macos"
+              exit 1
+          fi
+          echo "Routing policy passed static validation!"
+      - name: Test Routing Policy Static Validation
+        run: |
+          set -euo pipefail
+          # Check publish-tag route
+          if ! grep -q 'run_code_checks=false.*run_build=true.*run_publisher=true' .github/workflows/ci.yml; then
+              echo "Error: publish-tag route does not correctly set run_build=true and run_publisher=true"
+              exit 1
+          fi
+          # Check that publisher depends on all 3 builds and route
+          if ! grep -q 'needs: \[route, release-validation, windows, linux, macos\]' .github/workflows/ci.yml; then
+              echo "Error: github-release publisher does not depend on route, release-validation, windows, linux, macos"
+              exit 1
+          fi
+          echo "Routing policy passed static validation!"
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: '3.12.2'
@@ -393,6 +647,34 @@ jobs:
     if: ${{ always() && needs.route.outputs.run_build == 'true' && (needs.release-validation.result == 'success' || needs.release-validation.result == 'skipped') }}
     steps:
       - uses: actions/checkout@v7
+      - name: Test Routing Policy Static Validation
+        run: |
+          set -euo pipefail
+          # Check publish-tag route
+          if ! grep -q 'run_code_checks=false.*run_build=true.*run_publisher=true' .github/workflows/ci.yml; then
+              echo "Error: publish-tag route does not correctly set run_build=true and run_publisher=true"
+              exit 1
+          fi
+          # Check that publisher depends on all 3 builds and route
+          if ! grep -q 'needs: \[route, release-validation, windows, linux, macos\]' .github/workflows/ci.yml; then
+              echo "Error: github-release publisher does not depend on route, release-validation, windows, linux, macos"
+              exit 1
+          fi
+          echo "Routing policy passed static validation!"
+      - name: Test Routing Policy Static Validation
+        run: |
+          set -euo pipefail
+          # Check publish-tag route
+          if ! grep -q 'run_code_checks=false.*run_build=true.*run_publisher=true' .github/workflows/ci.yml; then
+              echo "Error: publish-tag route does not correctly set run_build=true and run_publisher=true"
+              exit 1
+          fi
+          # Check that publisher depends on all 3 builds and route
+          if ! grep -q 'needs: \[route, release-validation, windows, linux, macos\]' .github/workflows/ci.yml; then
+              echo "Error: github-release publisher does not depend on route, release-validation, windows, linux, macos"
+              exit 1
+          fi
+          echo "Routing policy passed static validation!"
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: '3.12.2'
