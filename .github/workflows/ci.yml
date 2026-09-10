@@ -66,6 +66,7 @@ jobs:
       run_maintenance: ${{ steps.route.outputs.run_maintenance }}
       mode: ${{ steps.route.outputs.mode }}
     steps:
+      - uses: actions/checkout@v7
       - id: route
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -75,7 +76,7 @@ jobs:
           SCHEDULE: ${{ github.event.schedule }}
         run: |
           set -euo pipefail
-          ./scripts/route_policy.sh "$EVENT_NAME" "$REF_TYPE" "$GITHUB_REF" "$INPUT_MODE" "$SCHEDULE" >> "$GITHUB_OUTPUT"
+          bash ./scripts/route_policy.sh "$EVENT_NAME" "$REF_TYPE" "$GITHUB_REF" "$INPUT_MODE" "$SCHEDULE" >> "$GITHUB_OUTPUT"
 
   policy-test:
     name: Test Release Policy
@@ -169,31 +170,42 @@ jobs:
 
           echo "Testing route_policy.sh"
           # PR validation
-          OUT=$(./scripts/route_policy.sh "pull_request" "" "refs/pull/1/merge" "" "")
+          OUT=$(bash ./scripts/route_policy.sh "pull_request" "" "refs/pull/1/merge" "" "")
           [[ "$OUT" =~ "run_code_checks=true" ]] || exit 1
 
           # Normal build
-          OUT=$(./scripts/route_policy.sh "workflow_dispatch" "branch" "refs/heads/main" "build" "")
+          OUT=$(bash ./scripts/route_policy.sh "workflow_dispatch" "branch" "refs/heads/main" "build" "")
           [[ "$OUT" =~ "run_build=true" ]] || exit 1
 
           # release-*
-          OUT=$(./scripts/route_policy.sh "workflow_dispatch" "branch" "refs/heads/main" "release-minor" "")
+          OUT=$(bash ./scripts/route_policy.sh "workflow_dispatch" "branch" "refs/heads/main" "release-minor" "")
           [[ "$OUT" =~ "run_release=true" ]] && [[ "$OUT" =~ "run_build=true" ]] || exit 1
 
           # valid publish-tag context
-          OUT=$(./scripts/route_policy.sh "workflow_dispatch" "tag" "refs/tags/v1.0.0" "publish-tag" "")
+          OUT=$(bash ./scripts/route_policy.sh "workflow_dispatch" "tag" "refs/tags/v1.0.0" "publish-tag" "")
           [[ "$OUT" =~ "run_build=true" ]] && [[ "$OUT" =~ "run_publisher=true" ]] && [[ "$OUT" =~ "run_release=false" ]] || exit 1
 
           # invalid publish-tag context
-          ! ./scripts/route_policy.sh "workflow_dispatch" "branch" "refs/heads/main" "publish-tag" "" || exit 1
+          ! bash ./scripts/route_policy.sh "workflow_dispatch" "branch" "refs/heads/main" "publish-tag" "" || exit 1
 
           # scheduled maintenance
-          OUT=$(./scripts/route_policy.sh "schedule" "" "" "" "17 3 1 * *")
+          OUT=$(bash ./scripts/route_policy.sh "schedule" "" "" "" "17 3 1 * *")
           [[ "$OUT" =~ "run_maintenance=true" ]] || exit 1
 
           # v* tag push
-          OUT=$(./scripts/route_policy.sh "push" "tag" "refs/tags/v1.0.0" "" "")
+          OUT=$(bash ./scripts/route_policy.sh "push" "tag" "refs/tags/v1.0.0" "" "")
           [[ "$OUT" =~ "run_publisher=true" ]] || exit 1
+          # Check that publisher depends on all 3 builds and route
+          if ! grep -q 'needs: \[route, release-validation, windows, linux, macos\]' .github/workflows/ci.yml; then
+              echo "Error: github-release publisher does not depend on route, release-validation, windows, linux, macos"
+              exit 1
+          fi
+          # Check exact single explicit dispatch
+          DISPATCH_COUNT=$(grep -c 'gh workflow run ci.yml --ref "$TAG" -f mode=publish-tag' .github/workflows/ci.yml || true)
+          if [[ "$DISPATCH_COUNT" != "1" ]]; then
+              echo "Error: Expected exactly 1 dispatch, got $DISPATCH_COUNT"
+              exit 1
+          fi
           echo "All policy tests passed!"
 
 
