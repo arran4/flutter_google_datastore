@@ -66,7 +66,7 @@ jobs:
       run_maintenance: ${{ steps.route.outputs.run_maintenance }}
       mode: ${{ steps.route.outputs.mode }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - id: route
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -84,7 +84,7 @@ jobs:
     if: ${{ needs.route.outputs.run_code_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - name: Install git-tag-inc
         uses: arran4/git-tag-inc-action@v1
         with:
@@ -201,7 +201,7 @@ jobs:
               exit 1
           fi
           # Check exact single explicit dispatch
-          DISPATCH_COUNT=$(grep -c 'gh workflow run ci.yml --ref "$TAG" -f mode=publish-tag' $GITHUB_WORKSPACE/$GITHUB_WORKSPACE/.github/workflows/ci.yml || true)
+          DISPATCH_COUNT=$(grep -c 'gh workflow run ci.yml --ref "$TAG" -f mode=publish-tag' $GITHUB_WORKSPACE/.github/workflows/ci.yml || true)
           if [[ "$DISPATCH_COUNT" != "1" ]]; then
               echo "Error: Expected exactly 1 dispatch, got $DISPATCH_COUNT"
               exit 1
@@ -216,7 +216,7 @@ jobs:
     if: ${{ needs.route.outputs.run_code_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: '3.12.2'
@@ -245,7 +245,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: '3.12.2'
@@ -256,7 +256,7 @@ jobs:
       - run: flutter pub upgrade --major-versions
       - name: Create Pull Request
         if: ${{ github.event_name == 'schedule' || inputs.allow_prs != false }}
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@v7
         with:
           commit-message: "chore: monthly dependency update"
           title: "chore: monthly dependency update"
@@ -272,7 +272,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: '3.12.2'
@@ -284,7 +284,7 @@ jobs:
       - run: dart format .
       - name: Create Pull Request
         if: ${{ github.event_name == 'schedule' || inputs.allow_prs != false }}
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@v7
         with:
           commit-message: "style: auto-format code and lint fixes"
           title: "style: auto-format code and lint fixes"
@@ -302,7 +302,7 @@ jobs:
     outputs:
       release_tag: ${{ steps.tagger.outputs.TAG }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Install git-tag-inc
@@ -345,7 +345,7 @@ jobs:
     needs: [route, release-validation]
     if: ${{ always() && needs.route.outputs.run_build == 'true' && (needs.release-validation.result == 'success' || needs.release-validation.result == 'skipped') }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: '3.12.2'
@@ -378,7 +378,7 @@ jobs:
           dart pub global activate fastforge
           fastforge release --name onwindows
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: windows-release
           path: dist/
@@ -390,7 +390,7 @@ jobs:
     needs: [route, release-validation]
     if: ${{ always() && needs.route.outputs.run_build == 'true' && (needs.release-validation.result == 'success' || needs.release-validation.result == 'skipped') }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: '3.12.2'
@@ -430,7 +430,7 @@ jobs:
           dart pub global activate fastforge
           fastforge release --name onlinux
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: linux-release
           path: dist/
@@ -442,7 +442,7 @@ jobs:
     needs: [route, release-validation]
     if: ${{ always() && needs.route.outputs.run_build == 'true' && (needs.release-validation.result == 'success' || needs.release-validation.result == 'skipped') }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: '3.12.2'
@@ -478,7 +478,7 @@ jobs:
           dart pub global activate fastforge
           fastforge release --name onmac
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: macos-release
           path: dist/
@@ -493,14 +493,14 @@ jobs:
       contents: write
     steps:
       - name: Collect release artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
           path: dist-release
           pattern: '*-release'
           merge-multiple: true
 
       - name: Create published GitHub release and upload assets
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@v2
         with:
           draft: false
           tag_name: ${{ github.ref_name }}
