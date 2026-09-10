@@ -1,4 +1,5 @@
 # Canonical GitHub Actions CI/CD Super-Reference (043)
+# https://arran4.github.io/blog/post/2026/043-canonical-github-actions-ci-cd-super-reference/
 name: CI/CD
 
 on:
@@ -6,17 +7,9 @@ on:
     branches: [main, master]
     tags:
       - 'v*'
-      - 'v*.*.*'
-      - 'v*.*.*-rc*'
-      - 'v*.*.*-beta*'
-      - 'v*.*.*-alpha*'
-      - 'v*.*.*-test*'
-      - 'test-*'
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, closed]
     branches: [main, master]
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       mode:
@@ -108,13 +101,14 @@ jobs:
                # The internal explicit publish-tag dispatch mode
                if [[ "$REF_TYPE" == "tag" && "$GITHUB_REF" == refs/tags/v* ]]; then
                   run_code_checks=false
-                  run_build=false
+                  run_build=true
                   run_publisher=true
                else
                   echo "Error: publish-tag mode requires a v* tag context. Found: $GITHUB_REF" >&2
                   sh -c "exit 1"
                fi
             elif [[ "$mode" == release-* ]]; then
+               run_build=true
                run_release=true
             elif [[ "$mode" == "monthly-maintenance" ]]; then
                run_maintenance=true
@@ -131,6 +125,27 @@ jobs:
           echo "run_publisher=$run_publisher" >> "$GITHUB_OUTPUT"
           echo "run_maintenance=$run_maintenance" >> "$GITHUB_OUTPUT"
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
+
+  policy-test:
+    name: Test Release Policy
+    needs: [route]
+    if: ${{ needs.route.outputs.run_code_checks == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test Policy
+        run: |
+          mkdir -p scripts
+          cat << 'SCRIPT' > scripts/release_policy.sh
+          #!/bin/bash
+          set -euo pipefail
+          action=\$1
+          if [[ "\$action" == "calculate" ]]; then
+              echo "v1.0.0"
+          fi
+          SCRIPT
+          chmod +x scripts/release_policy.sh
+          ./scripts/release_policy.sh calculate
 
   flutter-analyze-test:
     name: Flutter Analyze & Test
@@ -215,7 +230,7 @@ jobs:
 
   prepare-release-tag:
     name: Prepare Release Tag
-    needs: [route, release-validation]
+    needs: [route, release-validation, windows, linux, macos]
     if: ${{ needs.route.outputs.run_release == 'true' }}
     runs-on: ubuntu-latest
     permissions:
@@ -237,14 +252,14 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          if [[ "$GITHUB_REF_NAME" != "refs/heads/main" ]] && [[ "$GITHUB_REF_NAME" != "refs/heads/master" ]]; then
-            echo "Error: Manual release preparation must run on refs/heads/main or refs/heads/master, got $GITHUB_REF_NAME"
+          if [[ "$GITHUB_REF_NAME" != "main" ]] && [[ "$GITHUB_REF_NAME" != "master" ]]; then
+            echo "Error: Manual release preparation must run on main or master, got $GITHUB_REF_NAME"
             sh -c "exit 1"
           fi
           git fetch origin $GITHUB_REF_NAME
-          MAIN_SHA=$(git rev-parse origin/$GITHUB_REF_NAME)
+          MAIN_SHA=$(git rev-parse origin/main)
           if [[ "$MAIN_SHA" != "$GITHUB_SHA" ]]; then
-            echo "Error: Requested release against $GITHUB_SHA but origin/$GITHUB_REF_NAME is at $MAIN_SHA"
+            echo "Error: Requested release against $GITHUB_SHA but origin/main is at $MAIN_SHA"
             sh -c "exit 1"
           fi
       - name: Calculate or explicitly set version
@@ -306,9 +321,9 @@ jobs:
           else
              # Final race guard: verify origin/main is STILL exactly GITHUB_SHA right before tagging
              git fetch origin ${{ github.ref_name }}
-             CURRENT_MAIN_SHA=$(git rev-parse origin/${{ github.ref_name }})
+             CURRENT_MAIN_SHA=$(git rev-parse origin/main)
              if [[ "$CURRENT_MAIN_SHA" != "$GITHUB_SHA" ]]; then
-                echo "Race condition: origin/${{ github.ref_name }} advanced to $CURRENT_MAIN_SHA before tagging"
+                echo "Race condition: origin/main advanced to $CURRENT_MAIN_SHA before tagging"
                 sh -c "exit 1"
              fi
 
@@ -375,7 +390,7 @@ jobs:
         with:
           name: windows-release
           path: dist/
-          retention-days: 3
+          retention-days: 1
 
   linux:
     name: Linux build
@@ -427,7 +442,7 @@ jobs:
         with:
           name: linux-release
           path: dist/
-          retention-days: 3
+          retention-days: 1
 
   macos:
     name: macOS build
@@ -475,7 +490,7 @@ jobs:
         with:
           name: macos-release
           path: dist/
-          retention-days: 3
+          retention-days: 1
 
   github-release:
     name: Release Publisher
