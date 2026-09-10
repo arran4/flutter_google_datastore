@@ -201,7 +201,7 @@ jobs:
               exit 1
           fi
           # Check exact single explicit dispatch
-          DISPATCH_COUNT=$(grep -c 'gh workflow run ci.yml --ref "$TAG" -f mode=publish-tag' $GITHUB_WORKSPACE/.github/workflows/ci.yml || true)
+          DISPATCH_COUNT=$(grep -c 'run: gh workflow run ci.yml --ref "$TAG" -f mode=publish-tag' $GITHUB_WORKSPACE/.github/workflows/ci.yml || true)
           if [[ "$DISPATCH_COUNT" != "1" ]]; then
               echo "Error: Expected exactly 1 dispatch, got $DISPATCH_COUNT"
               exit 1
