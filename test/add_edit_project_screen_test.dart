@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_google_datastore/main.dart';
-import 'package:flutter_google_datastore/database.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
@@ -51,7 +50,8 @@ void main() {
     },
   );
 
-  testWidgets('AddEditProjectScreen renders correctly on wide screen (desktop)', (
+  testWidgets('AddEditProjectScreen renders correctly on wide screen (desktop)',
+      (
     WidgetTester tester,
   ) async {
     // Set a wide screen size (e.g., standard desktop)
