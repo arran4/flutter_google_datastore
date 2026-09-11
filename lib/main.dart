@@ -1,3 +1,4 @@
+import 'responsive_layout.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -237,6 +238,7 @@ class AddEditProjectScreen extends StatefulWidget {
 }
 
 class AddEditProjectScreenState extends State<AddEditProjectScreen> {
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController endpointUrlController = TextEditingController();
   final TextEditingController projectIdController = TextEditingController();
   final TextEditingController databaseIdController = TextEditingController();
@@ -246,6 +248,9 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
   String? googleCliProfile;
 
   void saveProject() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
     String? endpointUrl = endpointUrlController.text;
     if (endpointUrl.isEmpty) {
       endpointUrl = null;
@@ -290,95 +295,107 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Widget? googleCliWidget;
+    if (authMode == gcloudCliAuthMode) {
+      googleCliWidget = DropdownButtonFormField<String>(
+        initialValue: googleCliProfile,
+        decoration: const InputDecoration(labelText: 'Google CLI Profile'),
+        icon: const Icon(Icons.arrow_downward),
+        elevation: 16,
+        onChanged: (String? value) {
+          setState(() {
+            googleCliProfile = value!;
+          });
+        },
+        items: gCloudCLICredentialDiscover.profiles
+            .map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(value: value, child: Text(value));
+            })
+            .toList(),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.project == null ? 'Add Project' : 'Edit Project'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            TextField(
-              controller: endpointUrlController,
-              decoration: const InputDecoration(
-                labelText: 'Endpoint URL (blank for default)',
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ResponsiveContainer(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ResponsiveTwoColumnRow(
+                    left: TextFormField(
+                      controller: projectIdController,
+                      decoration: const InputDecoration(
+                        labelText: 'Project ID',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Project ID cannot be empty';
+                        }
+                        return null;
+                      },
+                    ),
+                    right: TextFormField(
+                      controller: databaseIdController,
+                      decoration: const InputDecoration(
+                        labelText: 'Database ID (blank for default)',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: endpointUrlController,
+                    decoration: const InputDecoration(
+                      labelText: 'Endpoint URL (blank for default)',
+                      helperText:
+                          'Leave blank to use the default Google Cloud Datastore endpoint.',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ResponsiveTwoColumnRow(
+                    left: DropdownButtonFormField<String>(
+                      initialValue: authMode,
+                      decoration: const InputDecoration(
+                        labelText: 'Authentication mode',
+                      ),
+                      icon: const Icon(Icons.arrow_downward),
+                      elevation: 16,
+                      onChanged: (String? value) {
+                        setState(() {
+                          authMode = value!;
+                        });
+                      },
+                      items: authModes.map<DropdownMenuItem<String>>((
+                        String value,
+                      ) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
+                    right: googleCliWidget ?? const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: saveProject,
+                    child: Text(
+                      widget.project == null ? 'Add Project' : 'Save Project',
+                    ),
+                  ),
+                ],
               ),
             ),
-            TextField(
-              controller: projectIdController,
-              decoration: const InputDecoration(labelText: 'Project'),
-            ),
-            TextField(
-              controller: databaseIdController,
-              decoration: const InputDecoration(
-                labelText: 'Database ID (blank for default)',
-              ),
-            ),
-            DropdownButtonFormField<String>(
-              initialValue: authMode,
-              decoration: const InputDecoration(
-                labelText: 'Authentication mode',
-              ),
-              icon: const Icon(Icons.arrow_downward),
-              elevation: 16,
-              style: const TextStyle(color: Colors.deepPurple),
-              onChanged: (String? value) {
-                // This is called when the user selects an item.
-                setState(() {
-                  authMode = value!;
-                });
-              },
-              items: authModes.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
-            ...(authenticationMethodConfiguration(authMode)),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: saveProject,
-              child: Text(
-                widget.project == null ? 'Add Project' : 'Edit Project',
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
-  }
-
-  List<Widget> authenticationMethodConfiguration(String authMode) {
-    switch (authMode) {
-      case gcloudCliAuthMode:
-        return [
-          DropdownButtonFormField<String>(
-            initialValue: googleCliProfile,
-            decoration: const InputDecoration(labelText: 'Google CLI Profile'),
-            icon: const Icon(Icons.arrow_downward),
-            elevation: 16,
-            style: const TextStyle(color: Colors.deepPurple),
-            onChanged: (String? value) {
-              // This is called when the user selects an item.
-              setState(() {
-                googleCliProfile = value!;
-              });
-            },
-            items: gCloudCLICredentialDiscover.profiles
-                .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                })
-                .toList(),
-          ),
-        ];
-      default:
-        return [];
-    }
   }
 }
 
