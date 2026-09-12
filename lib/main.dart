@@ -297,18 +297,28 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
   Widget build(BuildContext context) {
     Widget? googleCliWidget;
     if (authMode == gcloudCliAuthMode) {
+      List<String> profiles = [];
+      try {
+        profiles = gCloudCLICredentialDiscover.profiles;
+      } catch (_) {
+        profiles = const ['default'];
+      }
+      if (profiles.isEmpty) {
+        profiles = const ['default'];
+      }
       googleCliWidget = DropdownButtonFormField<String>(
-        initialValue: googleCliProfile,
+        initialValue: profiles.contains(googleCliProfile)
+            ? googleCliProfile
+            : (profiles.isNotEmpty ? profiles.first : null),
         decoration: const InputDecoration(labelText: 'Google CLI Profile'),
         icon: const Icon(Icons.arrow_downward),
         elevation: 16,
         onChanged: (String? value) {
           setState(() {
-            googleCliProfile = value!;
+            googleCliProfile = value;
           });
         },
-        items: gCloudCLICredentialDiscover.profiles
-            .map<DropdownMenuItem<String>>((String value) {
+        items: profiles.map<DropdownMenuItem<String>>((String value) {
           return DropdownMenuItem<String>(value: value, child: Text(value));
         }).toList(),
       );
@@ -320,72 +330,93 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(ResponsiveSpacing.md),
           child: ResponsiveContainer(
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  ResponsiveTwoColumnRow(
-                    left: TextFormField(
-                      controller: projectIdController,
-                      decoration: const InputDecoration(
-                        labelText: 'Project ID',
+                  FormSection(
+                    title: 'Project identity',
+                    child: ResponsiveTwoColumnRow(
+                      left: TextFormField(
+                        controller: projectIdController,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          labelText: 'Project ID',
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Project ID cannot be empty';
+                          }
+                          return null;
+                        },
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Project ID cannot be empty';
-                        }
-                        return null;
-                      },
-                    ),
-                    right: TextFormField(
-                      controller: databaseIdController,
-                      decoration: const InputDecoration(
-                        labelText: 'Database ID (blank for default)',
+                      right: TextFormField(
+                        controller: databaseIdController,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          labelText: 'Database ID (blank for default)',
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: endpointUrlController,
-                    decoration: const InputDecoration(
-                      labelText: 'Endpoint URL (blank for default)',
-                      helperText:
-                          'Leave blank to use the default Google Cloud Datastore endpoint.',
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ResponsiveTwoColumnRow(
-                    left: DropdownButtonFormField<String>(
-                      initialValue: authMode,
+                  const SizedBox(height: ResponsiveSpacing.lg),
+                  FormSection(
+                    title: 'Connection',
+                    child: TextFormField(
+                      controller: endpointUrlController,
+                      textInputAction: TextInputAction.next,
                       decoration: const InputDecoration(
-                        labelText: 'Authentication mode',
+                        labelText: 'Endpoint URL (blank for default)',
+                        helperText:
+                            'Leave blank to use the default Google Cloud Datastore endpoint.',
                       ),
-                      icon: const Icon(Icons.arrow_downward),
-                      elevation: 16,
-                      onChanged: (String? value) {
-                        setState(() {
-                          authMode = value!;
-                        });
-                      },
-                      items: authModes.map<DropdownMenuItem<String>>((
-                        String value,
-                      ) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
                     ),
-                    right: googleCliWidget ?? const SizedBox.shrink(),
                   ),
-                  const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: saveProject,
-                    child: Text(
-                      widget.project == null ? 'Add Project' : 'Save Project',
+                  const SizedBox(height: ResponsiveSpacing.lg),
+                  FormSection(
+                    title: 'Authentication',
+                    child: ResponsiveTwoColumnRow(
+                      left: DropdownButtonFormField<String>(
+                        initialValue: authMode,
+                        decoration: const InputDecoration(
+                          labelText: 'Authentication mode',
+                        ),
+                        icon: const Icon(Icons.arrow_downward),
+                        elevation: 16,
+                        onChanged: (String? value) {
+                          setState(() {
+                            authMode = value!;
+                          });
+                        },
+                        items: authModes.map<DropdownMenuItem<String>>((
+                          String value,
+                        ) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                      right: googleCliWidget,
+                    ),
+                  ),
+                  const SizedBox(height: ResponsiveSpacing.lg),
+                  FormSection(
+                    title: 'Actions',
+                    child: ResponsiveFormActions(
+                      children: [
+                        ElevatedButton(
+                          onPressed: saveProject,
+                          child: Text(
+                            widget.project == null
+                                ? 'Add Project'
+                                : 'Save Project',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
