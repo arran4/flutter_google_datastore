@@ -1,9 +1,63 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_google_datastore/database.dart';
+import 'package:flutter_google_datastore/datastoremain.dart';
 import 'package:flutter_google_datastore/main.dart';
 import 'package:flutter_google_datastore/responsive_layout.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+class FakeGCloudCLICredentialDiscover implements GCloudCLICredentialDiscover {
+  @override
+  final List<String> profiles;
+
+  FakeGCloudCLICredentialDiscover([this.profiles = const ['default']]);
+
+  @override
+  String get configDir => '';
+  @override
+  set configDir(String _) {}
+
+  @override
+  String get credentialsDBFile => '';
+  @override
+  set credentialsDBFile(String _) {}
+
+  @override
+  String get accessTokensDBFile => '';
+  @override
+  set accessTokensDBFile(String _) {}
+
+  @override
+  String get profileConfigDir => '';
+  @override
+  set profileConfigDir(String _) {}
+
+  @override
+  set profiles(List<String> _) {}
+
+  @override
+  String get defaultProfileName => 'default';
+
+  @override
+  bool get hasDefault => profiles.contains(defaultProfileName);
+
+  @override
+  String? get overrideConfigDir => null;
+
+  @override
+  Future<void> get initFuture => Future.value();
+  @override
+  set initFuture(Future<void> _) {}
+
+  @override
+  Future<void> loadConfigDir() async {}
+
+  @override
+  Future<void> loadProfiles() async {}
+
+  @override
+  Future<String> getJsonCredentials(String forProfile) async => '';
+}
 
 void main() {
   setUpAll(() {
@@ -11,11 +65,20 @@ void main() {
     databaseFactory = databaseFactoryFfi;
   });
 
-  Widget createTestWidget({Project? project, Key? key}) {
+  Widget createTestWidget({
+    Project? project,
+    Key? key,
+    List<String>? profileSource,
+    GCloudCLICredentialDiscover? credentialDiscoverer,
+  }) {
     return MaterialApp(
       home: AddEditProjectScreen(
         key: key ?? ValueKey(project?.id ?? 'new'),
         project: project,
+        profileSource:
+            profileSource ??
+            (credentialDiscoverer == null ? const ['default'] : null),
+        credentialDiscoverer: credentialDiscoverer,
       ),
     );
   }
@@ -418,5 +481,167 @@ void main() {
         equals(tester.getTopLeft(find.byKey(const Key('boundary-right'))).dy),
       );
     });
+  });
+
+  group('Google CLI Profile consistency and determinism', () {
+    testWidgets(
+      'profile-value consistency: form aligns displayed and persisted profile when stored profile is absent from available profiles',
+      (WidgetTester tester) async {
+        final projectWithAbsentProfile = Project(
+          id: 101,
+          created: DateTime.now(),
+          updated: DateTime.now(),
+          endpointUrl: '',
+          projectId: 'absent-profile-project',
+          authMode: gcloudCliAuthMode,
+          googleCliProfile: 'non_existent_profile',
+          databaseId: '',
+        );
+
+        const availableProfiles = ['profile_alpha', 'profile_beta'];
+
+        await tester.pumpWidget(
+          createTestWidget(
+            project: projectWithAbsentProfile,
+            profileSource: availableProfiles,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Stored profile is absent, so the form falls back to the first available profile
+        final dropdownFinder = find.widgetWithText(
+          DropdownButtonFormField<String>,
+          'Google CLI Profile',
+        );
+        expect(dropdownFinder, findsOneWidget);
+        expect(find.text('profile_alpha'), findsOneWidget);
+        expect(find.text('non_existent_profile'), findsNothing);
+
+        // State value (which is persisted on save) MUST match the displayed/selected dropdown value
+        final state = tester.state<AddEditProjectScreenState>(
+          find.byType(AddEditProjectScreen),
+        );
+        expect(state.googleCliProfile, equals('profile_alpha'));
+
+        final dropdownWidget = tester.widget<DropdownButtonFormField<String>>(
+          dropdownFinder,
+        );
+        expect(dropdownWidget.initialValue, equals('profile_alpha'));
+        expect(dropdownWidget.initialValue, equals(state.googleCliProfile));
+      },
+    );
+
+    testWidgets(
+      'profile-value consistency: preserves stored profile when present in available profiles',
+      (WidgetTester tester) async {
+        final projectWithPresentProfile = Project(
+          id: 102,
+          created: DateTime.now(),
+          updated: DateTime.now(),
+          endpointUrl: '',
+          projectId: 'present-profile-project',
+          authMode: gcloudCliAuthMode,
+          googleCliProfile: 'profile_beta',
+          databaseId: '',
+        );
+
+        const availableProfiles = ['profile_alpha', 'profile_beta'];
+
+        await tester.pumpWidget(
+          createTestWidget(
+            project: projectWithPresentProfile,
+            profileSource: availableProfiles,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('profile_beta'), findsOneWidget);
+
+        final state = tester.state<AddEditProjectScreenState>(
+          find.byType(AddEditProjectScreen),
+        );
+        expect(state.googleCliProfile, equals('profile_beta'));
+      },
+    );
+
+    testWidgets(
+      'profile-value consistency: user selection updates both displayed and persisted profile value',
+      (WidgetTester tester) async {
+        final project = Project(
+          id: 103,
+          created: DateTime.now(),
+          updated: DateTime.now(),
+          endpointUrl: '',
+          projectId: 'selection-test-project',
+          authMode: gcloudCliAuthMode,
+          googleCliProfile: 'old_absent_profile',
+          databaseId: '',
+        );
+
+        const availableProfiles = ['profile_alpha', 'profile_beta'];
+
+        await tester.pumpWidget(
+          createTestWidget(project: project, profileSource: availableProfiles),
+        );
+        await tester.pumpAndSettle();
+
+        final state = tester.state<AddEditProjectScreenState>(
+          find.byType(AddEditProjectScreen),
+        );
+        expect(state.googleCliProfile, equals('profile_alpha'));
+
+        // Tap dropdown and select 'profile_beta'
+        final dropdownFinder = find.widgetWithText(
+          DropdownButtonFormField<String>,
+          'Google CLI Profile',
+        );
+        await tester.tap(dropdownFinder);
+        await tester.pumpAndSettle();
+
+        final itemFinder = find
+            .widgetWithText(DropdownMenuItem<String>, 'profile_beta')
+            .last;
+        await tester.tap(itemFinder);
+        await tester.pumpAndSettle();
+
+        expect(state.googleCliProfile, equals('profile_beta'));
+        expect(find.text('profile_beta'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'supports deterministic profile discovery via credentialDiscoverer seam',
+      (WidgetTester tester) async {
+        final fakeDiscoverer = FakeGCloudCLICredentialDiscover([
+          'fake_work',
+          'fake_personal',
+        ]);
+
+        final project = Project(
+          id: 104,
+          created: DateTime.now(),
+          updated: DateTime.now(),
+          endpointUrl: '',
+          projectId: 'seam-test-project',
+          authMode: gcloudCliAuthMode,
+          googleCliProfile: 'fake_personal',
+          databaseId: '',
+        );
+
+        await tester.pumpWidget(
+          createTestWidget(
+            project: project,
+            credentialDiscoverer: fakeDiscoverer,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('fake_personal'), findsOneWidget);
+        final state = tester.state<AddEditProjectScreenState>(
+          find.byType(AddEditProjectScreen),
+        );
+        expect(state.googleCliProfile, equals('fake_personal'));
+      },
+    );
   });
 }

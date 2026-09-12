@@ -230,8 +230,15 @@ List<String> createAuthModes() {
 
 class AddEditProjectScreen extends StatefulWidget {
   final Project? project;
+  final GCloudCLICredentialDiscover? credentialDiscoverer;
+  final List<String>? profileSource;
 
-  const AddEditProjectScreen({super.key, this.project});
+  const AddEditProjectScreen({
+    super.key,
+    this.project,
+    this.credentialDiscoverer,
+    this.profileSource,
+  });
 
   @override
   AddEditProjectScreenState createState() => AddEditProjectScreenState();
@@ -243,8 +250,15 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
   final TextEditingController projectIdController = TextEditingController();
   final TextEditingController databaseIdController = TextEditingController();
   String authMode = "none";
-  GCloudCLICredentialDiscover gCloudCLICredentialDiscover =
+  late final GCloudCLICredentialDiscover _defaultCredentialDiscover =
       GCloudCLICredentialDiscover();
+
+  GCloudCLICredentialDiscover get gCloudCLICredentialDiscover =>
+      widget.credentialDiscoverer ?? _defaultCredentialDiscover;
+
+  List<String> get profiles =>
+      widget.profileSource ?? gCloudCLICredentialDiscover.profiles;
+
   String? googleCliProfile;
 
   void saveProject() async {
@@ -297,19 +311,14 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
   Widget build(BuildContext context) {
     Widget? googleCliWidget;
     if (authMode == gcloudCliAuthMode) {
-      List<String> profiles = [];
-      try {
-        profiles = gCloudCLICredentialDiscover.profiles;
-      } catch (_) {
-        profiles = const ['default'];
-      }
-      if (profiles.isEmpty) {
-        profiles = const ['default'];
+      final availableProfiles = profiles;
+      if (!availableProfiles.contains(googleCliProfile)) {
+        googleCliProfile = availableProfiles.isNotEmpty
+            ? availableProfiles.first
+            : null;
       }
       googleCliWidget = DropdownButtonFormField<String>(
-        initialValue: profiles.contains(googleCliProfile)
-            ? googleCliProfile
-            : (profiles.isNotEmpty ? profiles.first : null),
+        initialValue: googleCliProfile,
         decoration: const InputDecoration(labelText: 'Google CLI Profile'),
         icon: const Icon(Icons.arrow_downward),
         elevation: 16,
@@ -318,7 +327,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
             googleCliProfile = value;
           });
         },
-        items: profiles.map<DropdownMenuItem<String>>((String value) {
+        items: availableProfiles.map<DropdownMenuItem<String>>((String value) {
           return DropdownMenuItem<String>(value: value, child: Text(value));
         }).toList(),
       );
