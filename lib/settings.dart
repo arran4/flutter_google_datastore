@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/main.dart';
 import 'package:settings_ui/settings_ui.dart';
+import 'ui/confirmation_dialog.dart';
 
 class SettingsWidget extends StatefulWidget {
   const SettingsWidget({super.key});
@@ -20,12 +21,12 @@ class SettingsWidgetState extends State<SettingsWidget> {
   void initState() {
     super.initState();
     db.filepath().then(
-          (value) => {
-            setState(() {
-              fp = value;
-            }),
-          },
-        );
+      (value) => {
+        setState(() {
+          fp = value;
+        }),
+      },
+    );
   }
 
   @override
@@ -43,9 +44,18 @@ class SettingsWidgetState extends State<SettingsWidget> {
                 description: Text("SQLFile: $fp"),
                 onPressed: (BuildContext context) {
                   unawaited(
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const DeleteDatabaseScreen(),
+                    showDialog(
+                      context: context,
+                      builder: (context) => DestructiveConfirmationDialog(
+                        title: 'Delete Entire Database?',
+                        content: 'Are you sure you want to delete the entire database?',
+                        onCancel: () => Navigator.of(context).pop(),
+                        onConfirm: () async {
+                          await db.deleteEntireDatabase();
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                          }
+                        },
                       ),
                     ),
                   );
@@ -59,52 +69,4 @@ class SettingsWidgetState extends State<SettingsWidget> {
   }
 }
 
-class DeleteDatabaseScreen extends StatelessWidget {
-  const DeleteDatabaseScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Delete Entire database?')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Text("Delete Entire database ?"),
-            OverflowBar(
-              children: [
-                ElevatedButton(
-                  onPressed: () => back(context),
-                  child: const Text("Don't Delete"),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    await deleteProject(context);
-                  },
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.resolveWith(
-                      (states) => Colors.red,
-                    ),
-                  ),
-                  child: const Text("Delete"),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void back(BuildContext context) {
-    Navigator.of(context).pop();
-  }
-
-  Future<void> deleteProject(BuildContext context) async {
-    await db.deleteEntireDatabase();
-    if (context.mounted) {
-      Navigator.of(context).pop();
-    }
-  }
-}

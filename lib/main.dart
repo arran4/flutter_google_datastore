@@ -7,6 +7,7 @@ import 'package:flutter_google_datastore/settings.dart';
 import 'database.dart';
 import 'datastoremain.dart';
 import 'package:timezone/data/latest.dart' as tz;
+import 'ui/confirmation_dialog.dart';
 
 void main() {
   tz.initializeTimeZones();
@@ -204,9 +205,19 @@ class _ProjectPageState extends State<ProjectPage> {
   }
 
   Future<void> deletePressed(Project project) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => DeleteProjectScreen(project: project),
+    await showDialog(
+      context: context,
+      builder: (context) => DestructiveConfirmationDialog(
+        title: 'Delete Project?',
+        content: 'Delete ${project.projectId} @ ${project.endpointUrl} ?',
+        onCancel: () => Navigator.of(context).pop(),
+        onConfirm: () async {
+          await db.deleteProject(project.id);
+          await db.removeProject(project.id);
+          if (context.mounted) {
+            Navigator.of(context).pop();
+          }
+        },
       ),
     );
     if (!mounted) return;
@@ -313,8 +324,9 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
     if (authMode == gcloudCliAuthMode) {
       final availableProfiles = profiles;
       if (!availableProfiles.contains(googleCliProfile)) {
-        googleCliProfile =
-            availableProfiles.isNotEmpty ? availableProfiles.first : null;
+        googleCliProfile = availableProfiles.isNotEmpty
+            ? availableProfiles.first
+            : null;
       }
       googleCliWidget = DropdownButtonFormField<String>(
         initialValue: googleCliProfile,
@@ -437,55 +449,4 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
   }
 }
 
-class DeleteProjectScreen extends StatelessWidget {
-  final Project project;
 
-  const DeleteProjectScreen({super.key, required this.project});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Delete Project?')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text("Delete ${project.projectId} @ ${project.endpointUrl} ?"),
-            OverflowBar(
-              children: [
-                ElevatedButton(
-                  onPressed: () => back(context),
-                  child: const Text("Don't Delete"),
-                ),
-                ElevatedButton(
-                  onPressed: () => deleteProject(context),
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.resolveWith(
-                      (states) => Colors.red,
-                    ),
-                  ),
-                  child: const Text("Delete"),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void back(BuildContext context) {
-    // ignore: use_build_context_synchronously
-    Navigator.of(context).pop();
-  }
-
-  void deleteProject(BuildContext context) async {
-    await db.deleteProject(project.id);
-    await db.removeProject(project.id);
-    if (context.mounted) {
-      // ignore: use_build_context_synchronously
-      Navigator.of(context).pop();
-    }
-  }
-}

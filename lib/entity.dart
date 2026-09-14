@@ -9,6 +9,8 @@ import 'database.dart';
 import 'datastoremain.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:file_picker/file_picker.dart';
+import 'responsive_layout.dart';
+import 'ui/confirmation_dialog.dart';
 
 class ViewEntityPage extends StatefulWidget {
   final Project project;
@@ -95,69 +97,52 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
           if (!context.mounted) break;
           showDialog(
             context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: const Text("Delete Confirmation"),
-                content: const Text(
-                  "Are you sure you want to delete this item?",
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(); // Close the dialog
-                      if (context.mounted) {
-                        if (this.context.mounted) {
-                          Navigator.of(
-                            this.context,
-                          ).pop(); // Close the element window
-                        }
-                      }
-                    },
-                    child: const Text("Cancel"),
-                  ),
-                  TextButton(
-                    onPressed: () async {
-                      try {
-                        _loading++;
-                        await widget.actions!.deleteEntity(
-                          widget.index,
-                          widget.entityRow.entity,
-                        );
-                      } catch (e) {
-                        if (context.mounted) {
-                          await ScaffoldMessenger.of(context)
-                              .showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    "Failed to delete the record. $e",
-                                  ),
-                                  action: SnackBarAction(
-                                    label: "OK",
-                                    onPressed: () {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).hideCurrentSnackBar();
-                                    },
-                                  ),
-                                ),
-                              )
-                              .closed;
-                          return;
-                        }
-                      } finally {
-                        setState(() {
-                          setState(() {
-                            _loading--;
-                          });
-                        });
-                        if (context.mounted && Navigator.canPop(context)) {
-                          Navigator.of(context).pop(); // Close the dialog
-                        }
-                      }
-                    },
-                    child: const Text("Delete"),
-                  ),
-                ],
+            builder: (BuildContext dialogContext) {
+              return DestructiveConfirmationDialog(
+                title: "Delete Confirmation",
+                content: "Are you sure you want to delete this entity?",
+                onCancel: () {
+                  Navigator.of(dialogContext).pop(); // Close the dialog
+                },
+                onConfirm: () async {
+                  try {
+                    setState(() {
+                      _loading++;
+                    });
+                    await widget.actions!.deleteEntity(
+                      widget.index,
+                      widget.entityRow.entity,
+                    );
+                    if (dialogContext.mounted) {
+                      Navigator.of(dialogContext).pop(); // Close the dialog
+                    }
+                    if (mounted) {
+                      Navigator.of(context).pop(); // Close the page
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Failed to delete the record. $e"),
+                          action: SnackBarAction(
+                            label: "OK",
+                            onPressed: () {
+                              ScaffoldMessenger.of(
+                                context,
+                              ).hideCurrentSnackBar();
+                            },
+                          ),
+                        ),
+                      );
+                    }
+                  } finally {
+                    if (mounted) {
+                      setState(() {
+                        _loading--;
+                      });
+                    }
+                  }
+                },
               );
             },
           );
@@ -1387,22 +1372,24 @@ class _PropertyAddEditDeleteDialogState
         ];
       case "geoPoint":
         return [
-          TextField(
-            key: Key("${_selectedType}_lat"),
-            controller: _latitudeController,
-            decoration: const InputDecoration(labelText: 'Latitude'),
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-              signed: true,
+          ResponsiveTwoColumnRow(
+            left: TextField(
+              key: Key("${_selectedType}_lat"),
+              controller: _latitudeController,
+              decoration: const InputDecoration(labelText: 'Latitude'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
             ),
-          ),
-          TextField(
-            key: Key("${_selectedType}_long"),
-            controller: _longitudeController,
-            decoration: const InputDecoration(labelText: 'Longitude'),
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-              signed: true,
+            right: TextField(
+              key: Key("${_selectedType}_long"),
+              controller: _longitudeController,
+              decoration: const InputDecoration(labelText: 'Longitude'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
             ),
           ),
         ];
