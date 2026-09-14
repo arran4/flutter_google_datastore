@@ -116,75 +116,74 @@ class _KindContentsPageState extends State<KindContentsPage>
         controller: _pagingController,
         builder: (context, state, fetchNextPage) =>
             PagedListView<int, EntityRow>(
-              state: state,
-              fetchNextPage: fetchNextPage,
-              builderDelegate: PagedChildBuilderDelegate<EntityRow>(
-                itemBuilder:
-                    (BuildContext context, EntityRow item, int index) => Column(
-                      children: [
-                        ListTile(
-                          title: Text(item.key),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    if (expanded.contains(item.key)) {
-                                      expanded.remove(item.key);
-                                    } else {
-                                      expanded.add(item.key);
-                                    }
-                                  });
-                                },
-                                child: expanded.contains(item.key)
-                                    ? const Text("Collapse")
-                                    : const Text("Expand"),
+          state: state,
+          fetchNextPage: fetchNextPage,
+          builderDelegate: PagedChildBuilderDelegate<EntityRow>(
+            itemBuilder: (BuildContext context, EntityRow item, int index) =>
+                Column(
+              children: [
+                ListTile(
+                  title: Text(item.key),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            if (expanded.contains(item.key)) {
+                              expanded.remove(item.key);
+                            } else {
+                              expanded.add(item.key);
+                            }
+                          });
+                        },
+                        child: expanded.contains(item.key)
+                            ? const Text("Collapse")
+                            : const Text("Expand"),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (BuildContext context) => ViewEntityPage(
+                                widget.project,
+                                widget.dsApi,
+                                widget.kind,
+                                item,
+                                index,
+                                this,
                               ),
-                              TextButton(
-                                onPressed: () async {
-                                  await Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (BuildContext context) =>
-                                          ViewEntityPage(
-                                            widget.project,
-                                            widget.dsApi,
-                                            widget.kind,
-                                            item,
-                                            index,
-                                            this,
-                                          ),
-                                    ),
-                                  );
-                                },
-                                child: const Text("View"),
-                              ),
-                              PopupMenuButton<String>(
-                                onSelected: (String value) {
-                                  unawaited(
-                                    popupRowItemSelected(item, index, value),
-                                  );
-                                },
-                                itemBuilder: createRowPopupItems,
-                              ),
-                            ],
-                          ),
+                            ),
+                          );
+                        },
+                        child: const Text("View"),
+                      ),
+                      PopupMenuButton<String>(
+                        onSelected: (String value) {
+                          unawaited(
+                            popupRowItemSelected(item, index, value),
+                          );
+                        },
+                        itemBuilder: createRowPopupItems,
+                      ),
+                    ],
+                  ),
+                ),
+                ...(expanded.contains(item.key)
+                    ? [
+                        ViewEntity(
+                          widget.project,
+                          widget.dsApi,
+                          widget.kind,
+                          item,
+                          key: widget.key,
                         ),
-                        ...(expanded.contains(item.key)
-                            ? [
-                                ViewEntity(
-                                  widget.project,
-                                  widget.dsApi,
-                                  widget.kind,
-                                  item,
-                                  key: widget.key,
-                                ),
-                              ]
-                            : []),
-                      ],
-                    ),
-              ),
+                      ]
+                    : []),
+              ],
             ),
+          ),
+        ),
       ),
     );
   }

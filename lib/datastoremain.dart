@@ -47,13 +47,13 @@ class Kind {
 
   Kind(this.name, this.namespace);
   Kind.fromKey(dsv1.Key key)
-    : name = key.path?.firstOrNull?.name ?? "",
-      namespace = null;
+      : name = key.path?.firstOrNull?.name ?? "",
+        namespace = null;
   Kind.fromEntity(dsv1.Entity entity) : this.fromKey(entity.key!);
   Kind.fromKeyWithNamespace(dsv1.Key key, this.namespace)
-    : name = key.path?.firstOrNull?.name ?? "";
+      : name = key.path?.firstOrNull?.name ?? "";
   Kind.fromEntityWithNamespace(dsv1.Entity entity, Namespace? namespace)
-    : this.fromKeyWithNamespace(entity.key!, namespace);
+      : this.fromKeyWithNamespace(entity.key!, namespace);
 
   String get key =>
       "$name${(namespace == null || namespace!.name.isEmpty) ? "" : " IN ${namespace!.name}"}";

@@ -313,9 +313,8 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
     if (authMode == gcloudCliAuthMode) {
       final availableProfiles = profiles;
       if (!availableProfiles.contains(googleCliProfile)) {
-        googleCliProfile = availableProfiles.isNotEmpty
-            ? availableProfiles.first
-            : null;
+        googleCliProfile =
+            availableProfiles.isNotEmpty ? availableProfiles.first : null;
       }
       googleCliWidget = DropdownButtonFormField<String>(
         initialValue: googleCliProfile,
