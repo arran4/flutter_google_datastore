@@ -262,17 +262,21 @@ class _ViewEntityState extends State<ViewEntity> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Card(
+    return ResponsiveContainer(
+      maxWidth: ResponsiveBreakpoints.expanded + 400,
+      child: ResponsiveTwoColumnRow(
+        breakpoint: ResponsiveBreakpoints.expanded,
+        left: Card(
           margin: const EdgeInsets.all(16.0),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
                   "Details",
                   style: Theme.of(context).textTheme.headlineSmall,
+                  textAlign: TextAlign.center,
                 ),
                 Table(
                   defaultColumnWidth: const IntrinsicColumnWidth(flex: 1),
@@ -412,15 +416,14 @@ class _ViewEntityState extends State<ViewEntity> {
             ),
           ),
         ),
-        Card(
+        right: Card(
           margin: const EdgeInsets.all(16.0),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Stack(
               children: [
                 Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start, // Align children to the start
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(
                       child: Center(
@@ -429,7 +432,7 @@ class _ViewEntityState extends State<ViewEntity> {
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                       ),
-                    ), // Adjust the space according to your layout
+                    ),
                     PropertyViewWidget(
                       widget.entityRow,
                       properties: widget.entityRow.entity.properties ?? {},
@@ -488,7 +491,7 @@ class _ViewEntityState extends State<ViewEntity> {
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 
