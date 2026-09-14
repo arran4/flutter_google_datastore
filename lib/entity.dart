@@ -100,7 +100,7 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
             builder: (BuildContext dialogContext) {
               return DestructiveConfirmationDialog(
                 title: "Delete Confirmation",
-                content: "Are you sure you want to delete this entity?",
+                content: "Are you sure you want to delete the entity '${widget.entityRow.key}'?",
                 onCancel: () {
                   Navigator.of(dialogContext).pop(); // Close the dialog
                 },
@@ -160,9 +160,7 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(
-          "${widget.entityRow.key} In ${widget.kind.key} In Project: ${widget.project.key}",
-        ),
+        title: const Text("Entity Details"),
         actions: <Widget>[
           PopupMenuButton<String>(
             onSelected: popupRowItemSelected,
