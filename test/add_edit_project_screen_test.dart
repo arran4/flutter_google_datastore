@@ -75,7 +75,8 @@ void main() {
       home: AddEditProjectScreen(
         key: key ?? ValueKey(project?.id ?? 'new'),
         project: project,
-        profileSource: profileSource ??
+        profileSource:
+            profileSource ??
             (credentialDiscoverer == null ? const ['default'] : null),
         credentialDiscoverer: credentialDiscoverer,
       ),
@@ -597,8 +598,9 @@ void main() {
         await tester.tap(dropdownFinder);
         await tester.pumpAndSettle();
 
-        final itemFinder =
-            find.widgetWithText(DropdownMenuItem<String>, 'profile_beta').last;
+        final itemFinder = find
+            .widgetWithText(DropdownMenuItem<String>, 'profile_beta')
+            .last;
         await tester.tap(itemFinder);
         await tester.pumpAndSettle();
 

@@ -10,8 +10,6 @@ import 'datastoremain.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:file_picker/file_picker.dart';
 
-
-
 class ViewEntityPage extends StatefulWidget {
   final Project project;
   final dsv1.DatastoreApi dsApi;
