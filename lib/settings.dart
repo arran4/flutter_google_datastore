@@ -21,12 +21,12 @@ class SettingsWidgetState extends State<SettingsWidget> {
   void initState() {
     super.initState();
     db.filepath().then(
-      (value) => {
-        setState(() {
-          fp = value;
-        }),
-      },
-    );
+          (value) => {
+            setState(() {
+              fp = value;
+            }),
+          },
+        );
   }
 
   @override
@@ -48,7 +48,8 @@ class SettingsWidgetState extends State<SettingsWidget> {
                       context: context,
                       builder: (context) => DestructiveConfirmationDialog(
                         title: 'Delete Entire Database?',
-                        content: 'Are you sure you want to delete the entire database?',
+                        content:
+                            'Are you sure you want to delete the entire database?',
                         onCancel: () => Navigator.of(context).pop(),
                         onConfirm: () async {
                           await db.deleteEntireDatabase();
@@ -68,5 +69,3 @@ class SettingsWidgetState extends State<SettingsWidget> {
     );
   }
 }
-
-

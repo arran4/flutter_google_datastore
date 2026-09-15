@@ -100,7 +100,8 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
             builder: (BuildContext dialogContext) {
               return DestructiveConfirmationDialog(
                 title: "Delete Confirmation",
-                content: "Are you sure you want to delete the entity '${widget.entityRow.key}'?",
+                content:
+                    "Are you sure you want to delete the entity '${widget.entityRow.key}'?",
                 onCancel: () {
                   Navigator.of(dialogContext).pop(); // Close the dialog
                 },
