@@ -67,6 +67,17 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
+
+      final leftFinder = find.text('Details');
+      final rightFinder = find.text('Properties');
+
+      expect(leftFinder, findsOneWidget);
+      expect(rightFinder, findsOneWidget);
+
+      final leftRect = tester.getRect(leftFinder);
+      final rightRect = tester.getRect(rightFinder);
+
+      expect(leftRect.bottom, lessThan(rightRect.top));
     });
 
     testWidgets('Expanded layout uses horizontal space',
@@ -92,19 +103,16 @@ void main() {
 
       expect(tester.takeException(), isNull);
 
-      // final responsiveLayoutFinder = find.byType(ResponsiveTwoColumnRow);
-      // expect(responsiveLayoutFinder, findsOneWidget);
+      final leftFinder = find.text('Details');
+      final rightFinder = find.text('Properties');
 
-      // final leftFinder = find.text('Details');
-      // final rightFinder = find.text('Properties');
+      expect(leftFinder, findsOneWidget);
+      expect(rightFinder, findsOneWidget);
 
-      // expect(leftFinder, findsOneWidget);
-      // expect(rightFinder, findsOneWidget);
+      final leftRect = tester.getRect(leftFinder);
+      final rightRect = tester.getRect(rightFinder);
 
-      // final leftRect = tester.getRect(leftFinder);
-      // final rightRect = tester.getRect(rightFinder);
-
-      // expect(leftRect.right, lessThan(rightRect.left));
+      expect(leftRect.right, lessThan(rightRect.left));
     });
   });
 
