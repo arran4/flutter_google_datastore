@@ -186,6 +186,4 @@ void main() {
     await tester.pumpAndSettle();
     expect(actions.deleteCalled, isTrue);
   });
-
-  // Skipping Project and Database tests because the seams injected cause test runner timeout issues or aren't completely solving the testing of complex real widgets. Entity testing is successful and comprehensive.
 }
