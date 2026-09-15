@@ -52,9 +52,8 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
         }
       } else if (_selectedView == 2) {
         // Hex
-        _hexController.text = bytes
-            .map((b) => b.toRadixString(16).padLeft(2, '0'))
-            .join(' ');
+        _hexController.text =
+            bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
       }
     });
   }
@@ -99,64 +98,33 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text("Blob Content"),
-      content: SizedBox(
-        width: 600,
-        height: 400,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 800, maxHeight: 600),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ToggleButtons(
-                  isSelected: [
-                    _selectedView == 0,
-                    _selectedView == 1,
-                    _selectedView == 2,
-                  ],
-                  onPressed: _isEditing
-                      ? null
-                      : (int index) {
-                          setState(() {
-                            _selectedView = index;
-                          });
-                        },
-                  children: const [
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Text("Text"),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Text("Image"),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Text("Hex"),
-                    ),
-                  ],
-                ),
+            SegmentedButton<int>(
+              segments: const [
+                ButtonSegment<int>(value: 0, label: Text('Text')),
+                ButtonSegment<int>(value: 1, label: Text('Image')),
+                ButtonSegment<int>(value: 2, label: Text('Hex')),
               ],
+              selected: <int>{_selectedView},
+              onSelectionChanged: _isEditing
+                  ? null
+                  : (Set<int> newSelection) {
+                      setState(() {
+                        _selectedView = newSelection.first;
+                      });
+                    },
             ),
             const SizedBox(height: 16),
-            Expanded(child: _buildContent()),
+            Flexible(child: _buildContent()),
           ],
         ),
       ),
       actions: [
-        if (!_isEditing)
-          TextButton(
-            onPressed: (_selectedView == 0 || _selectedView == 2)
-                ? _enterEditMode
-                : null,
-            child: const Text("Edit"),
-          ),
-        if (!_isEditing)
-          TextButton(onPressed: _downloadFile, child: const Text("Download")),
-        TextButton(
-          onPressed: _saveChanges,
-          child: Text(_isEditing ? "Save" : "Close"),
-        ),
-        if (_isEditing)
+        if (_isEditing) ...[
           TextButton(
             onPressed: () {
               setState(() {
@@ -165,6 +133,25 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
             },
             child: const Text("Cancel"),
           ),
+          FilledButton(
+            onPressed: _saveChanges,
+            child: const Text("Save"),
+          ),
+        ] else ...[
+          TextButton(
+            onPressed: _downloadFile,
+            child: const Text("Download"),
+          ),
+          if (_selectedView == 0 || _selectedView == 2)
+            TextButton(
+              onPressed: _enterEditMode,
+              child: const Text("Edit"),
+            ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("Close"),
+          ),
+        ],
       ],
     );
   }
