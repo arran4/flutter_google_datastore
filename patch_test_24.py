@@ -1,6 +1,16 @@
-import 'package:flutter/material.dart';
+import re
+
+with open('test/destructive_actions_test.dart', 'r') as f:
+    content = f.read()
+
+# Replace the direct dialog instantiation with the actual flows. We already wrote this in test 16/17 but it got wiped out. Let's write the three flows.
+test_content = r'''import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_google_datastore/ui/confirmation_dialog.dart';
+import 'package:flutter_google_datastore/main.dart';
+import 'package:flutter_google_datastore/settings.dart';
+import 'package:flutter_google_datastore/entity.dart';
+import 'package:flutter_google_datastore/database.dart';
 import 'package:flutter_google_datastore/kind.dart';
 import 'package:googleapis/datastore/v1.dart' as dsv1;
 import 'widget_test_utils.dart';
@@ -10,17 +20,14 @@ class MockEntityActions extends EntityActions {
   bool deleteCalled = false;
 
   @override
-  Future<bool> deleteEntity(int index, dsv1.Entity entity) async {
+  Future<void> deleteEntity(int index, dsv1.Entity entity) async {
     deleteCalled = true;
-    return true;
   }
 
   @override
   Future<dsv1.Entity?> refreshEntity(dsv1.Key key) async => null;
   @override
   Future<EntityRow?> replaceEntity(int index, dsv1.Entity newEntity) async => null;
-  @override
-  Future<bool> updateEntity(dsv1.Key key, Map<String, dsv1.Value> props) async => true;
 }
 
 class MockClient extends http.BaseClient {
@@ -100,54 +107,82 @@ void main() {
     });
 
     testWidgets('Entity deletion confirmation path', (WidgetTester tester) async {
-      bool deleteCalled = false;
+      setDisplaySize(tester, const Size(400, 800));
 
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => DestructiveConfirmationDialog(
-                    title: 'Delete entity',
-                    content: "Are you sure you want to delete the entity '123 IN TestKind'?",
-                    onConfirm: () {
-                      deleteCalled = true;
-                      Navigator.of(context).pop();
-                    },
-                    onCancel: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                );
-              },
-              child: const Text('Show Dialog'),
-            ),
+      final project = Project(
+        id: 1,
+        projectId: 'test-project',
+        endpointUrl: 'http://localhost',
+        created: DateTime.now(),
+        updated: DateTime.now(),
+        authMode: 'none',
+        googleCliProfile: '',
+        databaseId: '',
+      );
+      final dsApi = dsv1.DatastoreApi(MockClient());
+      final kind = Kind('TestKind', null);
+
+      final entityRow = EntityRow(
+        entity: dsv1.Entity(
+          key: dsv1.Key(
+            path: [dsv1.PathElement(kind: 'TestKind', id: '123')],
+            partitionId: dsv1.PartitionId(databaseId: 'test-db')
+          ),
+          properties: {}
+        ),
+      );
+
+      final mockActions = MockEntityActions();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ViewEntityPage(
+            project,
+            dsApi,
+            kind,
+            entityRow,
+            0,
+            mockActions,
           ),
         ),
-      ));
+      );
 
-      // Open the dialog
-      await tester.tap(find.text('Show Dialog'));
       await tester.pumpAndSettle();
 
-      // Check content
-      expect(find.textContaining("Are you sure you want to delete the entity"), findsOneWidget);
+      // Open PopupMenu
+      await tester.tap(find.byType(PopupMenuButton<String>));
+      await tester.pumpAndSettle();
 
-      // Tap Cancel
+      // Tap Delete
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+
+      // Expect dialog
+      expect(find.byType(DestructiveConfirmationDialog), findsOneWidget);
+      expect(find.text("Are you sure you want to delete the entity '123 IN TestKind'?"), findsOneWidget);
+
+      // Cancel
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
-      expect(deleteCalled, isFalse);
 
-      // Re-open
-      await tester.tap(find.text('Show Dialog'));
+      expect(mockActions.deleteCalled, isFalse);
+
+      // Open again
+      await tester.tap(find.byType(PopupMenuButton<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
       await tester.pumpAndSettle();
 
       // Confirm
-      await tester.tap(find.text('Delete').first);
+      await tester.tap(find.text('Delete'));
       await tester.pumpAndSettle();
-      expect(deleteCalled, isTrue);
+
+      expect(mockActions.deleteCalled, isTrue);
+      // Dialog closed
+      expect(find.byType(DestructiveConfirmationDialog), findsNothing);
     });
   });
 }
+'''
+with open('test/destructive_actions_test.dart', 'w') as f:
+    f.write(test_content)
