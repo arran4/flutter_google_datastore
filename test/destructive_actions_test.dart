@@ -1,3 +1,5 @@
+import 'package:flutter_google_datastore/settings.dart';
+import 'package:flutter_google_datastore/main.dart';
 import 'package:flutter_google_datastore/datastoremain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,16 +18,11 @@ class FakeEntityActions implements EntityActions {
   Future<dsv1.Entity?> refreshEntity(dsv1.Key key) async => null;
 
   @override
-  Future<EntityRow?> replaceEntity(
-    int index,
-    dsv1.Entity newEntity,
-  ) async => null;
+  Future<EntityRow?> replaceEntity(int index, dsv1.Entity newEntity) async =>
+      null;
 
   @override
-  Future<bool> deleteEntity(
-    int index,
-    dsv1.Entity entity,
-  ) async {
+  Future<bool> deleteEntity(int index, dsv1.Entity entity) async {
     deleteCalled = true;
     return true;
   }
@@ -46,73 +43,74 @@ class NoopHttpClient extends http.BaseClient {
 
 void main() {
   testWidgets(
-      'DestructiveConfirmationDialog shows title, content, and styled button',
-      (WidgetTester tester) async {
-    setDisplaySize(tester, const Size(400, 800));
+    'DestructiveConfirmationDialog shows title, content, and styled button',
+    (WidgetTester tester) async {
+      setDisplaySize(tester, const Size(400, 800));
 
-    bool confirmPressed = false;
-    bool cancelPressed = false;
+      bool confirmPressed = false;
+      bool cancelPressed = false;
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          ),
+          home: Builder(
+            builder: (context) {
+              return ElevatedButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => DestructiveConfirmationDialog(
+                      title: 'Delete Data?',
+                      content: 'This will delete the selected data.',
+                      onCancel: () {
+                        cancelPressed = true;
+                        Navigator.of(context).pop();
+                      },
+                      onConfirm: () {
+                        confirmPressed = true;
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  );
+                },
+                child: const Text('Open'),
+              );
+            },
+          ),
         ),
-        home: Builder(
-          builder: (context) {
-            return ElevatedButton(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => DestructiveConfirmationDialog(
-                    title: 'Delete Data?',
-                    content: 'This will delete the selected data.',
-                    onCancel: () {
-                      cancelPressed = true;
-                      Navigator.of(context).pop();
-                    },
-                    onConfirm: () {
-                      confirmPressed = true;
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                );
-              },
-              child: const Text('Open'),
-            );
-          },
-        ),
-      ),
-    );
+      );
 
-    await tester.tap(find.text('Open'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Delete Data?'), findsOneWidget);
-    expect(find.text('This will delete the selected data.'), findsOneWidget);
+      expect(find.text('Delete Data?'), findsOneWidget);
+      expect(find.text('This will delete the selected data.'), findsOneWidget);
 
-    final cancelBtn = find.text('Cancel');
-    final deleteBtn = find.text('Delete');
+      final cancelBtn = find.text('Cancel');
+      final deleteBtn = find.text('Delete');
 
-    expect(cancelBtn, findsOneWidget);
-    expect(deleteBtn, findsOneWidget);
+      expect(cancelBtn, findsOneWidget);
+      expect(deleteBtn, findsOneWidget);
 
-    // Test Cancel
-    await tester.tap(cancelBtn);
-    await tester.pumpAndSettle();
+      // Test Cancel
+      await tester.tap(cancelBtn);
+      await tester.pumpAndSettle();
 
-    expect(cancelPressed, isTrue);
-    expect(confirmPressed, isFalse);
+      expect(cancelPressed, isTrue);
+      expect(confirmPressed, isFalse);
 
-    // Reopen and test Confirm
-    await tester.tap(find.text('Open'));
-    await tester.pumpAndSettle();
+      // Reopen and test Confirm
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Delete'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
 
-    expect(confirmPressed, isTrue);
-  });
+      expect(confirmPressed, isTrue);
+    },
+  );
 
   testWidgets('Entity deletion confirmation path', (WidgetTester tester) async {
     setDisplaySize(tester, const Size(400, 800));
@@ -145,18 +143,13 @@ void main() {
     final dsApi = dsv1.DatastoreApi(NoopHttpClient());
     final kind = Kind('TestKind', null);
 
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: ViewEntityPage(
-          project,
-          dsApi,
-          kind,
-          row,
-          0,
-          actions,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ViewEntityPage(project, dsApi, kind, row, 0, actions),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
 
     final menu = find.descendant(
@@ -185,5 +178,125 @@ void main() {
     await tester.tap(find.text('Delete').first);
     await tester.pumpAndSettle();
     expect(actions.deleteCalled, isTrue);
+  });
+
+  testWidgets('Project deletion confirmation path via ProjectPage', (
+    WidgetTester tester,
+  ) async {
+    setDisplaySize(tester, const Size(390, 800)); // Compact narrow viewport
+
+    int deleteCount = 0;
+
+    final mockProject = Project(
+      id: 1,
+      created: DateTime(2026),
+      updated: DateTime(2026),
+      endpointUrl: 'http://localhost',
+      projectId: 'test-project-deletion',
+      authMode: 'none',
+      googleCliProfile: null,
+      databaseId: '',
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProjectPage(
+          projectLoadCallback: () async => [mockProject],
+          projectDeleteCallback: (Project project) async {
+            expect(project.projectId, 'test-project-deletion');
+            deleteCount++;
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Project list rendered
+    expect(find.text('test-project-deletion'), findsOneWidget);
+
+    // Open project row popup
+    final menu = find
+        .descendant(
+          of: find.byType(ListTile),
+          matching: find.byType(PopupMenuButton<String>),
+        )
+        .first;
+    await tester.tap(menu);
+    await tester.pumpAndSettle();
+
+    // Select delete
+    await tester.tap(find.widgetWithText(PopupMenuItem<String>, 'Delete'));
+    await tester.pumpAndSettle();
+
+    // Verify dialog appears
+    expect(find.byType(DestructiveConfirmationDialog), findsOneWidget);
+    expect(
+      find.text('Delete test-project-deletion @ http://localhost ?'),
+      findsOneWidget,
+    );
+
+    // Cancel
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(deleteCount, 0);
+
+    // Reopen
+    await tester.tap(menu);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(PopupMenuItem<String>, 'Delete'));
+    await tester.pumpAndSettle();
+
+    // Confirm
+    await tester.tap(find.text('Delete').first);
+    await tester.pumpAndSettle();
+
+    // Verify exact one deletion
+    expect(deleteCount, 1);
+  });
+
+  testWidgets('Database deletion confirmation path via SettingsWidget', (
+    WidgetTester tester,
+  ) async {
+    setDisplaySize(tester, const Size(390, 800)); // Compact narrow viewport
+
+    int deleteCount = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SettingsWidget(
+          filepathCallback: () async => 'mock/filepath.db',
+          databaseDeleteCallback: () async {
+            deleteCount++;
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Filepath resolves and is shown
+    expect(find.textContaining('SQLFile: mock/filepath.db'), findsOneWidget);
+
+    // Activate Delete Database
+    await tester.tap(find.text('Delete Database'));
+    await tester.pumpAndSettle();
+
+    // Verify dialog appears
+    expect(find.byType(DestructiveConfirmationDialog), findsOneWidget);
+
+    // Cancel
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(deleteCount, 0);
+
+    // Reopen
+    await tester.tap(find.text('Delete Database'));
+    await tester.pumpAndSettle();
+
+    // Confirm
+    await tester.tap(find.text('Delete').first);
+    await tester.pumpAndSettle();
+
+    // Verify exactly one deletion
+    expect(deleteCount, 1);
   });
 }

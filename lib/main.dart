@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/settings.dart';
+import 'package:flutter_google_datastore/ui/confirmation_dialog.dart';
 import 'database.dart';
 import 'datastoremain.dart';
 import 'package:timezone/data/latest.dart' as tz;
@@ -26,13 +27,26 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Datastore explorer',
       theme: ThemeData(useMaterial3: true),
-      home: const ProjectPage(),
+      home: ProjectPage(),
     );
   }
 }
 
 class ProjectPage extends StatefulWidget {
-  const ProjectPage({super.key});
+  final Future<List<Project>> Function() projectLoadCallback;
+  final Future<void> Function(Project project) projectDeleteCallback;
+
+  ProjectPage({
+    super.key,
+    Future<List<Project>> Function()? projectLoadCallback,
+    Future<void> Function(Project project)? projectDeleteCallback,
+  }) : projectLoadCallback = projectLoadCallback ?? (() => db.getProjects),
+       projectDeleteCallback =
+           projectDeleteCallback ??
+           ((Project project) async {
+             await db.deleteProject(project.id);
+             await db.removeProject(project.id);
+           });
 
   @override
   State<ProjectPage> createState() => _ProjectPageState();
@@ -48,7 +62,7 @@ class _ProjectPageState extends State<ProjectPage> {
   }
 
   Future<List<Project>> _loadEntries() async {
-    return db.getProjects;
+    return widget.projectLoadCallback();
   }
 
   Future<void> popupItemSelected(String value) async {
@@ -66,7 +80,7 @@ class _ProjectPageState extends State<ProjectPage> {
           context,
           MaterialPageRoute<bool>(
             builder: (BuildContext context) {
-              return const SettingsWidget();
+              return SettingsWidget();
             },
           ),
         );
@@ -204,9 +218,20 @@ class _ProjectPageState extends State<ProjectPage> {
   }
 
   Future<void> deletePressed(Project project) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => DeleteProjectScreen(project: project),
+    await showDialog(
+      context: context,
+      builder: (context) => DestructiveConfirmationDialog(
+        title: 'Delete Project?',
+        content: 'Delete ${project.projectId} @ ${project.endpointUrl} ?',
+        onCancel: () {
+          Navigator.of(context).pop();
+        },
+        onConfirm: () async {
+          await widget.projectDeleteCallback(project);
+          if (context.mounted) {
+            Navigator.of(context).pop();
+          }
+        },
       ),
     );
     if (!mounted) return;
@@ -435,58 +460,5 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
         ),
       ),
     );
-  }
-}
-
-class DeleteProjectScreen extends StatelessWidget {
-  final Project project;
-
-  const DeleteProjectScreen({super.key, required this.project});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Delete Project?')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text("Delete ${project.projectId} @ ${project.endpointUrl} ?"),
-            OverflowBar(
-              children: [
-                ElevatedButton(
-                  onPressed: () => back(context),
-                  child: const Text("Don't Delete"),
-                ),
-                ElevatedButton(
-                  onPressed: () => deleteProject(context),
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.resolveWith(
-                      (states) => Colors.red,
-                    ),
-                  ),
-                  child: const Text("Delete"),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void back(BuildContext context) {
-    // ignore: use_build_context_synchronously
-    Navigator.of(context).pop();
-  }
-
-  void deleteProject(BuildContext context) async {
-    await db.deleteProject(project.id);
-    await db.removeProject(project.id);
-    if (context.mounted) {
-      // ignore: use_build_context_synchronously
-      Navigator.of(context).pop();
-    }
   }
 }
