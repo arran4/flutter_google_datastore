@@ -3,11 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_google_datastore/entity.dart';
 import 'package:flutter_google_datastore/kind.dart';
 import 'package:googleapis/datastore/v1.dart' as dsv1;
+import 'widget_test_utils.dart';
 
 void main() {
-  testWidgets('PropertyAddEditDeleteDialog allows editing GeoPoint', (
+  testWidgets(
+      'PropertyAddEditDeleteDialog allows editing GeoPoint without overflow', (
     WidgetTester tester,
   ) async {
+    setDisplaySize(tester, const Size(390, 844));
+
     final entityRow = EntityRow(
       entity: dsv1.Entity(
         key: dsv1.Key(
@@ -46,40 +50,35 @@ void main() {
     await tester.pumpAndSettle();
 
     // Select 'geoPoint' from dropdown
-    // The dropdown shows 'string' by default.
     await tester.tap(find.text('string'));
     await tester.pumpAndSettle();
 
-    // Find 'geoPoint' in the dropdown menu
     await tester.tap(find.text('geoPoint').last);
     await tester.pumpAndSettle();
 
-    // Verify Latitude and Longitude fields are present
-    // These assertions should fail initially
-    expect(find.widgetWithText(TextField, 'Latitude'), findsOneWidget);
-    expect(find.widgetWithText(TextField, 'Longitude'), findsOneWidget);
+    // Find by Key
+    final latFinder = find.byKey(const Key('geoPoint_lat'));
+    final longFinder = find.byKey(const Key('geoPoint_long'));
 
-    // Enter values (using negative values to test signed input support)
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Latitude'),
-      '-37.422',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Longitude'),
-      '-122.084',
-    );
+    expect(latFinder, findsOneWidget);
+    expect(longFinder, findsOneWidget);
 
-    // Also set a name for the property
+    // Enter values
+    await tester.enterText(latFinder, '-37.422');
+    await tester.enterText(longFinder, '-122.084');
+
     await tester.enterText(
       find.widgetWithText(TextField, 'Property Name'),
       'myLocation',
     );
 
+    // Assert no overflow
+    expect(tester.takeException(), isNull);
+
     // Save
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    // Verify result
     expect(resultValue, isNotNull);
     expect(resultValue!.geoPointValue, isNotNull);
     expect(resultValue!.geoPointValue!.latitude, -37.422);

@@ -9,6 +9,8 @@ import 'database.dart';
 import 'datastoremain.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:file_picker/file_picker.dart';
+import 'responsive_layout.dart';
+import 'ui/confirmation_dialog.dart';
 
 class ViewEntityPage extends StatefulWidget {
   final Project project;
@@ -95,69 +97,53 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
           if (!context.mounted) break;
           showDialog(
             context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: const Text("Delete Confirmation"),
-                content: const Text(
-                  "Are you sure you want to delete this item?",
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(); // Close the dialog
-                      if (context.mounted) {
-                        if (this.context.mounted) {
-                          Navigator.of(
-                            this.context,
-                          ).pop(); // Close the element window
-                        }
-                      }
-                    },
-                    child: const Text("Cancel"),
-                  ),
-                  TextButton(
-                    onPressed: () async {
-                      try {
-                        _loading++;
-                        await widget.actions!.deleteEntity(
-                          widget.index,
-                          widget.entityRow.entity,
-                        );
-                      } catch (e) {
-                        if (context.mounted) {
-                          await ScaffoldMessenger.of(context)
-                              .showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    "Failed to delete the record. $e",
-                                  ),
-                                  action: SnackBarAction(
-                                    label: "OK",
-                                    onPressed: () {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).hideCurrentSnackBar();
-                                    },
-                                  ),
-                                ),
-                              )
-                              .closed;
-                          return;
-                        }
-                      } finally {
-                        setState(() {
-                          setState(() {
-                            _loading--;
-                          });
-                        });
-                        if (context.mounted && Navigator.canPop(context)) {
-                          Navigator.of(context).pop(); // Close the dialog
-                        }
-                      }
-                    },
-                    child: const Text("Delete"),
-                  ),
-                ],
+            builder: (BuildContext dialogContext) {
+              return DestructiveConfirmationDialog(
+                title: "Delete Confirmation",
+                content:
+                    "Are you sure you want to delete the entity '${widget.entityRow.key}'?",
+                onCancel: () {
+                  Navigator.of(dialogContext).pop(); // Close the dialog
+                },
+                onConfirm: () async {
+                  try {
+                    setState(() {
+                      _loading++;
+                    });
+                    await widget.actions!.deleteEntity(
+                      widget.index,
+                      widget.entityRow.entity,
+                    );
+                    if (dialogContext.mounted) {
+                      Navigator.of(dialogContext).pop(); // Close the dialog
+                    }
+                    if (mounted) {
+                      Navigator.of(context).pop(); // Close the page
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Failed to delete the record. $e"),
+                          action: SnackBarAction(
+                            label: "OK",
+                            onPressed: () {
+                              ScaffoldMessenger.of(
+                                context,
+                              ).hideCurrentSnackBar();
+                            },
+                          ),
+                        ),
+                      );
+                    }
+                  } finally {
+                    if (mounted) {
+                      setState(() {
+                        _loading--;
+                      });
+                    }
+                  }
+                },
               );
             },
           );
@@ -175,9 +161,7 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(
-          "${widget.entityRow.key} In ${widget.kind.key} In Project: ${widget.project.key}",
-        ),
+        title: const Text("Entity Details"),
         actions: <Widget>[
           PopupMenuButton<String>(
             onSelected: popupRowItemSelected,
@@ -277,17 +261,21 @@ class _ViewEntityState extends State<ViewEntity> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Card(
+    return ResponsiveContainer(
+      maxWidth: ResponsiveBreakpoints.expanded + 400,
+      child: ResponsiveTwoColumnRow(
+        breakpoint: ResponsiveBreakpoints.expanded,
+        left: Card(
           margin: const EdgeInsets.all(16.0),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
                   "Details",
                   style: Theme.of(context).textTheme.headlineSmall,
+                  textAlign: TextAlign.center,
                 ),
                 Table(
                   defaultColumnWidth: const IntrinsicColumnWidth(flex: 1),
@@ -393,11 +381,7 @@ class _ViewEntityState extends State<ViewEntity> {
                           child: Padding(
                             padding: const EdgeInsets.all(4.0),
                             child: SelectableText(
-                              widget
-                                      .entityRow
-                                      .entity
-                                      .key
-                                      ?.partitionId
+                              widget.entityRow.entity.key?.partitionId
                                       ?.databaseId ??
                                   "",
                             ),
@@ -431,15 +415,14 @@ class _ViewEntityState extends State<ViewEntity> {
             ),
           ),
         ),
-        Card(
+        right: Card(
           margin: const EdgeInsets.all(16.0),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Stack(
               children: [
                 Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start, // Align children to the start
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(
                       child: Center(
@@ -448,7 +431,7 @@ class _ViewEntityState extends State<ViewEntity> {
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                       ),
-                    ), // Adjust the space according to your layout
+                    ),
                     PropertyViewWidget(
                       widget.entityRow,
                       properties: widget.entityRow.entity.properties ?? {},
@@ -471,15 +454,15 @@ class _ViewEntityState extends State<ViewEntity> {
                   child: PopupMenuButton<String>(
                     itemBuilder: (BuildContext context) =>
                         <PopupMenuEntry<String>>[
-                          const PopupMenuItem<String>(
-                            value: 'propsDownJson',
-                            child: Text('Download properties as Json'),
-                          ),
-                          const PopupMenuItem<String>(
-                            value: 'propsReplaceJson',
-                            child: Text('Replace properties with Json'),
-                          ),
-                        ],
+                      const PopupMenuItem<String>(
+                        value: 'propsDownJson',
+                        child: Text('Download properties as Json'),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'propsReplaceJson',
+                        child: Text('Replace properties with Json'),
+                      ),
+                    ],
                     onSelected: (String value) async {
                       // Handle the selected action
                       switch (value) {
@@ -507,7 +490,7 @@ class _ViewEntityState extends State<ViewEntity> {
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 
@@ -626,8 +609,8 @@ class _PropertyViewWidgetState extends State<PropertyViewWidget> {
       },
       children: [
         ...(newProperties ?? widget.properties).entries.expand(
-          expandProperties,
-        ),
+              expandProperties,
+            ),
         TableRow(
           children: [
             const SizedBox(),
@@ -1117,26 +1100,25 @@ class _PropertyAddEditDeleteDialogState
             ),
             DropdownButton<String>(
               value: _selectedType,
-              items:
-                  [
-                    "blob",
-                    "array",
-                    "boolean",
-                    "double",
-                    "entity",
-                    "geoPoint",
-                    "integer",
-                    "key",
-                    "me",
-                    "null",
-                    "string",
-                    "timestamp",
-                  ].map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
+              items: [
+                "blob",
+                "array",
+                "boolean",
+                "double",
+                "entity",
+                "geoPoint",
+                "integer",
+                "key",
+                "me",
+                "null",
+                "string",
+                "timestamp",
+              ].map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
               onChanged: (String? value) {
                 setState(() {
                   _selectedType = value ?? "string";
@@ -1248,82 +1230,84 @@ class _PropertyAddEditDeleteDialogState
       case "array":
         return [
           ..._arrayValues.asMap().entries.map(
-            (MapEntry<int, dsv1.Value> arrayEntry) => ValueAddEditRow(
-              value: arrayEntry.value,
-              onEdit: () async {
-                dynamic result = await showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return PropertyAddEditDeleteDialog(
-                      MapEntry<String, dsv1.Value>(
-                        "Replace Element of ${widget.propertyEntry?.key}",
-                        arrayEntry.value,
-                      ),
-                      widget.entityRow,
-                      readonlyName: true,
-                      type: "Element",
+                (MapEntry<int, dsv1.Value> arrayEntry) => ValueAddEditRow(
+                  value: arrayEntry.value,
+                  onEdit: () async {
+                    dynamic result = await showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return PropertyAddEditDeleteDialog(
+                          MapEntry<String, dsv1.Value>(
+                            "Replace Element of ${widget.propertyEntry?.key}",
+                            arrayEntry.value,
+                          ),
+                          widget.entityRow,
+                          readonlyName: true,
+                          type: "Element",
+                        );
+                      },
                     );
+                    if (result != null &&
+                        result is MapEntry<String, dsv1.Value?>) {
+                      setState(() {
+                        if (result.value != null) {
+                          _arrayValues = _arrayValues
+                              .asMap()
+                              .entries
+                              .map(
+                                (e) => e.key == arrayEntry.key
+                                    ? result.value!
+                                    : e.value,
+                              )
+                              .toList();
+                        } else {
+                          _arrayValues.removeAt(arrayEntry.key);
+                        }
+                      });
+                    }
                   },
-                );
-                if (result != null && result is MapEntry<String, dsv1.Value?>) {
-                  setState(() {
-                    if (result.value != null) {
+                  onCopy: () async {
+                    dynamic result = await showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return PropertyAddEditDeleteDialog(
+                          MapEntry<String, dsv1.Value>(
+                            "Duplicate Element of ${widget.propertyEntry?.key}",
+                            arrayEntry.value,
+                          ),
+                          widget.entityRow,
+                          readonlyName: true,
+                          type: "Element",
+                        );
+                      },
+                    );
+                    if (result != null &&
+                        result is MapEntry<String, dsv1.Value?> &&
+                        result.value != null) {
+                      if (!mounted) return;
+                      setState(() {
+                        _arrayValues.add(result.value!);
+                      });
+                    }
+                  },
+                  onUpdate: (dsv1.Value newValue) {
+                    setState(() {
                       _arrayValues = _arrayValues
                           .asMap()
                           .entries
-                          .map(
-                            (e) => e.key == arrayEntry.key
-                                ? result.value!
-                                : e.value,
-                          )
+                          .map((e) =>
+                              e.key == arrayEntry.key ? newValue : e.value)
                           .toList();
-                    } else {
-                      _arrayValues.removeAt(arrayEntry.key);
-                    }
-                  });
-                }
-              },
-              onCopy: () async {
-                dynamic result = await showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return PropertyAddEditDeleteDialog(
-                      MapEntry<String, dsv1.Value>(
-                        "Duplicate Element of ${widget.propertyEntry?.key}",
-                        arrayEntry.value,
-                      ),
-                      widget.entityRow,
-                      readonlyName: true,
-                      type: "Element",
-                    );
+                    });
                   },
-                );
-                if (result != null &&
-                    result is MapEntry<String, dsv1.Value?> &&
-                    result.value != null) {
-                  if (!mounted) return;
-                  setState(() {
-                    _arrayValues.add(result.value!);
-                  });
-                }
-              },
-              onUpdate: (dsv1.Value newValue) {
-                setState(() {
-                  _arrayValues = _arrayValues
-                      .asMap()
-                      .entries
-                      .map((e) => e.key == arrayEntry.key ? newValue : e.value)
-                      .toList();
-                });
-              },
-              onRemove: () {
-                setState(() {
-                  _arrayValues.removeAt(arrayEntry.key);
-                });
-              },
-              key: ValueKey(arrayEntry.key),
-            ),
-          ),
+                  onRemove: () {
+                    setState(() {
+                      _arrayValues.removeAt(arrayEntry.key);
+                    });
+                  },
+                  key: ValueKey(arrayEntry.key),
+                ),
+              ),
           TextButton(
             onPressed: () async {
               dynamic result = await showDialog(
@@ -1390,22 +1374,24 @@ class _PropertyAddEditDeleteDialogState
         ];
       case "geoPoint":
         return [
-          TextField(
-            key: Key("${_selectedType}_lat"),
-            controller: _latitudeController,
-            decoration: const InputDecoration(labelText: 'Latitude'),
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-              signed: true,
+          ResponsiveTwoColumnRow(
+            left: TextField(
+              key: Key("${_selectedType}_lat"),
+              controller: _latitudeController,
+              decoration: const InputDecoration(labelText: 'Latitude'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
             ),
-          ),
-          TextField(
-            key: Key("${_selectedType}_long"),
-            controller: _longitudeController,
-            decoration: const InputDecoration(labelText: 'Longitude'),
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-              signed: true,
+            right: TextField(
+              key: Key("${_selectedType}_long"),
+              controller: _longitudeController,
+              decoration: const InputDecoration(labelText: 'Longitude'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
             ),
           ),
         ];
@@ -1428,17 +1414,17 @@ class _PropertyAddEditDeleteDialogState
             ),
           ),
           ...(_keyPath ?? []).asMap().entries.map(
-            (entry) => KeyPatElementTextInputWidget(
-              each: entry.value,
-              index: entry.key,
-              key: ValueKey(entry.value),
-              onRemove: () {
-                setState(() {
-                  _keyPath!.removeAt(entry.key);
-                });
-              },
-            ),
-          ),
+                (entry) => KeyPatElementTextInputWidget(
+                  each: entry.value,
+                  index: entry.key,
+                  key: ValueKey(entry.value),
+                  onRemove: () {
+                    setState(() {
+                      _keyPath!.removeAt(entry.key);
+                    });
+                  },
+                ),
+              ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
             child: ElevatedButton.icon(
@@ -1490,63 +1476,61 @@ class _PropertyAddEditDeleteDialogState
                   String option,
                 ) {
                   return option.toLowerCase().contains(
-                    textEditingValue.text.toLowerCase(),
-                  );
+                        textEditingValue.text.toLowerCase(),
+                      );
                 });
               },
               onSelected: (String selection) {
                 _timezoneController.text = selection;
                 _updateDateTime();
               },
-              fieldViewBuilder:
-                  (
-                    BuildContext context,
-                    TextEditingController textEditingController,
-                    FocusNode focusNode,
-                    VoidCallback onFieldSubmitted,
-                  ) {
-                    return TextField(
-                      controller: textEditingController,
-                      focusNode: focusNode,
-                      onSubmitted: (String value) {
-                        onFieldSubmitted();
-                      },
-                      decoration: const InputDecoration(labelText: 'Timezone'),
-                      onChanged: (String value) {
-                        _updateDateTime();
-                      },
-                    );
+              fieldViewBuilder: (
+                BuildContext context,
+                TextEditingController textEditingController,
+                FocusNode focusNode,
+                VoidCallback onFieldSubmitted,
+              ) {
+                return TextField(
+                  controller: textEditingController,
+                  focusNode: focusNode,
+                  onSubmitted: (String value) {
+                    onFieldSubmitted();
                   },
-              optionsViewBuilder:
-                  (
-                    BuildContext context,
-                    AutocompleteOnSelected<String> onSelected,
-                    Iterable<String> options,
-                  ) {
-                    return Align(
-                      alignment: Alignment.topLeft,
-                      child: Material(
-                        elevation: 4.0,
-                        child: SizedBox(
-                          height: 200.0,
-                          width: 300.0, // Limit width
-                          child: ListView.builder(
-                            padding: const EdgeInsets.all(8.0),
-                            itemCount: options.length,
-                            itemBuilder: (BuildContext context, int index) {
-                              final String option = options.elementAt(index);
-                              return GestureDetector(
-                                onTap: () {
-                                  onSelected(option);
-                                },
-                                child: ListTile(title: Text(option)),
-                              );
+                  decoration: const InputDecoration(labelText: 'Timezone'),
+                  onChanged: (String value) {
+                    _updateDateTime();
+                  },
+                );
+              },
+              optionsViewBuilder: (
+                BuildContext context,
+                AutocompleteOnSelected<String> onSelected,
+                Iterable<String> options,
+              ) {
+                return Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 4.0,
+                    child: SizedBox(
+                      height: 200.0,
+                      width: 300.0, // Limit width
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(8.0),
+                        itemCount: options.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          final String option = options.elementAt(index);
+                          return GestureDetector(
+                            onTap: () {
+                              onSelected(option);
                             },
-                          ),
-                        ),
+                            child: ListTile(title: Text(option)),
+                          );
+                        },
                       ),
-                    );
-                  },
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ];
@@ -1858,12 +1842,10 @@ class _KeyPatElementTextInputWidgetState
                   onSelectionChanged: (Set<String> newSelection) {
                     setState(() {
                       var value = newSelection.first;
-                      widget.each.id = value == "id"
-                          ? _idController.text
-                          : null;
-                      widget.each.name = value == "name"
-                          ? _nameController.text
-                          : null;
+                      widget.each.id =
+                          value == "id" ? _idController.text : null;
+                      widget.each.name =
+                          value == "name" ? _nameController.text : null;
                     });
                   },
                 ),
