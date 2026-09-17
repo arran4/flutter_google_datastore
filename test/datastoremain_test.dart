@@ -90,5 +90,26 @@ account = test_account
 
       expect(creds, '{"client_id": "bar"}');
     });
+
+    test(
+        'empty configurations directory falls back to default profile successfully',
+        () async {
+      final tempDir =
+          await Directory.systemTemp.createTemp('gcloud_test_empty_');
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      final configDir = path.join(tempDir.path, 'gcloud');
+
+      // Create configurations directory but DO NOT create any config_ files
+      await Directory(path.join(configDir, 'configurations'))
+          .create(recursive: true);
+
+      final discover =
+          GCloudCLICredentialDiscover(overrideConfigDir: configDir);
+      final result = await discover.initFuture;
+
+      expect(result.profiles, ['default']);
+      expect(result.isFallbackDefault, true);
+    });
   });
 }

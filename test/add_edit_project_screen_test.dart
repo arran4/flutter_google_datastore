@@ -721,5 +721,65 @@ void main() {
       expect(find.text('Failed to load profiles: Directory not found'),
           findsOneWidget);
     });
+
+    testWidgets('Save button is disabled during loading', (WidgetTester tester) async {
+      final completer = Completer<GCloudProfileDiscoveryResult>();
+      final discoverer = FakeGCloudCLICredentialDiscover.withCustomFuture(completer.future);
+
+      final project = Project(
+        id: 1,
+        endpointUrl: '',
+        projectId: 'test-project',
+        authMode: gcloudCliAuthMode,
+        googleCliProfile: 'default',
+        databaseId: '',
+        created: DateTime.now(),
+        updated: DateTime.now(),
+      );
+
+      await tester.pumpWidget(
+          createTestWidget(project: project, credentialDiscoverer: discoverer));
+
+      // CircularProgressIndicator should be visible initially
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      // Save button should be disabled (onPressed == null)
+      final button = tester.widget<ElevatedButton>(find.ancestor(of: find.text('Save Project'), matching: find.byType(ElevatedButton)).first);
+      expect(button.onPressed, isNull);
+
+      // Complete discovery
+      completer.complete(GCloudProfileDiscoveryResult(['work', 'personal']));
+      await tester.pumpAndSettle();
+
+      final buttonAfter = tester.widget<ElevatedButton>(find.ancestor(of: find.text('Save Project'), matching: find.byType(ElevatedButton)).first);
+      expect(buttonAfter.onPressed, isNotNull);
+    });
+
+    testWidgets('Save button is disabled after discovery failure', (WidgetTester tester) async {
+      final completer = Completer<GCloudProfileDiscoveryResult>();
+      final discoverer = FakeGCloudCLICredentialDiscover.withCustomFuture(completer.future);
+
+      final project = Project(
+        id: 1,
+        endpointUrl: '',
+        projectId: 'test-project',
+        authMode: gcloudCliAuthMode,
+        googleCliProfile: 'default',
+        databaseId: '',
+        created: DateTime.now(),
+        updated: DateTime.now(),
+      );
+
+      await tester.pumpWidget(
+          createTestWidget(project: project, credentialDiscoverer: discoverer));
+
+      // Fail discovery
+      completer.completeError('Directory not found');
+      await tester.pumpAndSettle();
+
+      // Save button should be disabled (onPressed == null)
+      final button = tester.widget<ElevatedButton>(find.ancestor(of: find.text('Save Project'), matching: find.byType(ElevatedButton)).first);
+      expect(button.onPressed, isNull);
+    });
   });
 }

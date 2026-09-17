@@ -323,7 +323,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
     endpointUrlController.text = widget.project?.endpointUrl ?? "";
     databaseIdController.text = widget.project?.databaseId ?? "";
     authMode = widget.project?.authMode ?? "none";
-    googleCliProfile = widget.project?.googleCliProfile ?? "default";
+    googleCliProfile = widget.project?.googleCliProfile;
   }
 
   @override
@@ -483,14 +483,23 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
                     title: 'Actions',
                     child: ResponsiveFormActions(
                       children: [
-                        ElevatedButton(
-                          onPressed: saveProject,
-                          child: Text(
-                            widget.project == null
-                                ? 'Add Project'
-                                : 'Save Project',
-                          ),
-                        ),
+                        FutureBuilder<GCloudProfileDiscoveryResult>(
+                            future: gCloudCLICredentialDiscover.initFuture,
+                            builder: (context, snapshot) {
+                              bool disableSave =
+                                  authMode == gcloudCliAuthMode &&
+                                      (snapshot.connectionState ==
+                                              ConnectionState.waiting ||
+                                          snapshot.hasError);
+                              return ElevatedButton(
+                                onPressed: disableSave ? null : saveProject,
+                                child: Text(
+                                  widget.project == null
+                                      ? 'Add Project'
+                                      : 'Save Project',
+                                ),
+                              );
+                            }),
                       ],
                     ),
                   ),
