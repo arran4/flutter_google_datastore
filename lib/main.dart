@@ -40,13 +40,12 @@ class ProjectPage extends StatefulWidget {
     super.key,
     Future<List<Project>> Function()? projectLoadCallback,
     Future<void> Function(Project project)? projectDeleteCallback,
-  }) : projectLoadCallback = projectLoadCallback ?? (() => db.getProjects),
-       projectDeleteCallback =
-           projectDeleteCallback ??
-           ((Project project) async {
-             await db.deleteProject(project.id);
-             await db.removeProject(project.id);
-           });
+  })  : projectLoadCallback = projectLoadCallback ?? (() => db.getProjects),
+        projectDeleteCallback = projectDeleteCallback ??
+            ((Project project) async {
+              await db.deleteProject(project.id);
+              await db.removeProject(project.id);
+            });
 
   @override
   State<ProjectPage> createState() => _ProjectPageState();
@@ -256,13 +255,11 @@ List<String> createAuthModes() {
 class AddEditProjectScreen extends StatefulWidget {
   final Project? project;
   final GCloudCLICredentialDiscover? credentialDiscoverer;
-  final List<String>? profileSource;
 
   const AddEditProjectScreen({
     super.key,
     this.project,
     this.credentialDiscoverer,
-    this.profileSource,
   });
 
   @override
@@ -280,9 +277,6 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
 
   GCloudCLICredentialDiscover get gCloudCLICredentialDiscover =>
       widget.credentialDiscoverer ?? _defaultCredentialDiscover;
-
-  List<String> get profiles =>
-      widget.profileSource ?? gCloudCLICredentialDiscover.profiles;
 
   String? googleCliProfile;
 
@@ -336,25 +330,72 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
   Widget build(BuildContext context) {
     Widget? googleCliWidget;
     if (authMode == gcloudCliAuthMode) {
-      final availableProfiles = profiles;
-      if (!availableProfiles.contains(googleCliProfile)) {
-        googleCliProfile = availableProfiles.isNotEmpty
-            ? availableProfiles.first
-            : null;
-      }
-      googleCliWidget = DropdownButtonFormField<String>(
-        initialValue: googleCliProfile,
-        decoration: const InputDecoration(labelText: 'Google CLI Profile'),
-        icon: const Icon(Icons.arrow_downward),
-        elevation: 16,
-        onChanged: (String? value) {
-          setState(() {
-            googleCliProfile = value;
-          });
+      googleCliWidget = FutureBuilder<GCloudProfileDiscoveryResult>(
+        future: gCloudCLICredentialDiscover.initFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(width: ResponsiveSpacing.md),
+                  Text('Loading profiles...'),
+                ],
+              ),
+            );
+          } else if (snapshot.hasError) {
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'Failed to load profiles: ${snapshot.error}',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            );
+          } else if (snapshot.hasData) {
+            final availableProfiles = snapshot.data!.profiles;
+            if (!availableProfiles.contains(googleCliProfile)) {
+              // Wait for build to finish before updating state to avoid warnings
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  setState(() {
+                    googleCliProfile = availableProfiles.isNotEmpty
+                        ? availableProfiles.first
+                        : null;
+                  });
+                }
+              });
+            }
+
+            // It's possible that googleCliProfile is still the old value during this build frame,
+            // so we make sure the DropdownButtonFormField value exists in the items.
+            String? currentValue = availableProfiles.contains(googleCliProfile)
+                ? googleCliProfile
+                : (availableProfiles.isNotEmpty
+                    ? availableProfiles.first
+                    : null);
+
+            return DropdownButtonFormField<String>(
+              initialValue: currentValue,
+              decoration:
+                  const InputDecoration(labelText: 'Google CLI Profile'),
+              icon: const Icon(Icons.arrow_downward),
+              elevation: 16,
+              onChanged: (String? value) {
+                setState(() {
+                  googleCliProfile = value;
+                });
+              },
+              items: availableProfiles
+                  .map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                    value: value, child: Text(value));
+              }).toList(),
+            );
+          } else {
+            return const SizedBox();
+          }
         },
-        items: availableProfiles.map<DropdownMenuItem<String>>((String value) {
-          return DropdownMenuItem<String>(value: value, child: Text(value));
-        }).toList(),
       );
     }
 

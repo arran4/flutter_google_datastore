@@ -52,5 +52,43 @@ account = test_account
       final creds = await discover.getJsonCredentials('default');
       expect(creds, '{"client_id": "foo"}');
     });
+
+    test(
+        'immediate credential use waits for initialization without LateInitializationError',
+        () async {
+      final tempDir =
+          await Directory.systemTemp.createTemp('gcloud_test_immediate_');
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      final configDir = path.join(tempDir.path, 'gcloud');
+      await Directory(path.join(configDir, 'configurations'))
+          .create(recursive: true);
+
+      // Create config_default
+      final configFile =
+          File(path.join(configDir, 'configurations', 'config_default'));
+      await configFile.writeAsString('''
+[core]
+account = test_account
+''');
+
+      // Create credentials.db
+      final dbPath = path.join(configDir, 'credentials.db');
+      final db = await databaseFactoryFfi.openDatabase(dbPath);
+      await db.execute(
+          'CREATE TABLE credentials (account_id TEXT PRIMARY KEY, value TEXT)');
+      await db.insert('credentials', {
+        'account_id': 'test_account',
+        'value': '{"client_id": "bar"}',
+      });
+      await db.close();
+
+      // We do not await initFuture here to simulate immediate usage
+      final discover =
+          GCloudCLICredentialDiscover(overrideConfigDir: configDir);
+      final creds = await discover.getJsonCredentials('default');
+
+      expect(creds, '{"client_id": "bar"}');
+    });
   });
 }
