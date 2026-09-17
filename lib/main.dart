@@ -40,13 +40,12 @@ class ProjectPage extends StatefulWidget {
     super.key,
     Future<List<Project>> Function()? projectLoadCallback,
     Future<void> Function(Project project)? projectDeleteCallback,
-  }) : projectLoadCallback = projectLoadCallback ?? (() => db.getProjects),
-       projectDeleteCallback =
-           projectDeleteCallback ??
-           ((Project project) async {
-             await db.deleteProject(project.id);
-             await db.removeProject(project.id);
-           });
+  })  : projectLoadCallback = projectLoadCallback ?? (() => db.getProjects),
+        projectDeleteCallback = projectDeleteCallback ??
+            ((Project project) async {
+              await db.deleteProject(project.id);
+              await db.removeProject(project.id);
+            });
 
   @override
   State<ProjectPage> createState() => _ProjectPageState();
@@ -256,13 +255,11 @@ List<String> createAuthModes() {
 class AddEditProjectScreen extends StatefulWidget {
   final Project? project;
   final GCloudCLICredentialDiscover? credentialDiscoverer;
-  final List<String>? profileSource;
 
   const AddEditProjectScreen({
     super.key,
     this.project,
     this.credentialDiscoverer,
-    this.profileSource,
   });
 
   @override
@@ -280,9 +277,6 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
 
   GCloudCLICredentialDiscover get gCloudCLICredentialDiscover =>
       widget.credentialDiscoverer ?? _defaultCredentialDiscover;
-
-  List<String> get profiles =>
-      widget.profileSource ?? gCloudCLICredentialDiscover.profiles;
 
   String? googleCliProfile;
 
@@ -329,32 +323,78 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
     endpointUrlController.text = widget.project?.endpointUrl ?? "";
     databaseIdController.text = widget.project?.databaseId ?? "";
     authMode = widget.project?.authMode ?? "none";
-    googleCliProfile = widget.project?.googleCliProfile ?? "default";
+    googleCliProfile = widget.project?.googleCliProfile;
   }
 
   @override
   Widget build(BuildContext context) {
     Widget? googleCliWidget;
     if (authMode == gcloudCliAuthMode) {
-      final availableProfiles = profiles;
-      if (!availableProfiles.contains(googleCliProfile)) {
-        googleCliProfile = availableProfiles.isNotEmpty
-            ? availableProfiles.first
-            : null;
-      }
-      googleCliWidget = DropdownButtonFormField<String>(
-        initialValue: googleCliProfile,
-        decoration: const InputDecoration(labelText: 'Google CLI Profile'),
-        icon: const Icon(Icons.arrow_downward),
-        elevation: 16,
-        onChanged: (String? value) {
-          setState(() {
-            googleCliProfile = value;
-          });
+      googleCliWidget = FutureBuilder<GCloudProfileDiscoveryResult>(
+        future: gCloudCLICredentialDiscover.initFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(width: ResponsiveSpacing.md),
+                  Text('Loading profiles...'),
+                ],
+              ),
+            );
+          } else if (snapshot.hasError) {
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'Failed to load profiles: ${snapshot.error}',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            );
+          } else if (snapshot.hasData) {
+            final availableProfiles = snapshot.data!.profiles;
+
+            // Set googleCliProfile safely without post-frame callback
+            String? currentValue = googleCliProfile;
+            if (currentValue == null ||
+                !availableProfiles.contains(currentValue)) {
+              currentValue =
+                  availableProfiles.isNotEmpty ? availableProfiles.first : null;
+              // Schedule a microtask to update state, avoids setState during build error
+              // without relying on next frame rendering
+              if (googleCliProfile != currentValue) {
+                Future.microtask(() {
+                  if (mounted) {
+                    setState(() {
+                      googleCliProfile = currentValue;
+                    });
+                  }
+                });
+              }
+            }
+
+            return DropdownButtonFormField<String>(
+              initialValue: currentValue,
+              decoration:
+                  const InputDecoration(labelText: 'Google CLI Profile'),
+              icon: const Icon(Icons.arrow_downward),
+              elevation: 16,
+              onChanged: (String? value) {
+                setState(() {
+                  googleCliProfile = value;
+                });
+              },
+              items: availableProfiles
+                  .map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                    value: value, child: Text(value));
+              }).toList(),
+            );
+          } else {
+            return const SizedBox();
+          }
         },
-        items: availableProfiles.map<DropdownMenuItem<String>>((String value) {
-          return DropdownMenuItem<String>(value: value, child: Text(value));
-        }).toList(),
       );
     }
 
@@ -442,14 +482,31 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
                     title: 'Actions',
                     child: ResponsiveFormActions(
                       children: [
-                        ElevatedButton(
-                          onPressed: saveProject,
-                          child: Text(
-                            widget.project == null
-                                ? 'Add Project'
-                                : 'Save Project',
+                        if (authMode == gcloudCliAuthMode)
+                          FutureBuilder<GCloudProfileDiscoveryResult>(
+                              future: gCloudCLICredentialDiscover.initFuture,
+                              builder: (context, snapshot) {
+                                bool disableSave = snapshot.connectionState ==
+                                        ConnectionState.waiting ||
+                                    snapshot.hasError;
+                                return ElevatedButton(
+                                  onPressed: disableSave ? null : saveProject,
+                                  child: Text(
+                                    widget.project == null
+                                        ? 'Add Project'
+                                        : 'Save Project',
+                                  ),
+                                );
+                              })
+                        else
+                          ElevatedButton(
+                            onPressed: saveProject,
+                            child: Text(
+                              widget.project == null
+                                  ? 'Add Project'
+                                  : 'Save Project',
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),

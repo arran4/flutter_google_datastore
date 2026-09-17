@@ -47,13 +47,13 @@ class Kind {
 
   Kind(this.name, this.namespace);
   Kind.fromKey(dsv1.Key key)
-    : name = key.path?.firstOrNull?.name ?? "",
-      namespace = null;
+      : name = key.path?.firstOrNull?.name ?? "",
+        namespace = null;
   Kind.fromEntity(dsv1.Entity entity) : this.fromKey(entity.key!);
   Kind.fromKeyWithNamespace(dsv1.Key key, this.namespace)
-    : name = key.path?.firstOrNull?.name ?? "";
+      : name = key.path?.firstOrNull?.name ?? "";
   Kind.fromEntityWithNamespace(dsv1.Entity entity, Namespace? namespace)
-    : this.fromKeyWithNamespace(entity.key!, namespace);
+      : this.fromKeyWithNamespace(entity.key!, namespace);
 
   String get key =>
       "$name${(namespace == null || namespace!.name.isEmpty) ? "" : " IN ${namespace!.name}"}";
@@ -268,30 +268,34 @@ class _DatastoreMainPageState extends State<DatastoreMainPage> {
   }
 }
 
+class GCloudProfileDiscoveryResult {
+  final List<String> profiles;
+  final bool isFallbackDefault;
+
+  GCloudProfileDiscoveryResult(this.profiles, {this.isFallbackDefault = false});
+}
+
 class GCloudCLICredentialDiscover {
   late final String configDir;
   late final String credentialsDBFile;
   late final String accessTokensDBFile;
   late final String profileConfigDir;
-  late final List<String> profiles;
   final String defaultProfileName = "default";
 
-  bool get hasDefault {
-    return profiles.contains(defaultProfileName);
-  }
-
   final String? overrideConfigDir;
-  late final Future<void> initFuture;
+  late final Future<GCloudProfileDiscoveryResult> initFuture;
 
   GCloudCLICredentialDiscover({this.overrideConfigDir}) {
     initFuture = loadConfigDir();
   }
 
-  Future<void> loadConfigDir() async {
+  Future<GCloudProfileDiscoveryResult> loadConfigDir() async {
     if (overrideConfigDir != null) {
       configDir = overrideConfigDir!;
     } else if (kIsWeb) {
-      return;
+      return GCloudProfileDiscoveryResult([
+        defaultProfileName,
+      ], isFallbackDefault: true);
     } else if (Platform.isWindows) {
       final appData = Platform.environment['APPDATA'];
       if (appData != null) {
@@ -317,27 +321,35 @@ class GCloudCLICredentialDiscover {
     credentialsDBFile = path.join(configDir, "credentials.db");
     accessTokensDBFile = path.join(configDir, "access_tokens.db");
     profileConfigDir = path.join(configDir, "configurations");
-    await loadProfiles();
+    return await loadProfiles();
   }
 
-  Future<void> loadProfiles() async {
-    final dir = Directory(profileConfigDir);
-    profiles = await dir
-        .list()
-        .where((FileSystemEntity fse) {
-          return path.basename(fse.path).startsWith("config_");
-        })
-        .map(
-          (FileSystemEntity fse) =>
-              path.basename(fse.path).substring("config_".length),
-        )
-        .toList();
-    if (profiles.isEmpty) {
-      profiles = ["default"];
+  Future<GCloudProfileDiscoveryResult> loadProfiles() async {
+    try {
+      final dir = Directory(profileConfigDir);
+      var discoveredProfiles = await dir
+          .list()
+          .where((FileSystemEntity fse) {
+            return path.basename(fse.path).startsWith("config_");
+          })
+          .map(
+            (FileSystemEntity fse) =>
+                path.basename(fse.path).substring("config_".length),
+          )
+          .toList();
+      if (discoveredProfiles.isEmpty) {
+        return GCloudProfileDiscoveryResult([
+          defaultProfileName,
+        ], isFallbackDefault: true);
+      }
+      return GCloudProfileDiscoveryResult(discoveredProfiles);
+    } catch (e) {
+      throw Exception("Failed to load profiles: $e");
     }
   }
 
   Future<String> getJsonCredentials(String forProfile) async {
+    await initFuture;
     String fileContents = await File(
       path.join(profileConfigDir, "config_$forProfile"),
     ).readAsString();
