@@ -113,7 +113,7 @@ account = test_account
     });
 
     test(
-        'missing configurations directory falls back to default profile and is handled gracefully',
+        'missing configurations directory throws exception gracefully',
         () async {
       final tempDir =
           await Directory.systemTemp.createTemp('gcloud_test_missing_');

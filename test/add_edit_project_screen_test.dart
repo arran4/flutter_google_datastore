@@ -799,7 +799,7 @@ void main() {
     });
 
     testWidgets(
-        'successful-empty discovery produces default fallback and persists it',
+        'successful-empty discovery produces default fallback and selects it',
         (WidgetTester tester) async {
       final completer = Completer<GCloudProfileDiscoveryResult>();
       final discoverer =
@@ -827,14 +827,14 @@ void main() {
       // Check UI selection
       expect(find.text('default'), findsOneWidget);
 
-      // Check persisted state
+      // Check selected state
       final state = tester
           .state<AddEditProjectScreenState>(find.byType(AddEditProjectScreen));
       expect(state.googleCliProfile, equals('default'));
     });
 
     testWidgets(
-        'successful discovery with real profiles selects/persists a valid profile',
+        'successful discovery with real profiles selects a valid profile',
         (WidgetTester tester) async {
       final completer = Completer<GCloudProfileDiscoveryResult>();
       final discoverer =
@@ -862,7 +862,7 @@ void main() {
       // Check UI selection (falls back to first since old_invalid is not in list)
       expect(find.text('work'), findsOneWidget);
 
-      // Check persisted state
+      // Check selected state
       final state = tester
           .state<AddEditProjectScreenState>(find.byType(AddEditProjectScreen));
       expect(state.googleCliProfile, equals('work'));
