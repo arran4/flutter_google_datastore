@@ -722,9 +722,11 @@ void main() {
           findsOneWidget);
     });
 
-    testWidgets('Save button is disabled during loading', (WidgetTester tester) async {
+    testWidgets('Save button is disabled during loading',
+        (WidgetTester tester) async {
       final completer = Completer<GCloudProfileDiscoveryResult>();
-      final discoverer = FakeGCloudCLICredentialDiscover.withCustomFuture(completer.future);
+      final discoverer =
+          FakeGCloudCLICredentialDiscover.withCustomFuture(completer.future);
 
       final project = Project(
         id: 1,
@@ -744,20 +746,30 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
       // Save button should be disabled (onPressed == null)
-      final button = tester.widget<ElevatedButton>(find.ancestor(of: find.text('Save Project'), matching: find.byType(ElevatedButton)).first);
+      final button = tester.widget<ElevatedButton>(find
+          .ancestor(
+              of: find.text('Save Project'),
+              matching: find.byType(ElevatedButton))
+          .first);
       expect(button.onPressed, isNull);
 
       // Complete discovery
       completer.complete(GCloudProfileDiscoveryResult(['work', 'personal']));
       await tester.pumpAndSettle();
 
-      final buttonAfter = tester.widget<ElevatedButton>(find.ancestor(of: find.text('Save Project'), matching: find.byType(ElevatedButton)).first);
+      final buttonAfter = tester.widget<ElevatedButton>(find
+          .ancestor(
+              of: find.text('Save Project'),
+              matching: find.byType(ElevatedButton))
+          .first);
       expect(buttonAfter.onPressed, isNotNull);
     });
 
-    testWidgets('Save button is disabled after discovery failure', (WidgetTester tester) async {
+    testWidgets('Save button is disabled after discovery failure',
+        (WidgetTester tester) async {
       final completer = Completer<GCloudProfileDiscoveryResult>();
-      final discoverer = FakeGCloudCLICredentialDiscover.withCustomFuture(completer.future);
+      final discoverer =
+          FakeGCloudCLICredentialDiscover.withCustomFuture(completer.future);
 
       final project = Project(
         id: 1,
@@ -778,8 +790,82 @@ void main() {
       await tester.pumpAndSettle();
 
       // Save button should be disabled (onPressed == null)
-      final button = tester.widget<ElevatedButton>(find.ancestor(of: find.text('Save Project'), matching: find.byType(ElevatedButton)).first);
+      final button = tester.widget<ElevatedButton>(find
+          .ancestor(
+              of: find.text('Save Project'),
+              matching: find.byType(ElevatedButton))
+          .first);
       expect(button.onPressed, isNull);
+    });
+
+    testWidgets(
+        'successful-empty discovery produces default fallback and persists it',
+        (WidgetTester tester) async {
+      final completer = Completer<GCloudProfileDiscoveryResult>();
+      final discoverer =
+          FakeGCloudCLICredentialDiscover.withCustomFuture(completer.future);
+
+      final project = Project(
+        id: 1,
+        endpointUrl: '',
+        projectId: 'test-project',
+        authMode: gcloudCliAuthMode,
+        googleCliProfile: 'old_invalid',
+        databaseId: '',
+        created: DateTime.now(),
+        updated: DateTime.now(),
+      );
+
+      await tester.pumpWidget(
+          createTestWidget(project: project, credentialDiscoverer: discoverer));
+
+      // Complete discovery with empty fallback
+      completer.complete(
+          GCloudProfileDiscoveryResult(['default'], isFallbackDefault: true));
+      await tester.pumpAndSettle();
+
+      // Check UI selection
+      expect(find.text('default'), findsOneWidget);
+
+      // Check persisted state
+      final state = tester
+          .state<AddEditProjectScreenState>(find.byType(AddEditProjectScreen));
+      expect(state.googleCliProfile, equals('default'));
+    });
+
+    testWidgets(
+        'successful discovery with real profiles selects/persists a valid profile',
+        (WidgetTester tester) async {
+      final completer = Completer<GCloudProfileDiscoveryResult>();
+      final discoverer =
+          FakeGCloudCLICredentialDiscover.withCustomFuture(completer.future);
+
+      final project = Project(
+        id: 1,
+        endpointUrl: '',
+        projectId: 'test-project',
+        authMode: gcloudCliAuthMode,
+        googleCliProfile: 'old_invalid',
+        databaseId: '',
+        created: DateTime.now(),
+        updated: DateTime.now(),
+      );
+
+      await tester.pumpWidget(
+          createTestWidget(project: project, credentialDiscoverer: discoverer));
+
+      // Complete discovery with real profiles
+      completer.complete(GCloudProfileDiscoveryResult(['work', 'personal'],
+          isFallbackDefault: false));
+      await tester.pumpAndSettle();
+
+      // Check UI selection (falls back to first since old_invalid is not in list)
+      expect(find.text('work'), findsOneWidget);
+
+      // Check persisted state
+      final state = tester
+          .state<AddEditProjectScreenState>(find.byType(AddEditProjectScreen));
+      expect(state.googleCliProfile, equals('work'));
     });
   });
 }

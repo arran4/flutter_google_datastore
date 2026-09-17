@@ -111,5 +111,28 @@ account = test_account
       expect(result.profiles, ['default']);
       expect(result.isFallbackDefault, true);
     });
+
+    test(
+        'missing configurations directory falls back to default profile and is handled gracefully',
+        () async {
+      final tempDir =
+          await Directory.systemTemp.createTemp('gcloud_test_missing_');
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      final configDir = path.join(tempDir.path, 'gcloud');
+
+      // DO NOT create configurations directory
+      // await Directory(path.join(configDir, 'configurations')).create(recursive: true);
+
+      final discover =
+          GCloudCLICredentialDiscover(overrideConfigDir: configDir);
+
+      try {
+        await discover.initFuture;
+        fail('Expected an exception for missing directory');
+      } catch (e) {
+        expect(e.toString(), contains('Failed to load profiles'));
+      }
+    });
   });
 }

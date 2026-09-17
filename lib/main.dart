@@ -354,26 +354,25 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
             );
           } else if (snapshot.hasData) {
             final availableProfiles = snapshot.data!.profiles;
-            if (!availableProfiles.contains(googleCliProfile)) {
-              // Wait for build to finish before updating state to avoid warnings
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) {
-                  setState(() {
-                    googleCliProfile = availableProfiles.isNotEmpty
-                        ? availableProfiles.first
-                        : null;
-                  });
-                }
-              });
-            }
 
-            // It's possible that googleCliProfile is still the old value during this build frame,
-            // so we make sure the DropdownButtonFormField value exists in the items.
-            String? currentValue = availableProfiles.contains(googleCliProfile)
-                ? googleCliProfile
-                : (availableProfiles.isNotEmpty
-                    ? availableProfiles.first
-                    : null);
+            // Set googleCliProfile safely without post-frame callback
+            String? currentValue = googleCliProfile;
+            if (currentValue == null ||
+                !availableProfiles.contains(currentValue)) {
+              currentValue =
+                  availableProfiles.isNotEmpty ? availableProfiles.first : null;
+              // Schedule a microtask to update state, avoids setState during build error
+              // without relying on next frame rendering
+              if (googleCliProfile != currentValue) {
+                Future.microtask(() {
+                  if (mounted) {
+                    setState(() {
+                      googleCliProfile = currentValue;
+                    });
+                  }
+                });
+              }
+            }
 
             return DropdownButtonFormField<String>(
               initialValue: currentValue,
@@ -483,23 +482,31 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
                     title: 'Actions',
                     child: ResponsiveFormActions(
                       children: [
-                        FutureBuilder<GCloudProfileDiscoveryResult>(
-                            future: gCloudCLICredentialDiscover.initFuture,
-                            builder: (context, snapshot) {
-                              bool disableSave =
-                                  authMode == gcloudCliAuthMode &&
-                                      (snapshot.connectionState ==
-                                              ConnectionState.waiting ||
-                                          snapshot.hasError);
-                              return ElevatedButton(
-                                onPressed: disableSave ? null : saveProject,
-                                child: Text(
-                                  widget.project == null
-                                      ? 'Add Project'
-                                      : 'Save Project',
-                                ),
-                              );
-                            }),
+                        if (authMode == gcloudCliAuthMode)
+                          FutureBuilder<GCloudProfileDiscoveryResult>(
+                              future: gCloudCLICredentialDiscover.initFuture,
+                              builder: (context, snapshot) {
+                                bool disableSave = snapshot.connectionState ==
+                                        ConnectionState.waiting ||
+                                    snapshot.hasError;
+                                return ElevatedButton(
+                                  onPressed: disableSave ? null : saveProject,
+                                  child: Text(
+                                    widget.project == null
+                                        ? 'Add Project'
+                                        : 'Save Project',
+                                  ),
+                                );
+                              })
+                        else
+                          ElevatedButton(
+                            onPressed: saveProject,
+                            child: Text(
+                              widget.project == null
+                                  ? 'Add Project'
+                                  : 'Save Project',
+                            ),
+                          ),
                       ],
                     ),
                   ),
