@@ -81,6 +81,7 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
             widget.index,
             newEntity,
           );
+          if (!mounted) return;
           if (er != null) {
             setState(() {
               entityRow = er;
@@ -150,9 +151,11 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
           break;
       }
     } finally {
-      setState(() {
-        _loading--;
-      });
+      if (mounted) {
+        setState(() {
+          _loading--;
+        });
+      }
     }
   }
 
@@ -206,15 +209,18 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
         widget.index,
         newEntity,
       );
+      if (!mounted) return;
       if (er != null) {
         setState(() {
           entityRow = er;
         });
       }
     } finally {
-      setState(() {
-        _loading--;
-      });
+      if (mounted) {
+        setState(() {
+          _loading--;
+        });
+      }
     }
   }
 }
@@ -475,6 +481,7 @@ class _ViewEntityState extends State<ViewEntity> {
                           break;
                         case 'propsReplaceJson':
                           var np = await replacePropertiesWithJson();
+                          if (!mounted) return;
                           if (np != null) {
                             setState(() {
                               newProperties = np;
