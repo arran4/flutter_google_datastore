@@ -30,8 +30,9 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('Compact width layout owns scrolling without overflow',
-        (WidgetTester tester) async {
+    testWidgets('Compact width layout owns scrolling without overflow', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -52,12 +53,15 @@ void main() {
       await tester.pumpAndSettle();
 
       final hexScrollFinder = find.descendant(
-          of: dialogFinder, matching: find.byType(SingleChildScrollView));
+        of: dialogFinder,
+        matching: find.byType(SingleChildScrollView),
+      );
       expect(hexScrollFinder, findsWidgets);
     });
 
-    testWidgets('Expanded desktop width uses space without overflow',
-        (WidgetTester tester) async {
+    testWidgets('Expanded desktop width uses space without overflow', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(1024, 768);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -69,8 +73,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('Large text scale respects layout constraints',
-        (WidgetTester tester) async {
+    testWidgets('Large text scale respects layout constraints', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {

@@ -40,12 +40,13 @@ class ProjectPage extends StatefulWidget {
     super.key,
     Future<List<Project>> Function()? projectLoadCallback,
     Future<void> Function(Project project)? projectDeleteCallback,
-  })  : projectLoadCallback = projectLoadCallback ?? (() => db.getProjects),
-        projectDeleteCallback = projectDeleteCallback ??
-            ((Project project) async {
-              await db.deleteProject(project.id);
-              await db.removeProject(project.id);
-            });
+  }) : projectLoadCallback = projectLoadCallback ?? (() => db.getProjects),
+       projectDeleteCallback =
+           projectDeleteCallback ??
+           ((Project project) async {
+             await db.deleteProject(project.id);
+             await db.removeProject(project.id);
+           });
 
   @override
   State<ProjectPage> createState() => _ProjectPageState();
@@ -359,8 +360,9 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
             String? currentValue = googleCliProfile;
             if (currentValue == null ||
                 !availableProfiles.contains(currentValue)) {
-              currentValue =
-                  availableProfiles.isNotEmpty ? availableProfiles.first : null;
+              currentValue = availableProfiles.isNotEmpty
+                  ? availableProfiles.first
+                  : null;
               // Schedule a microtask to update state, avoids setState during build error
               // without relying on next frame rendering
               if (googleCliProfile != currentValue) {
@@ -376,8 +378,9 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
 
             return DropdownButtonFormField<String>(
               initialValue: currentValue,
-              decoration:
-                  const InputDecoration(labelText: 'Google CLI Profile'),
+              decoration: const InputDecoration(
+                labelText: 'Google CLI Profile',
+              ),
               icon: const Icon(Icons.arrow_downward),
               elevation: 16,
               onChanged: (String? value) {
@@ -385,10 +388,13 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
                   googleCliProfile = value;
                 });
               },
-              items: availableProfiles
-                  .map<DropdownMenuItem<String>>((String value) {
+              items: availableProfiles.map<DropdownMenuItem<String>>((
+                String value,
+              ) {
                 return DropdownMenuItem<String>(
-                    value: value, child: Text(value));
+                  value: value,
+                  child: Text(value),
+                );
               }).toList(),
             );
           } else {
@@ -484,20 +490,22 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
                       children: [
                         if (authMode == gcloudCliAuthMode)
                           FutureBuilder<GCloudProfileDiscoveryResult>(
-                              future: gCloudCLICredentialDiscover.initFuture,
-                              builder: (context, snapshot) {
-                                bool disableSave = snapshot.connectionState ==
-                                        ConnectionState.waiting ||
-                                    snapshot.hasError;
-                                return ElevatedButton(
-                                  onPressed: disableSave ? null : saveProject,
-                                  child: Text(
-                                    widget.project == null
-                                        ? 'Add Project'
-                                        : 'Save Project',
-                                  ),
-                                );
-                              })
+                            future: gCloudCLICredentialDiscover.initFuture,
+                            builder: (context, snapshot) {
+                              bool disableSave =
+                                  snapshot.connectionState ==
+                                      ConnectionState.waiting ||
+                                  snapshot.hasError;
+                              return ElevatedButton(
+                                onPressed: disableSave ? null : saveProject,
+                                child: Text(
+                                  widget.project == null
+                                      ? 'Add Project'
+                                      : 'Save Project',
+                                ),
+                              );
+                            },
+                          )
                         else
                           ElevatedButton(
                             onPressed: saveProject,
