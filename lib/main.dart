@@ -327,6 +327,14 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
   }
 
   @override
+  void dispose() {
+    endpointUrlController.dispose();
+    projectIdController.dispose();
+    databaseIdController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     Widget? googleCliWidget;
     if (authMode == gcloudCliAuthMode) {
