@@ -13,6 +13,7 @@ class MockDatastoreApi implements dsv1.DatastoreApi {
 
 class MockProjectsResource implements dsv1.ProjectsResource {
   Completer<dsv1.LookupResponse>? lookupCompleter;
+  int lookupCallCount = 0;
 
   @override
   Future<dsv1.LookupResponse> lookup(
@@ -20,6 +21,7 @@ class MockProjectsResource implements dsv1.ProjectsResource {
     String projectId, {
     String? $fields,
   }) {
+    lookupCallCount++;
     if (lookupCompleter != null) {
       return lookupCompleter!.future;
     }
@@ -98,17 +100,23 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Verify row is displayed
-      expect(find.byType(ListTile), findsWidgets);
+      // Verify exact row is displayed
+      expect(find.text('Task ( task1 )'), findsOneWidget);
 
-      // Open popup menu for the row and select Refresh
-      await tester.tap(find.byType(PopupMenuButton<String>).last);
+      // Open popup menu for the specific row and select Refresh
+      await tester.tap(
+        find.descendant(
+          of: find.widgetWithText(ListTile, 'Task ( task1 )'),
+          matching: find.byType(PopupMenuButton<String>),
+        ),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Refresh').last);
       await tester.pump();
 
-      // Verify lookup is pending
+      // Verify lookup is pending and actually called exactly once
+      expect(mockProjects.lookupCallCount, 1);
       expect(mockProjects.lookupCompleter!.isCompleted, isFalse);
 
       // Now, while the refresh (lookup) is pending, remove the widget from the tree
