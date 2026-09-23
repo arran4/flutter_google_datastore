@@ -66,6 +66,8 @@ void main() {
     'replaceEntity does not throw when unmounted via popupRowItemSelected',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1920, 1080);
+      addTearDown(tester.view.resetPhysicalSize);
+
       final mockApi = MockDatastoreApi();
       final mockProjects = mockApi.projects as MockProjectsResource;
       mockProjects.lookupCompleter = Completer<dsv1.LookupResponse>();
@@ -96,8 +98,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // The text to find might be 'Task/task1' or something else
-      // We can just find the ListTile instead to verify it loaded
+      // Verify row is displayed
       expect(find.byType(ListTile), findsWidgets);
 
       // Open popup menu for the row and select Refresh
@@ -106,6 +107,9 @@ void main() {
 
       await tester.tap(find.text('Refresh').last);
       await tester.pump();
+
+      // Verify lookup is pending
+      expect(mockProjects.lookupCompleter!.isCompleted, isFalse);
 
       // Now, while the refresh (lookup) is pending, remove the widget from the tree
       await tester.pumpWidget(Container());
