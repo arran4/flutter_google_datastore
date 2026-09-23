@@ -282,6 +282,7 @@ class _KindContentsPageState extends State<KindContentsPage>
     if (index >= (_pagingController.value.items?.length ?? 0)) {
       return null;
     }
+    if (!mounted) return null;
     EntityRow er = _pagingController.value.items![index];
     Completer<EntityRow?> completer = Completer();
     setState(() {
@@ -300,6 +301,7 @@ class _KindContentsPageState extends State<KindContentsPage>
     if (index >= (_pagingController.value.items?.length ?? 0)) {
       return false;
     }
+    if (!mounted) return false;
     EntityRow er = _pagingController.value.items![index];
     Completer<bool> completer = Completer();
     setState(() {

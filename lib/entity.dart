@@ -59,6 +59,7 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
   }
 
   void popupRowItemSelected(String value) async {
+    if (!mounted) return;
     try {
       setState(() {
         _loading++;
