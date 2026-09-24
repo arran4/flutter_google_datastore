@@ -279,6 +279,7 @@ class _KindContentsPageState extends State<KindContentsPage>
   @override
   @override
   Future<EntityRow?> replaceEntity(int index, dsv1.Entity newEntity) async {
+    if (!mounted) return null;
     if (index >= (_pagingController.value.items?.length ?? 0)) {
       return null;
     }
@@ -297,6 +298,7 @@ class _KindContentsPageState extends State<KindContentsPage>
   }
 
   Future<bool> removeEntity(int index, dsv1.Entity newEntity) async {
+    if (!mounted) return false;
     if (index >= (_pagingController.value.items?.length ?? 0)) {
       return false;
     }
