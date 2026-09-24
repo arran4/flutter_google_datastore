@@ -57,6 +57,12 @@ class _KindContentsPageState extends State<KindContentsPage>
     super.initState();
   }
 
+  @override
+  void dispose() {
+    _pagingController.dispose();
+    super.dispose();
+  }
+
   void popupItemSelected(String value) {
     switch (value) {
       case 'refresh':
@@ -205,6 +211,7 @@ class _KindContentsPageState extends State<KindContentsPage>
       ),
       widget.project.projectId,
     );
+    if (!mounted) return [];
     startCursor = response.batch?.endCursor;
     results.addAll(
       response.batch?.entityResults
@@ -220,6 +227,7 @@ class _KindContentsPageState extends State<KindContentsPage>
   Future<List<EntityRow>> _fetchPage(int pageKey) async {
     try {
       final newItems = await retrieveRows();
+      if (!mounted) return [];
       if (newItems.length < limit) {
         _pagingController.value = _pagingController.value.copyWith(
           hasNextPage: false,
@@ -227,7 +235,9 @@ class _KindContentsPageState extends State<KindContentsPage>
       }
       return newItems;
     } catch (error) {
-      _pagingController.value = _pagingController.value.copyWith(error: error);
+      if (mounted) {
+        _pagingController.value = _pagingController.value.copyWith(error: error);
+      }
       return [];
     }
   }
