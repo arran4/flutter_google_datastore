@@ -34,13 +34,18 @@ class FakeEntityActions implements EntityActions {
   }
 
   @override
-  Future<bool> updateEntity(dsv1.Key key, Map<String, dsv1.Value> newProperties) async {
+  Future<bool> updateEntity(
+    dsv1.Key key,
+    Map<String, dsv1.Value> newProperties,
+  ) async {
     return true;
   }
 }
 
 void main() {
-  testWidgets('ViewEntityPage lifecycle test - unmounted during save', (WidgetTester tester) async {
+  testWidgets('ViewEntityPage lifecycle test - unmounted during save', (
+    WidgetTester tester,
+  ) async {
     final actions = FakeEntityActions();
     final entityRow = EntityRow(
       entity: dsv1.Entity(
@@ -50,21 +55,23 @@ void main() {
       ),
     );
 
-    final project = Project(id: 1, projectId: 'p', endpointUrl: 'http://e', created: DateTime.now(), updated: DateTime.now(), authMode: 'none', googleCliProfile: 'p', databaseId: '');
+    final project = Project(
+      id: 1,
+      projectId: 'p',
+      endpointUrl: 'http://e',
+      created: DateTime.now(),
+      updated: DateTime.now(),
+      authMode: 'none',
+      googleCliProfile: 'p',
+      databaseId: '',
+    );
     final dsApi = dsv1.DatastoreApi(MockClient());
     final kind = dsm.Kind('TestKind', dsm.Namespace('n'));
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ViewEntityPage(
-            project,
-            dsApi,
-            kind,
-            entityRow,
-            0,
-            actions,
-          ),
+          body: ViewEntityPage(project, dsApi, kind, entityRow, 0, actions),
         ),
       ),
     );
@@ -85,7 +92,9 @@ void main() {
     expect(tester.takeException(), isNull); // Should not throw error
   });
 
-  testWidgets('ViewEntityPage lifecycle test - unmounted during refresh', (WidgetTester tester) async {
+  testWidgets('ViewEntityPage lifecycle test - unmounted during refresh', (
+    WidgetTester tester,
+  ) async {
     final actions = FakeEntityActions();
     final entityRow = EntityRow(
       entity: dsv1.Entity(
@@ -95,27 +104,31 @@ void main() {
       ),
     );
 
-    final project = Project(id: 1, projectId: 'p', endpointUrl: 'http://e', created: DateTime.now(), updated: DateTime.now(), authMode: 'none', googleCliProfile: 'p', databaseId: '');
+    final project = Project(
+      id: 1,
+      projectId: 'p',
+      endpointUrl: 'http://e',
+      created: DateTime.now(),
+      updated: DateTime.now(),
+      authMode: 'none',
+      googleCliProfile: 'p',
+      databaseId: '',
+    );
     final dsApi = dsv1.DatastoreApi(MockClient());
     final kind = dsm.Kind('TestKind', dsm.Namespace('n'));
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ViewEntityPage(
-            project,
-            dsApi,
-            kind,
-            entityRow,
-            0,
-            actions,
-          ),
+          body: ViewEntityPage(project, dsApi, kind, entityRow, 0, actions),
         ),
       ),
     );
 
     // Call popupRowItemSelected('refresh')
-    final state = tester.state<State<ViewEntityPage>>(find.byType(ViewEntityPage));
+    final state = tester.state<State<ViewEntityPage>>(
+      find.byType(ViewEntityPage),
+    );
     (state as dynamic).popupRowItemSelected('refresh');
 
     await tester.pump();

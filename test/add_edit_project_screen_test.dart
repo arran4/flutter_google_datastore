@@ -13,8 +13,12 @@ class FakeGCloudCLICredentialDiscover implements GCloudCLICredentialDiscover {
   FakeGCloudCLICredentialDiscover([
     List<String> profiles = const ['default'],
     bool isFallbackDefault = true,
-  ]) : customInitFuture = Future.value(GCloudProfileDiscoveryResult(profiles,
-            isFallbackDefault: isFallbackDefault));
+  ]) : customInitFuture = Future.value(
+         GCloudProfileDiscoveryResult(
+           profiles,
+           isFallbackDefault: isFallbackDefault,
+         ),
+       );
 
   FakeGCloudCLICredentialDiscover.withCustomFuture(this.customInitFuture);
 
@@ -78,7 +82,8 @@ void main() {
       home: AddEditProjectScreen(
         key: key ?? ValueKey(project?.id ?? 'new'),
         project: project,
-        credentialDiscoverer: credentialDiscoverer ??
+        credentialDiscoverer:
+            credentialDiscoverer ??
             FakeGCloudCLICredentialDiscover(['default'], true),
       ),
     );
@@ -504,8 +509,10 @@ void main() {
         await tester.pumpWidget(
           createTestWidget(
             project: projectWithAbsentProfile,
-            credentialDiscoverer:
-                FakeGCloudCLICredentialDiscover(availableProfiles, false),
+            credentialDiscoverer: FakeGCloudCLICredentialDiscover(
+              availableProfiles,
+              false,
+            ),
           ),
         );
         await tester.pumpAndSettle();
@@ -552,8 +559,10 @@ void main() {
         await tester.pumpWidget(
           createTestWidget(
             project: projectWithPresentProfile,
-            credentialDiscoverer:
-                FakeGCloudCLICredentialDiscover(availableProfiles, false),
+            credentialDiscoverer: FakeGCloudCLICredentialDiscover(
+              availableProfiles,
+              false,
+            ),
           ),
         );
         await tester.pumpAndSettle();
@@ -585,9 +594,12 @@ void main() {
 
         await tester.pumpWidget(
           createTestWidget(
-              project: project,
-              credentialDiscoverer:
-                  FakeGCloudCLICredentialDiscover(availableProfiles, false)),
+            project: project,
+            credentialDiscoverer: FakeGCloudCLICredentialDiscover(
+              availableProfiles,
+              false,
+            ),
+          ),
         );
         await tester.pumpAndSettle();
 
@@ -604,8 +616,9 @@ void main() {
         await tester.tap(dropdownFinder);
         await tester.pumpAndSettle();
 
-        final itemFinder =
-            find.widgetWithText(DropdownMenuItem<String>, 'profile_beta').last;
+        final itemFinder = find
+            .widgetWithText(DropdownMenuItem<String>, 'profile_beta')
+            .last;
         await tester.tap(itemFinder);
         await tester.pumpAndSettle();
 
@@ -650,17 +663,61 @@ void main() {
     );
 
     testWidgets(
-        'Delayed discovery shows CircularProgressIndicator initially, then profiles',
-        (WidgetTester tester) async {
+      'Delayed discovery shows CircularProgressIndicator initially, then profiles',
+      (WidgetTester tester) async {
+        final completer = Completer<GCloudProfileDiscoveryResult>();
+        final discoverer = FakeGCloudCLICredentialDiscover.withCustomFuture(
+          completer.future,
+        );
+
+        await tester.pumpWidget(
+          createTestWidget(credentialDiscoverer: discoverer),
+        );
+
+        // Need to find by key or just set the state if it's not default. Wait, the default is "none".
+        // Let's pass a project with gcloudCliAuthMode to createTestWidget instead.
+
+        final project = Project(
+          id: 1,
+          endpointUrl: '',
+          projectId: 'test-project',
+          authMode: gcloudCliAuthMode,
+          googleCliProfile: 'default',
+          databaseId: '',
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        );
+
+        await tester.pumpWidget(
+          createTestWidget(project: project, credentialDiscoverer: discoverer),
+        );
+
+        // CircularProgressIndicator should be visible initially
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(find.text('Loading profiles...'), findsOneWidget);
+        expect(find.text('Google CLI Profile'), findsNothing);
+
+        // Complete discovery
+        completer.complete(GCloudProfileDiscoveryResult(['work', 'personal']));
+        await tester.pumpAndSettle();
+
+        // Profiles should now be visible
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(find.text('Google CLI Profile'), findsOneWidget);
+        expect(
+          find.text('work'),
+          findsOneWidget,
+        ); // Selects first element if default is missing
+      },
+    );
+
+    testWidgets('Discovery failure shows intentional error message', (
+      WidgetTester tester,
+    ) async {
       final completer = Completer<GCloudProfileDiscoveryResult>();
-      final discoverer =
-          FakeGCloudCLICredentialDiscover.withCustomFuture(completer.future);
-
-      await tester
-          .pumpWidget(createTestWidget(credentialDiscoverer: discoverer));
-
-      // Need to find by key or just set the state if it's not default. Wait, the default is "none".
-      // Let's pass a project with gcloudCliAuthMode to createTestWidget instead.
+      final discoverer = FakeGCloudCLICredentialDiscover.withCustomFuture(
+        completer.future,
+      );
 
       final project = Project(
         id: 1,
@@ -674,43 +731,8 @@ void main() {
       );
 
       await tester.pumpWidget(
-          createTestWidget(project: project, credentialDiscoverer: discoverer));
-
-      // CircularProgressIndicator should be visible initially
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(find.text('Loading profiles...'), findsOneWidget);
-      expect(find.text('Google CLI Profile'), findsNothing);
-
-      // Complete discovery
-      completer.complete(GCloudProfileDiscoveryResult(['work', 'personal']));
-      await tester.pumpAndSettle();
-
-      // Profiles should now be visible
-      expect(find.byType(CircularProgressIndicator), findsNothing);
-      expect(find.text('Google CLI Profile'), findsOneWidget);
-      expect(find.text('work'),
-          findsOneWidget); // Selects first element if default is missing
-    });
-
-    testWidgets('Discovery failure shows intentional error message',
-        (WidgetTester tester) async {
-      final completer = Completer<GCloudProfileDiscoveryResult>();
-      final discoverer =
-          FakeGCloudCLICredentialDiscover.withCustomFuture(completer.future);
-
-      final project = Project(
-        id: 1,
-        endpointUrl: '',
-        projectId: 'test-project',
-        authMode: gcloudCliAuthMode,
-        googleCliProfile: 'default',
-        databaseId: '',
-        created: DateTime.now(),
-        updated: DateTime.now(),
+        createTestWidget(project: project, credentialDiscoverer: discoverer),
       );
-
-      await tester.pumpWidget(
-          createTestWidget(project: project, credentialDiscoverer: discoverer));
 
       // Fail discovery
       completer.completeError('Directory not found');
@@ -718,15 +740,19 @@ void main() {
 
       // Error state should be visible
       expect(find.byType(CircularProgressIndicator), findsNothing);
-      expect(find.text('Failed to load profiles: Directory not found'),
-          findsOneWidget);
+      expect(
+        find.text('Failed to load profiles: Directory not found'),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('Save button is disabled during loading',
-        (WidgetTester tester) async {
+    testWidgets('Save button is disabled during loading', (
+      WidgetTester tester,
+    ) async {
       final completer = Completer<GCloudProfileDiscoveryResult>();
-      final discoverer =
-          FakeGCloudCLICredentialDiscover.withCustomFuture(completer.future);
+      final discoverer = FakeGCloudCLICredentialDiscover.withCustomFuture(
+        completer.future,
+      );
 
       final project = Project(
         id: 1,
@@ -740,36 +766,45 @@ void main() {
       );
 
       await tester.pumpWidget(
-          createTestWidget(project: project, credentialDiscoverer: discoverer));
+        createTestWidget(project: project, credentialDiscoverer: discoverer),
+      );
 
       // CircularProgressIndicator should be visible initially
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
       // Save button should be disabled (onPressed == null)
-      final button = tester.widget<ElevatedButton>(find
-          .ancestor(
+      final button = tester.widget<ElevatedButton>(
+        find
+            .ancestor(
               of: find.text('Save Project'),
-              matching: find.byType(ElevatedButton))
-          .first);
+              matching: find.byType(ElevatedButton),
+            )
+            .first,
+      );
       expect(button.onPressed, isNull);
 
       // Complete discovery
       completer.complete(GCloudProfileDiscoveryResult(['work', 'personal']));
       await tester.pumpAndSettle();
 
-      final buttonAfter = tester.widget<ElevatedButton>(find
-          .ancestor(
+      final buttonAfter = tester.widget<ElevatedButton>(
+        find
+            .ancestor(
               of: find.text('Save Project'),
-              matching: find.byType(ElevatedButton))
-          .first);
+              matching: find.byType(ElevatedButton),
+            )
+            .first,
+      );
       expect(buttonAfter.onPressed, isNotNull);
     });
 
-    testWidgets('Save button is disabled after discovery failure',
-        (WidgetTester tester) async {
+    testWidgets('Save button is disabled after discovery failure', (
+      WidgetTester tester,
+    ) async {
       final completer = Completer<GCloudProfileDiscoveryResult>();
-      final discoverer =
-          FakeGCloudCLICredentialDiscover.withCustomFuture(completer.future);
+      final discoverer = FakeGCloudCLICredentialDiscover.withCustomFuture(
+        completer.future,
+      );
 
       final project = Project(
         id: 1,
@@ -783,89 +818,106 @@ void main() {
       );
 
       await tester.pumpWidget(
-          createTestWidget(project: project, credentialDiscoverer: discoverer));
+        createTestWidget(project: project, credentialDiscoverer: discoverer),
+      );
 
       // Fail discovery
       completer.completeError('Directory not found');
       await tester.pumpAndSettle();
 
       // Save button should be disabled (onPressed == null)
-      final button = tester.widget<ElevatedButton>(find
-          .ancestor(
+      final button = tester.widget<ElevatedButton>(
+        find
+            .ancestor(
               of: find.text('Save Project'),
-              matching: find.byType(ElevatedButton))
-          .first);
+              matching: find.byType(ElevatedButton),
+            )
+            .first,
+      );
       expect(button.onPressed, isNull);
     });
 
     testWidgets(
-        'successful-empty discovery produces default fallback and selects it',
-        (WidgetTester tester) async {
-      final completer = Completer<GCloudProfileDiscoveryResult>();
-      final discoverer =
-          FakeGCloudCLICredentialDiscover.withCustomFuture(completer.future);
+      'successful-empty discovery produces default fallback and selects it',
+      (WidgetTester tester) async {
+        final completer = Completer<GCloudProfileDiscoveryResult>();
+        final discoverer = FakeGCloudCLICredentialDiscover.withCustomFuture(
+          completer.future,
+        );
 
-      final project = Project(
-        id: 1,
-        endpointUrl: '',
-        projectId: 'test-project',
-        authMode: gcloudCliAuthMode,
-        googleCliProfile: 'old_invalid',
-        databaseId: '',
-        created: DateTime.now(),
-        updated: DateTime.now(),
-      );
+        final project = Project(
+          id: 1,
+          endpointUrl: '',
+          projectId: 'test-project',
+          authMode: gcloudCliAuthMode,
+          googleCliProfile: 'old_invalid',
+          databaseId: '',
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        );
 
-      await tester.pumpWidget(
-          createTestWidget(project: project, credentialDiscoverer: discoverer));
+        await tester.pumpWidget(
+          createTestWidget(project: project, credentialDiscoverer: discoverer),
+        );
 
-      // Complete discovery with empty fallback
-      completer.complete(
-          GCloudProfileDiscoveryResult(['default'], isFallbackDefault: true));
-      await tester.pumpAndSettle();
+        // Complete discovery with empty fallback
+        completer.complete(
+          GCloudProfileDiscoveryResult(['default'], isFallbackDefault: true),
+        );
+        await tester.pumpAndSettle();
 
-      // Check UI selection
-      expect(find.text('default'), findsOneWidget);
+        // Check UI selection
+        expect(find.text('default'), findsOneWidget);
 
-      // Check selected state
-      final state = tester
-          .state<AddEditProjectScreenState>(find.byType(AddEditProjectScreen));
-      expect(state.googleCliProfile, equals('default'));
-    });
+        // Check selected state
+        final state = tester.state<AddEditProjectScreenState>(
+          find.byType(AddEditProjectScreen),
+        );
+        expect(state.googleCliProfile, equals('default'));
+      },
+    );
 
     testWidgets(
-        'successful discovery with real profiles selects a valid profile',
-        (WidgetTester tester) async {
-      final completer = Completer<GCloudProfileDiscoveryResult>();
-      final discoverer =
-          FakeGCloudCLICredentialDiscover.withCustomFuture(completer.future);
+      'successful discovery with real profiles selects a valid profile',
+      (WidgetTester tester) async {
+        final completer = Completer<GCloudProfileDiscoveryResult>();
+        final discoverer = FakeGCloudCLICredentialDiscover.withCustomFuture(
+          completer.future,
+        );
 
-      final project = Project(
-        id: 1,
-        endpointUrl: '',
-        projectId: 'test-project',
-        authMode: gcloudCliAuthMode,
-        googleCliProfile: 'old_invalid',
-        databaseId: '',
-        created: DateTime.now(),
-        updated: DateTime.now(),
-      );
+        final project = Project(
+          id: 1,
+          endpointUrl: '',
+          projectId: 'test-project',
+          authMode: gcloudCliAuthMode,
+          googleCliProfile: 'old_invalid',
+          databaseId: '',
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        );
 
-      await tester.pumpWidget(
-          createTestWidget(project: project, credentialDiscoverer: discoverer));
+        await tester.pumpWidget(
+          createTestWidget(project: project, credentialDiscoverer: discoverer),
+        );
 
-      // Complete discovery with real profiles
-      completer.complete(GCloudProfileDiscoveryResult(['work', 'personal'],
-          isFallbackDefault: false));
-      await tester.pumpAndSettle();
+        // Complete discovery with real profiles
+        completer.complete(
+          GCloudProfileDiscoveryResult([
+            'work',
+            'personal',
+          ], isFallbackDefault: false),
+        );
+        await tester.pumpAndSettle();
 
-      // Check UI selection (falls back to first since old_invalid is not in list)
-      expect(find.text('work'), findsOneWidget);
+        // Check UI selection (falls back to first since old_invalid is not in list)
+        expect(find.text('work'), findsOneWidget);
 
-      // Check selected state
-      final state = tester
-          .state<AddEditProjectScreenState>(find.byType(AddEditProjectScreen));
-      expect(state.googleCliProfile, equals('work'));
-    });
+        // Check selected state
+        final state = tester.state<AddEditProjectScreenState>(
+          find.byType(AddEditProjectScreen),
+        );
+        expect(state.googleCliProfile, equals('work'));
+      },
+    );
   });
 }

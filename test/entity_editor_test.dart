@@ -33,32 +33,31 @@ void main() {
 
     final entityRow = EntityRow(
       entity: dsv1.Entity(
-          key: dsv1.Key(
-              path: [dsv1.PathElement(kind: 'TestKind', id: '123')],
-              partitionId: dsv1.PartitionId(databaseId: 'test-db')),
-          properties: {
-            'prop1': dsv1.Value(
-                stringValue:
-                    'Long string value to test horizontal wrapping or layout boundaries.'),
-            'prop2': dsv1.Value(integerValue: '42'),
-            'prop3': dsv1.Value(booleanValue: true),
-          }),
+        key: dsv1.Key(
+          path: [dsv1.PathElement(kind: 'TestKind', id: '123')],
+          partitionId: dsv1.PartitionId(databaseId: 'test-db'),
+        ),
+        properties: {
+          'prop1': dsv1.Value(
+            stringValue:
+                'Long string value to test horizontal wrapping or layout boundaries.',
+          ),
+          'prop2': dsv1.Value(integerValue: '42'),
+          'prop3': dsv1.Value(booleanValue: true),
+        },
+      ),
     );
 
-    testWidgets('Compact layout is single column without overflow',
-        (WidgetTester tester) async {
+    testWidgets('Compact layout is single column without overflow', (
+      WidgetTester tester,
+    ) async {
       setDisplaySize(tester, const Size(390, 844));
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: SingleChildScrollView(
-              child: ViewEntity(
-                project,
-                dsApi,
-                kind,
-                entityRow,
-              ),
+              child: ViewEntity(project, dsApi, kind, entityRow),
             ),
           ),
         ),
@@ -80,20 +79,16 @@ void main() {
       expect(leftRect.bottom, lessThan(rightRect.top));
     });
 
-    testWidgets('Expanded layout uses horizontal space',
-        (WidgetTester tester) async {
+    testWidgets('Expanded layout uses horizontal space', (
+      WidgetTester tester,
+    ) async {
       setDisplaySize(tester, const Size(1024, 768));
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: SingleChildScrollView(
-              child: ViewEntity(
-                project,
-                dsApi,
-                kind,
-                entityRow,
-              ),
+              child: ViewEntity(project, dsApi, kind, entityRow),
             ),
           ),
         ),

@@ -52,8 +52,9 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
         }
       } else if (_selectedView == 2) {
         // Hex
-        _hexController.text =
-            bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
+        _hexController.text = bytes
+            .map((b) => b.toRadixString(16).padLeft(2, '0'))
+            .join(' ');
       }
     });
   }
@@ -133,20 +134,11 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
             },
             child: const Text("Cancel"),
           ),
-          FilledButton(
-            onPressed: _saveChanges,
-            child: const Text("Save"),
-          ),
+          FilledButton(onPressed: _saveChanges, child: const Text("Save")),
         ] else ...[
-          TextButton(
-            onPressed: _downloadFile,
-            child: const Text("Download"),
-          ),
+          TextButton(onPressed: _downloadFile, child: const Text("Download")),
           if (_selectedView == 0 || _selectedView == 2)
-            TextButton(
-              onPressed: _enterEditMode,
-              child: const Text("Edit"),
-            ),
+            TextButton(onPressed: _enterEditMode, child: const Text("Edit")),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text("Close"),
