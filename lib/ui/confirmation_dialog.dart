@@ -23,14 +23,9 @@ class DestructiveConfirmationDialog extends StatelessWidget {
     final theme = Theme.of(context);
     return AlertDialog(
       title: Text(title),
-      content: SingleChildScrollView(
-        child: Text(content),
-      ),
+      content: SingleChildScrollView(child: Text(content)),
       actions: [
-        TextButton(
-          onPressed: onCancel,
-          child: Text(cancelButtonText),
-        ),
+        TextButton(onPressed: onCancel, child: Text(cancelButtonText)),
         FilledButton(
           onPressed: onConfirm,
           style: FilledButton.styleFrom(
