@@ -34,9 +34,9 @@ on:
         default: ""
         type: string
       allow_prs:
-        description: "Allow automation to open pull requests"
+        description: "Create PR"
         required: false
-        default: true
+        default: false
         type: boolean
   schedule:
     - cron: '17 3 1 * *'
@@ -259,9 +259,14 @@ jobs:
         with:
           cache: true
           flutter-version: ${{ env.FLUTTER_SDK_VERSION }}
-      - run: flutter pub upgrade --major-versions
+      - name: Check outdated dependencies (dry run)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance') }}
+        run: flutter pub outdated
+      - name: Upgrade dependencies
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance' }}
+        run: flutter pub upgrade --major-versions
       - name: Create Pull Request
-        if: ${{ github.event_name == 'schedule' || inputs.allow_prs != false }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance' }}
         uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "chore: monthly dependency update"
@@ -287,9 +292,14 @@ jobs:
           cache: true
           flutter-version: ${{ env.FLUTTER_SDK_VERSION }}
       - run: flutter pub get
-      - run: dart format .
+      - name: Check formatting drift (dry run)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix') }}
+        run: dart format --output=none --set-exit-if-changed .
+      - name: Apply formatting
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix' }}
+        run: dart format .
       - name: Create Pull Request
-        if: ${{ github.event_name == 'schedule' || inputs.allow_prs != false }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix' }}
         uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "style: auto-format code and lint fixes"
