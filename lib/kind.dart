@@ -236,7 +236,9 @@ class _KindContentsPageState extends State<KindContentsPage>
       return newItems;
     } catch (error) {
       if (mounted) {
-        _pagingController.value = _pagingController.value.copyWith(error: error);
+        _pagingController.value = _pagingController.value.copyWith(
+          error: error,
+        );
       }
       return [];
     }
