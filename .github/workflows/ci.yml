@@ -34,9 +34,9 @@ on:
         default: ""
         type: string
       allow_prs:
-        description: "Allow automation to open pull requests"
+        description: "Create PR"
         required: false
-        default: true
+        default: false
         type: boolean
   schedule:
     - cron: '17 3 1 * *'
@@ -212,6 +212,35 @@ jobs:
               echo "Error: Expected exactly 1 dispatch, got $DISPATCH_COUNT"
               exit 1
           fi
+          # check ci.yml for PR gating policy
+          echo "Testing ci.yml PR gating conditions"
+          cat << 'PYEOF' > policy_test.py
+          import yaml
+          import os
+          with open(os.environ['GITHUB_WORKSPACE'] + '/.github/workflows/ci.yml') as f:
+              ci = yaml.safe_load(f)
+          assert ci[True]['workflow_dispatch']['inputs']['allow_prs']['default'] == False, 'allow_prs default must be false'
+
+          maintenance = [j for name, j in ci['jobs'].items() if 'monthly-maintenance' in str(j) or 'maintenance' in name][0]['steps']
+          dry_run = [s for s in maintenance if 'name' in s and 'Check outdated dependencies (dry run)' in s['name']][0]
+          upgrade = [s for s in maintenance if 'name' in s and 'Upgrade dependencies' in s['name']][0]
+          pr = [s for s in maintenance if 'uses' in s and 'create-pull-request' in s['uses']][0]
+
+          dollar = '$'
+          assert dry_run['if'] == dollar + "{{ !(github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance') }}", 'dry run missing neg gating'
+          assert upgrade['if'] == dollar + "{{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance' }}", 'upgrade missing explicit gating'
+          assert pr['if'] == dollar + "{{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance' }}", 'pr missing explicit gating'
+
+          autofix = ci['jobs']['autofix']['steps']
+          dry_run = [s for s in autofix if 'name' in s and 'Check formatting drift (dry run)' in s['name']][0]
+          fmt = [s for s in autofix if 'name' in s and 'Apply formatting' in s['name']][0]
+          pr = [s for s in autofix if 'uses' in s and 'create-pull-request' in s['uses']][0]
+
+          assert dry_run['if'] == dollar + "{{ !(github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix') }}", 'dry run missing neg gating'
+          assert fmt['if'] == dollar + "{{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix' }}", 'fmt missing explicit gating'
+          assert pr['if'] == dollar + "{{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix' }}", 'pr missing explicit gating'
+          PYEOF
+          python3 policy_test.py
           echo "All policy tests passed!"
 
 
@@ -259,9 +288,14 @@ jobs:
         with:
           cache: true
           flutter-version: ${{ env.FLUTTER_SDK_VERSION }}
-      - run: flutter pub upgrade --major-versions
+      - name: Check outdated dependencies (dry run)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance') }}
+        run: flutter pub outdated
+      - name: Upgrade dependencies
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance' }}
+        run: flutter pub upgrade --major-versions
       - name: Create Pull Request
-        if: ${{ github.event_name == 'schedule' || inputs.allow_prs != false }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance' }}
         uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "chore: monthly dependency update"
@@ -287,9 +321,14 @@ jobs:
           cache: true
           flutter-version: ${{ env.FLUTTER_SDK_VERSION }}
       - run: flutter pub get
-      - run: dart format .
+      - name: Check formatting drift (dry run)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix') }}
+        run: dart format --output=none --set-exit-if-changed .
+      - name: Apply formatting
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix' }}
+        run: dart format .
       - name: Create Pull Request
-        if: ${{ github.event_name == 'schedule' || inputs.allow_prs != false }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix' }}
         uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "style: auto-format code and lint fixes"
