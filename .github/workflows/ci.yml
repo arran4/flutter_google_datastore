@@ -214,9 +214,10 @@ jobs:
           fi
 # check ci.yml for PR gating policy
           echo "Testing ci.yml PR gating conditions"
-          python3 -c "
+          cat << 'PYEOF' > policy_test.py
 import yaml
-with open('$GITHUB_WORKSPACE/.github/workflows/ci.yml') as f:
+import os
+with open(os.environ['GITHUB_WORKSPACE'] + '/.github/workflows/ci.yml') as f:
     ci = yaml.safe_load(f)
 assert ci[True]['workflow_dispatch']['inputs']['allow_prs']['default'] == False, 'allow_prs default must be false'
 
@@ -225,19 +226,21 @@ dry_run = [s for s in maintenance if 'name' in s and 'Check outdated dependencie
 upgrade = [s for s in maintenance if 'name' in s and 'Upgrade dependencies' in s['name']][0]
 pr = [s for s in maintenance if 'uses' in s and 'create-pull-request' in s['uses']][0]
 
-assert dry_run['if'] == r\"\"\"\${{ !(github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance') }}\"\"\", 'dry run missing neg gating'
-assert upgrade['if'] == r\"\"\"\${{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance' }}\"\"\", 'upgrade missing explicit gating'
-assert pr['if'] == r\"\"\"\${{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance' }}\"\"\", 'pr missing explicit gating'
+dollar = '$'
+assert dry_run['if'] == dollar + "{{ !(github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance') }}", 'dry run missing neg gating'
+assert upgrade['if'] == dollar + "{{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance' }}", 'upgrade missing explicit gating'
+assert pr['if'] == dollar + "{{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance' }}", 'pr missing explicit gating'
 
 autofix = ci['jobs']['autofix']['steps']
 dry_run = [s for s in autofix if 'name' in s and 'Check formatting drift (dry run)' in s['name']][0]
 fmt = [s for s in autofix if 'name' in s and 'Apply formatting' in s['name']][0]
 pr = [s for s in autofix if 'uses' in s and 'create-pull-request' in s['uses']][0]
 
-assert dry_run['if'] == r\"\"\"\${{ !(github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix') }}\"\"\", 'dry run missing neg gating'
-assert fmt['if'] == r\"\"\"\${{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix' }}\"\"\", 'fmt missing explicit gating'
-assert pr['if'] == r\"\"\"\${{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix' }}\"\"\", 'pr missing explicit gating'
-"
+assert dry_run['if'] == dollar + "{{ !(github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix') }}", 'dry run missing neg gating'
+assert fmt['if'] == dollar + "{{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix' }}", 'fmt missing explicit gating'
+assert pr['if'] == dollar + "{{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix' }}", 'pr missing explicit gating'
+PYEOF
+          python3 policy_test.py
           echo "All policy tests passed!"
 
 
