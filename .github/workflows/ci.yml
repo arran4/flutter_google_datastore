@@ -221,14 +221,16 @@ jobs:
               ci = yaml.safe_load(f)
           assert ci[True]['workflow_dispatch']['inputs']['allow_prs']['default'] == False, 'allow_prs default must be false'
 
-          maintenance = [j for name, j in ci['jobs'].items() if 'monthly-maintenance' in str(j) or 'maintenance' in name][0]['steps']
+          maintenance = ci['jobs']['maintenance']['steps']
           dry_run = [s for s in maintenance if 'name' in s and 'Check outdated dependencies (dry run)' in s['name']][0]
           upgrade = [s for s in maintenance if 'name' in s and 'Upgrade dependencies' in s['name']][0]
           pr = [s for s in maintenance if 'uses' in s and 'create-pull-request' in s['uses']][0]
 
           dollar = '$'
           assert dry_run['if'] == dollar + "{{ !(github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance') }}", 'dry run missing neg gating'
+          assert dry_run['run'] == 'flutter pub outdated', 'wrong command for dry run'
           assert upgrade['if'] == dollar + "{{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance' }}", 'upgrade missing explicit gating'
+          assert upgrade['run'] == 'flutter pub upgrade --major-versions', 'wrong command for upgrade'
           assert pr['if'] == dollar + "{{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance' }}", 'pr missing explicit gating'
 
           autofix = ci['jobs']['autofix']['steps']
@@ -237,7 +239,9 @@ jobs:
           pr = [s for s in autofix if 'uses' in s and 'create-pull-request' in s['uses']][0]
 
           assert dry_run['if'] == dollar + "{{ !(github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix') }}", 'dry run missing neg gating'
+          assert dry_run['run'] == 'dart format --output=none --set-exit-if-changed .', 'wrong command for dry run'
           assert fmt['if'] == dollar + "{{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix' }}", 'fmt missing explicit gating'
+          assert fmt['run'] == 'dart format .', 'wrong command for fmt'
           assert pr['if'] == dollar + "{{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix' }}", 'pr missing explicit gating'
           PYEOF
           python3 policy_test.py
