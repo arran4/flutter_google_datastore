@@ -1,0 +1,30 @@
+name: Format kind.dart once
+on:
+  push:
+    branches:
+      - fix/format-kind-39107483657
+permissions:
+  contents: write
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.12.2'
+      - name: Apply the CI formatter
+        run: |
+          dart format .
+          git diff --check
+          git diff --stat
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- '*.dart'
+          if git diff --cached --quiet; then
+            echo 'No formatting changes needed.'
+            exit 0
+          fi
+          git commit -m 'style: apply Dart 3.12.2 formatter'
+          git push origin HEAD:fix/format-kind-39107483657
