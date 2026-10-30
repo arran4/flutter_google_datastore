@@ -17,4 +17,4 @@ generic_name: Misc Applications
 startup_notify: true
 
 spec_macros:
-  - "%define buildsubdir %{name}"
+  - "%define buildsubdir %{nil}"
