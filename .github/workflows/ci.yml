@@ -431,7 +431,10 @@ jobs:
 
   linux:
     name: Linux build
-    runs-on: ubuntu-latest
+    # Pinned to ubuntu-22.04 because FastForge/flutter_app_packager generated RPM specs
+    # are incompatible with the rpmbuild 4.20+ %mkbuilddir working directory behavior
+    # present in ubuntu-24.04 and later runners.
+    runs-on: ubuntu-22.04
     needs: [route, release-validation]
     if: ${{ always() && needs.route.outputs.run_build == 'true' && (needs.release-validation.result == 'success' || needs.release-validation.result == 'skipped') }}
     steps:
