@@ -431,11 +431,19 @@ jobs:
 
   linux:
     name: Linux build
-    runs-on: ubuntu-latest
+    # Pinned to ubuntu-24.04 because FastForge/flutter_app_packager generated RPM specs
+    # are incompatible with the rpmbuild 4.20+ %mkbuilddir working directory behavior
+    # present in ubuntu-26.04 and later runners (which ubuntu-latest will soon migrate to).
+    # TODO: Track this in a separate actionable follow-up issue to remove the OS pin after FastForge fixes the generated RPM spec.
+    runs-on: ubuntu-24.04
     needs: [route, release-validation]
     if: ${{ always() && needs.route.outputs.run_build == 'true' && (needs.release-validation.result == 'success' || needs.release-validation.result == 'skipped') }}
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: '17'
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: '3.12.2'
@@ -443,10 +451,14 @@ jobs:
         with:
           cache: true
           flutter-version: ${{ env.FLUTTER_SDK_VERSION }}
+      - name: Verify Environment
+        run: |
+          java -version
+          flutter doctor --verbose
       - name: Install Dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y appstream clang cmake desktop-file-utils fakeroot fuse gir1.2-appindicator3-0.1 libappindicator3-1 libappindicator3-dev libarchive-tools libgdk-pixbuf2.0-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgtk-3-dev libjsoncpp25 libjsoncpp-dev libmpv-dev libnotify-bin libnotify-dev libsecret-1-0 libsecret-1-dev libunwind-dev locate make mpv ninja-build patchelf pkg-config python3-pip python3-setuptools strace tar xmlstarlet
+          sudo apt-get install -y appstream clang cmake desktop-file-utils fakeroot fuse libfuse2t64 gir1.2-appindicator3-0.1 libappindicator3-1 libappindicator3-dev libarchive-tools libgdk-pixbuf-2.0-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgtk-3-dev libjsoncpp-dev libmpv-dev libnotify-bin libnotify-dev libsecret-1-0 libsecret-1-dev libunwind-dev locate make mpv ninja-build patchelf pkg-config python3-pip python3-setuptools strace tar xmlstarlet
       - name: Install AppImage Tool
         run: |
           wget -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
