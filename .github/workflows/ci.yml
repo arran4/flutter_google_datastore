@@ -89,6 +89,8 @@ jobs:
         uses: arran4/git-tag-inc-action@v1
         with:
           mode: install
+      - name: Test Pubspec Version Helper
+        run: bash scripts/test_set_pubspec_version.sh
       - name: Test Policy Helper
         run: |
           set -euo pipefail
@@ -413,9 +415,7 @@ jobs:
           echo "GITHUB_REPOSITORY_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
       - name: Update version number
         shell: bash
-        run: |
-          choco install sed make yq -y
-          yq -i '.version = strenv(SEMANTIC_VERSION)' pubspec.yaml
+        run: bash scripts/set_pubspec_version.sh "$SEMANTIC_VERSION"
       - name: Build Windows Packages
         run: |
           flutter pub get
@@ -478,9 +478,7 @@ jobs:
           echo "FLUTTER_APP_VERSION=$VERSION" >> $GITHUB_ENV
           echo "GITHUB_REPOSITORY_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
       - name: Update version number
-        run: |
-          curl -sS https://webi.sh/yq | bash
-          ~/.local/bin/yq -i '.version = strenv(SEMANTIC_VERSION)' pubspec.yaml
+        run: bash scripts/set_pubspec_version.sh "$SEMANTIC_VERSION"
       - name: Build Linux Packages
         run: |
           flutter pub get
@@ -525,9 +523,7 @@ jobs:
           echo "FLUTTER_APP_VERSION=$VERSION" >> $GITHUB_ENV
           echo "GITHUB_REPOSITORY_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
       - name: Update version number
-        run: |
-          brew install yq
-          yq -i '.version = strenv(SEMANTIC_VERSION)' pubspec.yaml
+        run: bash scripts/set_pubspec_version.sh "$SEMANTIC_VERSION"
       - name: Build macOS Packages
         run: |
           flutter pub get
