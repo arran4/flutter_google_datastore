@@ -480,6 +480,10 @@ jobs:
       - name: Update version number
         run: bash scripts/set_pubspec_version.sh "$SEMANTIC_VERSION"
       - name: Build Linux Packages
+        env:
+          # AppDir includes tooling/libraries from multiple architectures.
+          # appimagetool otherwise refuses to auto-detect its target.
+          ARCH: x86_64
         run: |
           flutter pub get
           dart pub global activate fastforge
