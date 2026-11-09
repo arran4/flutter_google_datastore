@@ -413,6 +413,9 @@ jobs:
           echo "FLUTTER_VERSION=$VERSION" >> $GITHUB_ENV
           echo "FLUTTER_APP_VERSION=$VERSION" >> $GITHUB_ENV
           echo "GITHUB_REPOSITORY_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
+      - name: Install Windows packaging tools
+        shell: bash
+        run: choco install make -y
       - name: Update version number
         shell: bash
         run: bash scripts/set_pubspec_version.sh "$SEMANTIC_VERSION"
