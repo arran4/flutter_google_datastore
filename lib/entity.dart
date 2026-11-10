@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/kind.dart';
@@ -506,23 +506,24 @@ class _ViewEntityState extends State<ViewEntity> {
   }
 
   Future<void> downloadPropertiesAsJson(Map<String, dsv1.Value> map) async {
-    String? filePath = await FilePicker.saveFile(
+    String jsonString = jsonEncode(map);
+    Uint8List bytes = Uint8List.fromList(utf8.encode(jsonString));
+    Uri? savedUri = await FilePicker.saveFile(
       dialogTitle: "Save JSON data to file",
       fileName:
           "${widget.entityRow.entity.key?.path?[0].kind}-${widget.entityRow.entity.key?.path?[0].id ?? widget.entityRow.entity.key?.path?[0].name}.json",
-      type: FileType.custom,
-      allowedExtensions: ['json'],
+      bytes: bytes,
     );
-    if (filePath == null) {
+    if (savedUri == null) {
       return;
     }
-    String jsonString = jsonEncode(map);
-    File file = File(filePath);
-    await file.writeAsString(jsonString);
     if (!mounted) return;
+    String displayPath = savedUri.isScheme('file')
+        ? savedUri.toFilePath()
+        : savedUri.toString();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('JSON data saved to file: $filePath'),
+        content: Text('JSON data saved to file: $displayPath'),
         duration: const Duration(seconds: 3),
         action: SnackBarAction(label: 'OK', onPressed: () {}),
       ),
@@ -530,16 +531,16 @@ class _ViewEntityState extends State<ViewEntity> {
   }
 
   Future<Map<String, dsv1.Value>?> replacePropertiesWithJson() async {
-    FilePickerResult? result = await FilePicker.pickFiles(
+    PlatformFile? file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['json'],
     );
-    if (result == null) {
+    if (file == null) {
       return null;
     }
     try {
-      String filePath = result.files.single.path!;
-      String jsonContent = await File(filePath).readAsString();
+      Uint8List bytes = await file.readAsBytes();
+      String jsonContent = utf8.decode(bytes);
       Map<String, dynamic> jsonData = jsonDecode(jsonContent);
       Map<String, dsv1.Value> resultProps = {};
       jsonData.forEach((key, value) {
@@ -547,9 +548,10 @@ class _ViewEntityState extends State<ViewEntity> {
         resultProps[key] = newValue;
       });
       if (mounted) {
+        String displayPath = file.name;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('JSON data read from file: $filePath'),
+            content: Text('JSON data read from file: $displayPath'),
             duration: const Duration(seconds: 3),
             action: SnackBarAction(label: 'OK', onPressed: () {}),
           ),
@@ -980,22 +982,14 @@ class _PropertyAddEditDeleteDialogState
   String? _blobValue;
 
   Future<void> _uploadBlob() async {
-    FilePickerResult? result = await FilePicker.pickFiles();
+    PlatformFile? file = await FilePicker.pickFile();
 
-    if (result != null) {
+    if (file != null) {
+      Uint8List bytes = await file.readAsBytes();
       if (!mounted) return;
-      if (result.files.first.bytes != null) {
-        setState(() {
-          _blobValue = base64Encode(result.files.first.bytes!);
-        });
-      } else if (result.files.single.path != null) {
-        File file = File(result.files.single.path!);
-        List<int> bytes = await file.readAsBytes();
-        if (!mounted) return;
-        setState(() {
-          _blobValue = base64Encode(bytes);
-        });
-      }
+      setState(() {
+        _blobValue = base64Encode(bytes);
+      });
     }
   }
 
@@ -1003,22 +997,24 @@ class _PropertyAddEditDeleteDialogState
     if (_blobValue == null) {
       return;
     }
-    String? filePath = await FilePicker.saveFile(
+    Uint8List bytes = base64Decode(_blobValue!);
+    Uri? savedUri = await FilePicker.saveFile(
       dialogTitle: "Save Blob to file",
       fileName: "blob.bin",
+      bytes: bytes,
     );
-    if (filePath == null) {
+    if (savedUri == null) {
       return;
     }
-    List<int> bytes = base64Decode(_blobValue!);
-    File file = File(filePath);
-    await file.writeAsBytes(bytes);
     if (!mounted) {
       return;
     }
+    String displayPath = savedUri.isScheme('file')
+        ? savedUri.toFilePath()
+        : savedUri.toString();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Blob saved to file: $filePath'),
+        content: Text('Blob saved to file: $displayPath'),
         duration: const Duration(seconds: 3),
         action: SnackBarAction(label: 'OK', onPressed: () {}),
       ),

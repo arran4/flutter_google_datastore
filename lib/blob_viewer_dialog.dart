@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -260,22 +259,24 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
   }
 
   Future<void> _downloadFile() async {
-    String? filePath = await FilePicker.saveFile(
-      dialogTitle: "Save Blob",
-      fileName: "blob.bin",
-    );
-
-    if (filePath == null) {
-      return;
-    }
-
     try {
-      File file = File(filePath);
-      await file.writeAsBytes(bytes);
+      Uri? savedUri = await FilePicker.saveFile(
+        dialogTitle: "Save Blob",
+        fileName: "blob.bin",
+        bytes: bytes,
+      );
+
+      if (savedUri == null) {
+        return;
+      }
+
       if (mounted) {
+        String displayPath = savedUri.isScheme('file')
+            ? savedUri.toFilePath()
+            : savedUri.toString();
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Saved to $filePath')));
+        ).showSnackBar(SnackBar(content: Text('Saved to $displayPath')));
       }
     } catch (e) {
       if (mounted) {
