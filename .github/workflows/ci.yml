@@ -264,6 +264,17 @@ jobs:
           cache: true
           flutter-version: ${{ env.FLUTTER_SDK_VERSION }}
       - run: flutter pub get
+      - name: Verify Android application identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle_file=android/app/build.gradle.kts
+          namespace="$(awk -F '"' '/^[[:space:]]*namespace[[:space:]]*=/ {print $2}' "$gradle_file")"
+          application_id="$(awk -F '"' '/^[[:space:]]*applicationId[[:space:]]*=/ {print $2}' "$gradle_file")"
+          [[ "$namespace" == com.arran4.* && "$application_id" == "$namespace" ]]
+          activity="android/app/src/main/kotlin/${namespace//.//}/MainActivity.kt"
+          test -f "$activity"
+          grep -Fx "package $namespace" "$activity"
       - run: flutter analyze --fatal-infos
       - run: flutter test
 

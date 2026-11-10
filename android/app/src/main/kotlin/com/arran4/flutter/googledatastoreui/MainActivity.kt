@@ -1,4 +1,4 @@
-package com.example.flutter_google_datastore
+package com.arran4.flutter.googledatastoreui
 
 import io.flutter.embedding.android.FlutterActivity
 
