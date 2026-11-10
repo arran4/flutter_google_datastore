@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -83,9 +82,8 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
           bytes = Uint8List.fromList(newBytes);
         }
       } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Error saving changes: $e")));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text("Error saving changes: $e")));
         return;
       }
       setState(() {
@@ -260,28 +258,28 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
   }
 
   Future<void> _downloadFile() async {
-    String? filePath = await FilePicker.saveFile(
-      dialogTitle: "Save Blob",
-      fileName: "blob.bin",
-    );
-
-    if (filePath == null) {
-      return;
-    }
-
     try {
-      File file = File(filePath);
-      await file.writeAsBytes(bytes);
+      Uri? savedUri = await FilePicker.saveFile(
+        dialogTitle: "Save Blob",
+        fileName: "blob.bin",
+        bytes: bytes,
+      );
+
+      if (savedUri == null) {
+        return;
+      }
+
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Saved to $filePath')));
+        String displayPath = savedUri.isScheme('file')
+            ? savedUri.toFilePath()
+            : savedUri.toString();
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Saved to $displayPath')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error saving file: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error saving file: $e')));
       }
     }
   }
