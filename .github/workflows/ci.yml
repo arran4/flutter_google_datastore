@@ -91,6 +91,8 @@ jobs:
           mode: install
       - name: Test Android Release Version Helper
         run: bash scripts/test_derive_android_version.sh
+      - name: Test Release Asset Verification
+        run: bash scripts/test_verify_release_artifacts.sh
       - name: Test Policy Helper
         run: |
           set -euo pipefail
@@ -591,6 +593,7 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v7
       - name: Collect release artifacts
         uses: actions/download-artifact@v8
         with:
@@ -598,6 +601,9 @@ jobs:
           pattern: '*-release'
           merge-multiple: true
 
+      - name: Verify and stage complete release assets
+        shell: bash
+        run: bash scripts/verify_release_artifacts.sh "$GITHUB_REF_NAME" dist-release release-files
       - name: Create published GitHub release and upload assets
         uses: softprops/action-gh-release@v3
         with:
@@ -605,4 +611,5 @@ jobs:
           tag_name: ${{ github.ref_name }}
           prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-test') }}
           generate_release_notes: true
-          files: dist-release/**
+          fail_on_unmatched_files: true
+          files: release-files/*
