@@ -52,6 +52,14 @@ Pre-built packages for Linux, macOS, Windows, Android and iOS are available on
 the [GitHub releases](https://github.com/arran4/flutter_google_datastore/releases)
 page.
 
+## Android installation identity
+
+Android builds use the application ID `com.arran4.flutter.googledatastoreui`. Earlier releases (including
+`v0.1.24`) used `com.example.flutter_google_datastore`. Android treats these as
+separate applications: installing a new build will not upgrade an existing
+installation or migrate its private data and settings. Keep the old installation
+until you have recovered any local data you need.
+
 ## Building
 This project uses [FastForge](https://pub.dev/packages/fastforge) (formerly
 Flutter Distributor) to package releases. The workflow in
