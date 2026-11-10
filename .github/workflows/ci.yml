@@ -482,6 +482,10 @@ jobs:
           curl -sS https://webi.sh/yq | bash
           ~/.local/bin/yq -i '.version = strenv(SEMANTIC_VERSION)' pubspec.yaml
       - name: Build Linux Packages
+        env:
+          # AppImageKit cannot auto-detect the architecture of this AppDir.
+          # This job builds x86-64 Linux packages; pass it explicitly to appimagetool.
+          ARCH: x86_64
         run: |
           flutter pub get
           dart pub global activate fastforge
