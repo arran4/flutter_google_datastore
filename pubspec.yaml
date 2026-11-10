@@ -5,32 +5,32 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.12.2 <4.0.0'
-  flutter: '>=3.44.4'
+  sdk: '>=3.13.7 <4.0.0'
+  flutter: '>=3.47.9'
 
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
-  sqflite: ^2.4.2
-  sqflite_common_ffi: ^2.3.5
-  sqflite_common_ffi_web: ^1.0.0
+  cupertino_icons: ^2.0.0
+  sqflite: ^2.4.6
+  sqflite_common_ffi: ^2.4.6
+  sqflite_common_ffi_web: ^1.2.2
   ulid4d: ^2.0.0
   settings_ui: ^3.0.1
-  googleapis: ^16.0.0
+  googleapis: ^18.0.0
   path_provider: ^2.1.5
   extension_google_sign_in_as_googleapis_auth: ^3.0.0
   google_sign_in: ^7.2.0
-  google_sign_in_android: ^7.2.7
-  google_sign_in_ios: ^6.2.5
+  google_sign_in_android: ^7.2.18
+  google_sign_in_ios: ^6.4.0
   google_sign_in_platform_interface: ^3.1.0
   google_sign_in_web: ^1.1.0
-  googleapis_auth: ^2.0.0
+  googleapis_auth: ^2.3.7
   toml: ^0.18.0
   ini: ^2.1.0
   infinite_scroll_pagination: ^5.0.0
-  timezone: ^0.11.0
-  file_picker: ^11.0.2
+  timezone: ^0.11.2
+  file_picker: ^13.3.2
   dartobjectutils: ^0.1.1
   path: ^1.9.1
   http: ^1.6.0

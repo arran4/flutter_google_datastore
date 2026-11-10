@@ -6,6 +6,7 @@ import 'package:flutter_google_datastore/datastoremain.dart';
 import 'package:flutter_google_datastore/database.dart';
 
 import 'widget_test_utils.dart';
+
 import 'package:googleapis/datastore/v1.dart' as dsv1;
 import 'package:http/http.dart' as http;
 
@@ -39,8 +40,7 @@ void main() {
         ),
         properties: {
           'prop1': dsv1.Value(
-            stringValue:
-                'Long string value to test horizontal wrapping or layout boundaries.',
+            stringValue: 'Long string value to test horizontal wrapping or layout boundaries.',
           ),
           'prop2': dsv1.Value(integerValue: '42'),
           'prop3': dsv1.Value(booleanValue: true),
