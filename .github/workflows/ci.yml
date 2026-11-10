@@ -50,9 +50,6 @@ permissions:
   contents: read
   pull-requests: read
 
-env:
-  FLUTTER_SDK_VERSION: '3.47.9'
-
 jobs:
   route:
     name: Route Event
@@ -272,7 +269,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           cache: true
-          flutter-version: ${{ env.FLUTTER_SDK_VERSION }}
+          flutter-version-file: .fvmrc
       - run: flutter pub get
       - name: Verify Android application identity
         shell: bash
@@ -312,7 +309,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           cache: true
-          flutter-version: ${{ env.FLUTTER_SDK_VERSION }}
+          flutter-version-file: .fvmrc
       - name: Check outdated dependencies (dry run)
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'monthly-maintenance') }}
         run: flutter pub outdated
@@ -344,7 +341,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           cache: true
-          flutter-version: ${{ env.FLUTTER_SDK_VERSION }}
+          flutter-version-file: .fvmrc
       - run: flutter pub get
       - name: Check formatting drift (dry run)
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix') }}
@@ -418,7 +415,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           cache: true
-          flutter-version: ${{ env.FLUTTER_SDK_VERSION }}
+          flutter-version-file: .fvmrc
       - name: Set up environment vars
         shell: bash
         run: |
@@ -471,7 +468,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           cache: true
-          flutter-version: ${{ env.FLUTTER_SDK_VERSION }}
+          flutter-version-file: .fvmrc
       - name: Verify Environment
         run: |
           java -version
@@ -550,7 +547,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           cache: true
-          flutter-version: ${{ env.FLUTTER_SDK_VERSION }}
+          flutter-version-file: .fvmrc
       - name: Dependencies
         run: |
           python3 -m pip install --break-system-packages setuptools
