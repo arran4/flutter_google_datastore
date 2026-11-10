@@ -245,6 +245,12 @@ jobs:
           assert fmt['if'] == dollar + "{{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix' }}", 'fmt missing explicit gating'
           assert fmt['run'] == 'dart format .', 'wrong command for fmt'
           assert pr['if'] == dollar + "{{ github.event_name == 'workflow_dispatch' && inputs.allow_prs == true && inputs.mode == 'lint-fix' }}", 'pr missing explicit gating'
+          # A publish-tag run deliberately skips release-validation.
+          # Without always(), GitHub's implicit success() skips the publisher.
+          publisher = ci['jobs']['github-release']
+          assert publisher['needs'] == ['route', 'release-validation', 'windows', 'linux', 'macos'], 'publisher dependencies changed'
+          expected_publisher_if = dollar + "{{ always() && needs.route.result == 'success' && needs.route.outputs.run_publisher == 'true' && (needs.release-validation.result == 'success' || needs.release-validation.result == 'skipped') && needs.windows.result == 'success' && needs.linux.result == 'success' && needs.macos.result == 'success' }}"
+          assert publisher['if'] == expected_publisher_if, 'publisher requires always() and explicit successful builds'
           PYEOF
           python3 policy_test.py
           echo "All policy tests passed!"
@@ -580,7 +586,7 @@ jobs:
   github-release:
     name: Release Publisher
     needs: [route, release-validation, windows, linux, macos]
-    if: ${{ needs.route.outputs.run_publisher == 'true' }}
+    if: ${{ always() && needs.route.result == 'success' && needs.route.outputs.run_publisher == 'true' && (needs.release-validation.result == 'success' || needs.release-validation.result == 'skipped') && needs.windows.result == 'success' && needs.linux.result == 'success' && needs.macos.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
