@@ -82,9 +82,8 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
           bytes = Uint8List.fromList(newBytes);
         }
       } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Error saving changes: $e")));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text("Error saving changes: $e")));
         return;
       }
       setState(() {
@@ -274,15 +273,13 @@ class _BlobViewerDialogState extends State<BlobViewerDialog> {
         String displayPath = savedUri.isScheme('file')
             ? savedUri.toFilePath()
             : savedUri.toString();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Saved to $displayPath')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Saved to $displayPath')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error saving file: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error saving file: $e')));
       }
     }
   }

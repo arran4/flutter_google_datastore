@@ -4,11 +4,14 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/kind.dart';
 import 'package:googleapis/datastore/v1.dart' as dsv1;
+
 import 'blob_viewer_dialog.dart';
 import 'database.dart';
 import 'datastoremain.dart';
+
 import 'package:timezone/timezone.dart' as tz;
 import 'package:file_picker/file_picker.dart';
+
 import 'responsive_layout.dart';
 import 'ui/confirmation_dialog.dart';
 
@@ -129,9 +132,8 @@ class _ViewEntityPageState extends State<ViewEntityPage> {
                           action: SnackBarAction(
                             label: "OK",
                             onPressed: () {
-                              ScaffoldMessenger.of(
-                                context,
-                              ).hideCurrentSnackBar();
+                              ScaffoldMessenger.of(context)
+                                  .hideCurrentSnackBar();
                             },
                           ),
                         ),
@@ -1625,9 +1627,8 @@ class _PropertyAddEditDeleteDialogState
         break;
       case "integer":
         value = dsv1.Value(
-          integerValue: int.parse(
-            _numberEditingController?.text ?? "",
-          ).toString(),
+          integerValue: int.parse(_numberEditingController?.text ?? "")
+              .toString(),
         );
         break;
       case "key":

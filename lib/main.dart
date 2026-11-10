@@ -1,12 +1,15 @@
 import 'responsive_layout.dart';
+
 import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_google_datastore/settings.dart';
 import 'package:flutter_google_datastore/ui/confirmation_dialog.dart';
+
 import 'database.dart';
 import 'datastoremain.dart';
+
 import 'package:timezone/data/latest.dart' as tz;
 
 void main() {
@@ -458,8 +461,7 @@ class AddEditProjectScreenState extends State<AddEditProjectScreen> {
                       textInputAction: TextInputAction.next,
                       decoration: const InputDecoration(
                         labelText: 'Endpoint URL (blank for default)',
-                        helperText:
-                            'Leave blank to use the default Google Cloud Datastore endpoint.',
+                        helperText: 'Leave blank to use the default Google Cloud Datastore endpoint.',
                       ),
                     ),
                   ),
