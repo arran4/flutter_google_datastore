@@ -31,6 +31,7 @@ assert_invalid '0.1.42+abc'
 assert_invalid 0.1.42-rc.300
 assert_invalid 0.1.1000
 assert_invalid 21.0.0
-assert_invalid 0.0.0-rc
+assert_version 0.0.0-rc 0.0.0-rc+700
+assert_invalid 0.0.0-alpha
 assert_invalid 1.0.0+0
 echo "Android release version tests passed"
