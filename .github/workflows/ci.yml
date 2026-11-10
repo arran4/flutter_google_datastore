@@ -89,6 +89,8 @@ jobs:
         uses: arran4/git-tag-inc-action@v1
         with:
           mode: install
+      - name: Test Android Release Version Helper
+        run: bash scripts/test_derive_android_version.sh
       - name: Test Policy Helper
         run: |
           set -euo pipefail
@@ -492,6 +494,25 @@ jobs:
         run: |
           curl -sS https://webi.sh/yq | bash
           ~/.local/bin/yq -i '.version = strenv(SEMANTIC_VERSION)' pubspec.yaml
+      - name: Configure Android build numbers
+        shell: bash
+        run: |
+          set -euo pipefail
+          # FastForge 0.6.14 defaults --build-number to the entire version when
+          # pubspec has no +build suffix. Android needs an integer versionCode.
+          # Set only Android build args to keep Linux artifact filenames stable.
+          ANDROID_VERSION="$(bash scripts/derive_android_version.sh "$SEMANTIC_VERSION")"
+          ANDROID_BUILD_NUMBER="${ANDROID_VERSION##*+}"
+          export ANDROID_BUILD_NUMBER
+          ~/.local/bin/yq -i '(.releases[] | select(.name == "onlinux") | .jobs[] | select(.package.platform == "android") | .package.build_args."build-number") = strenv(ANDROID_BUILD_NUMBER)' distribute_options.yaml
+          for package in android-aab android-apk; do
+            actual="$(~/.local/bin/yq -r ".releases[] | select(.name == \"onlinux\") | .jobs[] | select(.name == \"$package\") | .package.build_args.\"build-number\"" distribute_options.yaml)"
+            if [[ "$actual" != "$ANDROID_BUILD_NUMBER" ]]; then
+              echo "Missing Android build number for $package" >&2
+              exit 1
+            fi
+          done
+          echo "Android build number: $ANDROID_BUILD_NUMBER"
       - name: Build Linux Packages
         env:
           # AppImageKit cannot auto-detect the architecture of this AppDir.
