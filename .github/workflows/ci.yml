@@ -529,17 +529,23 @@ jobs:
           flutter pub get
           dart pub global activate fastforge
 
-          # Flutter's included Gradle build has no plugin repository declaration.
-          # Prefer Maven Central for Kotlin dependencies, but keep the Plugin Portal
-          # for Gradle's own kotlin-dsl plugin (which is not on Maven Central).
-          # Apply to included builds without modifying Flutter SDK files.
+          # Kotlin downloads via Maven Central or the Plugin Portal can be
+          # throttled on shared CI runners. Use Google's public mirror first;
+          # retain Maven Central for releases not mirrored yet and the Plugin
+          # Portal for Gradle plugins absent from Maven Central.
+          # Applies to Flutter's included Gradle build without changing the SDK.
           gradle_init_dir="${GRADLE_USER_HOME:-$HOME/.gradle}/init.d"
           mkdir -p "$gradle_init_dir"
           cat > "$gradle_init_dir/plugin-repositories.init.gradle" <<'GRADLE'
           gradle.beforeSettings { settings ->
+              def mirror = 'https://maven-central.storage-download.googleapis.com/maven2/'
               settings.pluginManagement.repositories {
+                  maven { url = uri(mirror) }
                   mavenCentral()
                   gradlePluginPortal()
+              }
+              settings.dependencyResolutionManagement.repositories {
+                  maven { url = uri(mirror) }
               }
           }
           GRADLE
