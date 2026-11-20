@@ -529,6 +529,20 @@ jobs:
           flutter pub get
           dart pub global activate fastforge
 
+          # Flutter's included Gradle plugin build can resolve Kotlin's transitive
+          # dependencies through the Plugin Portal alone, where they may be absent.
+          # Add Maven Central to plugin resolution before *each* settings script
+          # (including the Flutter SDK's included build), without editing the SDK.
+          gradle_init_dir="${GRADLE_USER_HOME:-$HOME/.gradle}/init.d"
+          mkdir -p "$gradle_init_dir"
+          cat > "$gradle_init_dir/maven-central.init.gradle" <<'GRADLE'
+          gradle.beforeSettings { settings ->
+              settings.pluginManagement.repositories {
+                  mavenCentral()
+              }
+          }
+          GRADLE
+
           # Fastforge retries Gradle downloads almost immediately. A Maven Central
           # 429 needs a longer pause; only retry known transient HTTP responses.
           build_log="$(mktemp)"
