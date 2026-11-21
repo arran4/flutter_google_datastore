@@ -548,6 +548,18 @@ jobs:
                   maven { url = uri(mirror) }
               }
           }
+          // Legacy plugins such as android_file_picker resolve their own
+          // buildscript classpath, bypassing settings-level repository lists.
+          // Register the mirror before those subprojects are evaluated, while
+          // retaining their own Google/Maven Central repository fallbacks.
+          gradle.beforeProject { project ->
+              project.buildscript.repositories {
+                  maven {
+                      name = 'GoogleMavenCentralMirror'
+                      url = project.uri('https://maven-central.storage-download.googleapis.com/maven2/')
+                  }
+              }
+          }
           GRADLE
 
           # Fastforge retries Gradle downloads almost immediately. A Maven Central
