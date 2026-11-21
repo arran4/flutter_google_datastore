@@ -523,10 +523,58 @@ jobs:
           # AppImageKit cannot auto-detect the architecture of this AppDir.
           # This job builds x86-64 Linux packages; pass it explicitly to appimagetool.
           ARCH: x86_64
+        shell: bash
         run: |
+          set -euo pipefail
           flutter pub get
           dart pub global activate fastforge
-          fastforge release --name onlinux
+
+          # Kotlin downloads via Maven Central or the Plugin Portal can be
+          # throttled on shared CI runners. Use Google's public mirror first;
+          # retain Maven Central for releases not mirrored yet and the Plugin
+          # Portal for Gradle plugins absent from Maven Central.
+          # Applies to Flutter's included Gradle build without changing the SDK.
+          gradle_init_dir="${GRADLE_USER_HOME:-$HOME/.gradle}/init.d"
+          mkdir -p "$gradle_init_dir"
+          cat > "$gradle_init_dir/plugin-repositories.init.gradle" <<'GRADLE'
+          gradle.beforeSettings { settings ->
+              def mirror = 'https://maven-central.storage-download.googleapis.com/maven2/'
+              settings.pluginManagement.repositories {
+                  maven { url = uri(mirror) }
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+              settings.dependencyResolutionManagement.repositories {
+                  maven { url = uri(mirror) }
+              }
+          }
+          GRADLE
+
+          # Fastforge retries Gradle downloads almost immediately. A Maven Central
+          # 429 needs a longer pause; only retry known transient HTTP responses.
+          build_log="$(mktemp)"
+          trap 'rm -f "$build_log"' EXIT
+          for attempt in 1 2 3; do
+            if fastforge release --name onlinux 2>&1 | tee "$build_log"; then
+              exit 0
+            fi
+
+            if ! grep -Eiq 'Too Many Requests|Received status code (429|502|503|504)|HTTP/[0-9.]+ (429|502|503|504)' "$build_log"; then
+              echo "Fastforge failed without a transient HTTP error; not retrying." >&2
+              exit 1
+            fi
+            if (( attempt == 3 )); then
+              echo "Fastforge failed after three attempts." >&2
+              exit 1
+            fi
+
+            delay_seconds=$((30 * attempt))
+            echo "::warning::Transient HTTP dependency failure (attempt ${attempt}/3); retrying in ${delay_seconds}s."
+            # Fastforge may have written some packages before Android failed.
+            # Clear only the release output, not Gradle's downloaded dependencies.
+            rm -rf dist/
+            sleep "$delay_seconds"
+          done
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
